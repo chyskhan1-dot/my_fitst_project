@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор вопросов</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* Layout: sticky toolbar on top, one column of question cards, summary bar at the bottom */
+:root {
+  --bg: #0e1330;
+  --bg2: #1a1050;
+  --panel: #171d45;
+  --panel2: #1f2657;
+  --ink: #f4f5ff;
+  --muted: #a7aedb;
+  --line: rgba(255, 255, 255, .12);
+  --accent: #ffd23f;
+  --accent-ink: #1a1400;
+  --a0: #e5484d; --a1: #3e7bfa; --a2: #f2a516; --a3: #26a269;
+  --good: #3ddc84; --bad: #ff6b6b;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--body); font-size: 15px;
+  background: radial-gradient(120% 60% at 0% 0%, var(--bg2), var(--bg) 60%) fixed, var(--bg);
+}
+.bar {
+  position: sticky; top: 0; z-index: 5; padding: 12px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: rgba(14, 19, 48, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.bar .logo { font-family: var(--display); font-weight: 800; margin-right: auto; display: flex; align-items: center; gap: 10px; }
+.bar .logo::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--accent); transform: rotate(45deg); }
+.wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 120px; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--display); font-size: 28px; margin: 0; }
+p { margin: 0; line-height: 1.5; }
+.muted { color: var(--muted); }
+.btn {
+  font: 800 14px var(--body); padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer;
+  background: var(--panel2); color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.danger { color: var(--bad); }
+.btn.icon { padding: 8px 10px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[type=text], input[type=url], textarea, select {
+  font: 600 15px var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px; width: 100%;
+}
+textarea { resize: vertical; min-height: 54px; }
+.title-input { font-family: var(--display); font-size: 22px; padding: 12px 14px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row > * { min-width: 0; }
+.help { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.help code { background: var(--bg); padding: 1px 6px; border-radius: 6px; }
+
+.card { gap: 12px; }
+.card.bad { border-color: rgba(255, 107, 107, .6); }
+.card-head { display: flex; align-items: center; gap: 8px; }
+.card-head b { font-family: var(--display); font-size: 14px; margin-right: auto; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; border-radius: 12px; background: var(--bg); border: 2px solid transparent; min-width: 0; }
+.opt.right { border-color: var(--good); }
+.opt .mark {
+  width: 34px; height: 34px; border-radius: 9px; flex: none; display: grid; place-items: center; color: #fff;
+  background: var(--c); cursor: pointer; font-size: 15px; border: 0;
+}
+.opt input[type=text] { border: 0; background: transparent; padding: 8px 4px; }
+.opt.right .mark::after { content: "✓"; position: absolute; }
+.opt .mark span { transition: opacity .15s; }
+.opt.right .mark span { opacity: 0; }
+.opt .mark { position: relative; }
+.media { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.slot { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: var(--bg); min-width: 0; }
+.slot-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.slot-head .btn { margin-left: auto; padding: 6px 10px; font-size: 12px; }
+.slot img { max-width: 100%; max-height: 140px; border-radius: 8px; align-self: flex-start; background: #fff; }
+.slot audio { width: 100%; }
+.errs { color: var(--bad); font-size: 13px; font-weight: 700; }
+.add { align-self: center; }
+
+.foot {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 12px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: rgba(14, 19, 48, .94); backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+}
+.foot .sum { margin-right: auto; font-weight: 700; }
+.foot .sum.bad { color: var(--bad); }
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 12px; font-weight: 800; z-index: 9; }
+.empty { text-align: center; padding: 40px 16px; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .opts, .media { grid-template-columns: 1fr; }
+  .bar .logo { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="logo">Редактор вопросов</span>
+  <button class="btn" id="new">Новый</button>
+  <label class="btn" for="open">Открыть файл</label>
+  <input type="file" id="open" accept=".json,.csv,.txt,.xlsx" hidden>
+  <select id="base" aria-label="Взять за основу встроенный пакет" style="width:auto"><option value="">Взять за основу…</option></select>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <input class="title-input" type="text" id="title" maxlength="60" placeholder="Название пакета" aria-label="Название пакета">
+    <p class="help">
+      Вопросы можно писать здесь или подготовить в <b>Google Таблицах / Excel</b>: колонки
+      <code>Вопрос</code> · <code>Вариант 1–4</code> · <code>Правильный (1–4)</code> · <code>Картинка</code> · <code>Аудио</code>,
+      затем «Файл → Скачать → CSV» и «Открыть файл» здесь.
+      <a href="#" id="template" style="color:var(--accent)">Скачать шаблон таблицы</a>.
+    </p>
+  </div>
+  <div id="list"></div>
+  <button class="btn add" id="add">+ Добавить вопрос</button>
+  <div class="panel help">
+    <b style="color:var(--ink)">Где хранить пакет</b>
+    <span>• <b>На один вечер</b>: кнопка «Играть с этим пакетом» внизу. Пакет живёт, пока открыта комната.</span>
+    <span>• <b>Навсегда</b>: «Скачать .json» и загрузи файл на GitHub в папку <code>quiz/packs</code>
+      (на сайте GitHub: <i>Add file → Upload files</i>). После обновления сервера пакет появится в меню у всех.</span>
+    <span>• Картинки и аудио, загруженные с компьютера, сохраняются прямо в файле пакета. Картинки уменьшаются автоматически, аудио — до 8 МБ на вопрос, весь пакет — до 25 МБ.</span>
+  </div>
+</div>
+
+<div class="foot">
+  <span class="sum" id="sum"></span>
+  <button class="btn" id="csv">Скачать .csv</button>
+  <button class="btn" id="save">Скачать .json</button>
+  <button class="btn primary" id="play">Играть с этим пакетом →</button>
+</div>
+
+<script src="/static/pack.js"></script>
+<script>
+const SHAPES = ["▲", "◆", "●", "■"];
+const DRAFT = "quiz-editor-draft";
+const $list = document.getElementById("list");
+let pack = loadDraft() || blank();
+
+function blank() { return { title: "", questions: [emptyQ()] }; }
+function emptyQ() { return { q: "", options: ["", "", "", ""], answer: 0, image: null, audio: null }; }
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// В редакторе у вопроса всегда 4 поля для вариантов
+function fromPack(p) {
+  return {
+    title: String(p.title || ""),
+    questions: (p.questions || []).map((q) => {
+      const options = [0, 1, 2, 3].map((i) => String((q.options || [])[i] ?? ""));
+      return { q: String(q.q || ""), options, answer: Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1, image: q.image || null, audio: q.audio || null };
+    }),
+  };
+}
+
+// Пустые варианты убираем, номер правильного ответа пересчитываем
+function toPack() {
+  return {
+    title: pack.title.trim() || "Мой пакет",
+    questions: pack.questions.map((q) => {
+      const kept = q.options.map((text, i) => ({ text: text.trim(), i })).filter((o) => o.text);
+      const q2 = { q: q.q.trim(), options: kept.map((o) => o.text), answer: kept.findIndex((o) => o.i === q.answer) };
+      if (q.image) q2.image = q.image;
+      if (q.audio) q2.audio = q.audio;
+      return q2;
+    }),
+  };
+}
+
+function problems(q) {
+  const errs = [];
+  if (!q.q.trim()) errs.push("нет текста вопроса");
+  if (q.options.filter((o) => o.trim()).length < 2) errs.push("нужно минимум 2 варианта");
+  if (!q.options[q.answer] || !q.options[q.answer].trim()) errs.push("отметь правильный ответ (нажми на значок слева от варианта)");
+  return errs;
+}
+
+function loadDraft() { try { const d = JSON.parse(localStorage.getItem(DRAFT)); return d && d.questions ? d : null; } catch { return null; } }
+let warnedBig = false;
+function saveDraft() {
+  try { localStorage.setItem(DRAFT, JSON.stringify(pack)); }
+  catch { if (!warnedBig) { warnedBig = true; toast("Черновик слишком большой для автосохранения — скачай пакет"); } }
+}
+
+function toast(text) {
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = text; t.setAttribute("role", "status");
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
+
+function slot(q, i, kind) {
+  const label = kind === "image" ? "🖼 Картинка" : "🎵 Аудио";
+  const v = q[kind];
+  const preview = !v ? "" : kind === "image"
+    ? `<img src="${esc(QuizPack.mediaSrc(v))}" alt="">`
+    : `<audio controls preload="none" src="${esc(QuizPack.mediaSrc(v))}"></audio>`;
+  const link = v && !String(v).startsWith("data:") ? v : "";
+  return `<div class="slot">
+    <div class="slot-head">${label}
+      ${v ? `<button class="btn danger" data-clear="${kind}" data-i="${i}">Убрать</button>` : ""}
+      <label class="btn" for="f-${kind}-${i}">${v ? "Заменить" : "С компьютера"}</label>
+      <input type="file" id="f-${kind}-${i}" data-file="${kind}" data-i="${i}" accept="${kind}/*" hidden>
+    </div>
+    ${preview}
+    <input type="url" data-link="${kind}" data-i="${i}" value="${esc(link)}" placeholder="${v && !link ? "Файл вшит в пакет" : "или вставь ссылку https://…"}" aria-label="Ссылка: ${label}">
+  </div>`;
+}
+
+function card(q, i) {
+  const errs = problems(q);
+  return `<section class="panel card ${errs.length ? "bad" : ""}" data-card="${i}">
+    <div class="card-head">
+      <b>Вопрос ${i + 1}</b>
+      <button class="btn icon" data-move="-1" data-i="${i}" ${i === 0 ? "disabled" : ""} aria-label="Выше">↑</button>
+      <button class="btn icon" data-move="1" data-i="${i}" ${i === pack.questions.length - 1 ? "disabled" : ""} aria-label="Ниже">↓</button>
+      <button class="btn icon" data-copy="${i}" aria-label="Копировать">⧉</button>
+      <button class="btn icon danger" data-del="${i}" aria-label="Удалить">✕</button>
+    </div>
+    <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
+    <div class="opts">${q.options.map((o, k) => `
+      <div class="opt ${q.answer === k ? "right" : ""}">
+        <button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Сделать правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>
+        <input type="text" data-opt="${k}" data-i="${i}" maxlength="100" value="${esc(o)}" placeholder="Вариант ${k + 1}${k > 1 ? " (необязательно)" : ""}" aria-label="Вариант ${k + 1}">
+      </div>`).join("")}
+    </div>
+    <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}</div>
+    <div class="errs" data-errs="${i}">${errs.length ? "Нужно поправить: " + errs.join(", ") : ""}</div>
+  </section>`;
+}
+
+function render() {
+  document.getElementById("title").value = pack.title;
+  $list.innerHTML = pack.questions.length
+    ? pack.questions.map(card).join("")
+    : `<div class="empty">Вопросов пока нет. Нажми «Добавить вопрос» или открой файл.</div>`;
+  $list.style.cssText = "display:flex;flex-direction:column;gap:16px";
+  summary();
+}
+
+function summary() {
+  const bad = pack.questions.filter((q) => problems(q).length).length;
+  const size = new Blob([JSON.stringify(pack)]).size / 1024 / 1024;
+  const el = document.getElementById("sum");
+  el.className = "sum" + (bad || size > 25 ? " bad" : "");
+  el.textContent = `${pack.questions.length} вопросов` + (bad ? ` · с ошибками: ${bad}` : " · всё заполнено") + (size > 1 ? ` · ${size.toFixed(1)} МБ` : "");
+  saveDraft();
+}
+
+// точечное обновление карточки без перерисовки всего списка (чтобы не терялся фокус)
+function refreshCard(i) {
+  const errs = problems(pack.questions[i]);
+  const c = $list.querySelector(`[data-card="${i}"]`);
+  c.classList.toggle("bad", errs.length > 0);
+  c.querySelector(`[data-errs="${i}"]`).textContent = errs.length ? "Нужно поправить: " + errs.join(", ") : "";
+  summary();
+}
+
+document.getElementById("title").addEventListener("input", (e) => { pack.title = e.target.value; summary(); });
+
+$list.addEventListener("input", (e) => {
+  const t = e.target, i = Number(t.dataset.i ?? t.dataset.q);
+  if (t.dataset.q != null) pack.questions[i].q = t.value;
+  else if (t.dataset.opt != null) pack.questions[i].options[Number(t.dataset.opt)] = t.value;
+  else return;
+  refreshCard(i);
+});
+
+$list.addEventListener("change", async (e) => {
+  const t = e.target, i = Number(t.dataset.i);
+  if (t.dataset.link) {
+    const v = t.value.trim();
+    if (v && !/^https?:\/\//.test(v)) { toast("Ссылка должна начинаться с https://"); return; }
+    if (v || !String(pack.questions[i][t.dataset.link] || "").startsWith("data:")) pack.questions[i][t.dataset.link] = v || null;
+    render();
+  }
+  if (t.dataset.file && t.files[0]) {
+    try {
+      pack.questions[i][t.dataset.file] = await QuizPack.fileToDataURL(t.files[0], t.dataset.file);
+      render();
+    } catch (x) { toast(x.message); }
+  }
+});
+
+$list.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  if (b.dataset.right != null) { pack.questions[i].answer = Number(b.dataset.right); render(); }
+  else if (b.dataset.clear) { pack.questions[i][b.dataset.clear] = null; render(); }
+  else if (b.dataset.move) {
+    const j = i + Number(b.dataset.move), qs = pack.questions;
+    [qs[i], qs[j]] = [qs[j], qs[i]]; render();
+  } else if (b.dataset.copy != null) {
+    const k = Number(b.dataset.copy);
+    pack.questions.splice(k + 1, 0, JSON.parse(JSON.stringify(pack.questions[k]))); render();
+  } else if (b.dataset.del != null) {
+    const k = Number(b.dataset.del), q = pack.questions[k];
+    if ((q.q || q.options.some(Boolean)) && !confirm(`Удалить вопрос ${k + 1}?`)) return;
+    pack.questions.splice(k, 1); render();
+  }
+});
+
+document.getElementById("add").onclick = () => {
+  pack.questions.push(emptyQ()); render();
+  const last = $list.querySelector(`[data-q="${pack.questions.length - 1}"]`);
+  last.scrollIntoView({ behavior: "smooth", block: "center" }); last.focus();
+};
+
+document.getElementById("new").onclick = () => {
+  if (pack.questions.some((q) => q.q) && !confirm("Начать новый пакет? Текущий черновик удалится (скачай его, если нужен).")) return;
+  pack = blank(); render();
+};
+
+function load(p, note) {
+  pack = fromPack(p);
+  if (!pack.questions.length) pack.questions.push(emptyQ());
+  render(); toast(note);
+}
+
+document.getElementById("open").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    const p = await QuizPack.readPackFile(f);
+    load(p, `Открыто: ${p.questions.length} вопросов`);
+  } catch (x) { toast(x.message); }
+});
+
+fetch("/api/packs").then((r) => r.json()).then((packs) => {
+  document.getElementById("base").insertAdjacentHTML("beforeend",
+    packs.map((p) => `<option value="${esc(p.id)}">${esc(p.title)} (${p.count})</option>`).join(""));
+}).catch(() => {});
+document.getElementById("base").addEventListener("change", async (e) => {
+  const id = e.target.value;
+  e.target.value = "";
+  if (!id) return;
+  if (pack.questions.some((q) => q.q) && !confirm("Заменить текущий черновик выбранным пакетом?")) return;
+  const p = await (await fetch("/api/packs/" + encodeURIComponent(id))).json();
+  p.title = p.title + " (копия)";
+  load(p, "Пакет загружен — меняй как хочешь");
+});
+
+document.getElementById("template").onclick = (e) => {
+  e.preventDefault();
+  QuizPack.download("шаблон-вопросов.csv", "﻿" + QuizPack.TEMPLATE_CSV, "text/csv;charset=utf-8");
+};
+
+function ready() {
+  const bad = pack.questions.findIndex((q) => problems(q).length);
+  if (!pack.questions.length) { toast("Добавь хотя бы один вопрос"); return false; }
+  if (bad >= 0) {
+    toast(`Поправь вопрос ${bad + 1}`);
+    $list.querySelector(`[data-card="${bad}"]`).scrollIntoView({ behavior: "smooth", block: "center" });
+    return false;
+  }
+  return true;
+}
+const fileName = (ext) => (pack.title.trim() || "мой-пакет").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "-").toLowerCase() + ext;
+
+document.getElementById("save").onclick = () => {
+  if (!ready()) return;
+  QuizPack.download(fileName(".json"), JSON.stringify(toPack(), null, 2), "application/json");
+};
+document.getElementById("csv").onclick = () => {
+  if (!ready()) return;
+  const hasFiles = pack.questions.some((q) => String(q.image || "").startsWith("data:") || String(q.audio || "").startsWith("data:"));
+  QuizPack.download(fileName(".csv"), "﻿" + QuizPack.packToCSV(toPack()), "text/csv;charset=utf-8");
+  if (hasFiles) toast("В CSV попадают только ссылки. Файлы с компьютера сохраняются в .json");
+};
+
+document.getElementById("play").onclick = async (e) => {
+  if (!ready()) return;
+  const btn = e.currentTarget;
+  btn.disabled = true; btn.textContent = "Создаю комнату…";
+  const post = async (url, body) => (await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+  try {
+    const room = await post("/api/rooms", {});
+    if (room.error) throw new Error(room.error);
+    const res = await post("/api/host/upload", { room: room.room, token: room.token, pack: toPack() });
+    if (res.error) throw new Error(res.error);
+    try { localStorage.setItem("quiz-host-" + room.room, room.token); } catch {}
+    location.href = "/host?room=" + room.room;
+  } catch (x) {
+    toast(x.message || "Не получилось, попробуй ещё раз");
+    btn.disabled = false; btn.textContent = "Играть с этим пакетом →";
+  }
+};
+
+render();
+</script>
+</body>
+</html>

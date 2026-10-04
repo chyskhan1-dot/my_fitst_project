@@ -143,6 +143,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .sound { font: inherit; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 .sound.blocked { border-color: var(--accent); color: var(--accent); animation: blink2 1.2s ease-in-out infinite; }
 @keyframes blink2 { 50% { opacity: .5; } }
+.emoji-pic { font-size: clamp(64px, 11vw, 150px); line-height: 1.1; text-align: center; letter-spacing: .08em; }
 .melody { display: flex; align-items: center; gap: 18px; justify-content: center; font-size: 1.4em; font-weight: 800; }
 .melody .eq { display: flex; gap: 5px; align-items: flex-end; height: 40px; }
 .melody .eq i { width: 8px; background: var(--accent); border-radius: 4px; animation: eq 0.9s ease-in-out infinite; }
@@ -313,10 +314,11 @@ function dots(s) {
 }
 
 function media(s) {
-  if (s.melody) return `<div class="melody rise"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию
+  const emoji = s.emoji ? `<div class="emoji-pic rise" aria-label="Картинка из эмодзи">${esc(s.emoji)}</div>` : "";
+  if (s.melody) return emoji + `<div class="melody rise"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию
     <button class="btn ghost small" data-replay type="button">▶ Ещё раз</button></div>`;
-  if (!s.image && !s.audio) return "";
-  return `<div class="qmedia rise">
+  if (!s.image && !s.audio) return emoji;
+  return emoji + `<div class="qmedia rise">
     ${s.image ? `<img class="qimg" src="${esc(QuizPack.mediaSrc(s.image))}" alt="Картинка к вопросу">` : ""}
     ${s.audio ? `<div class="qaudio">🎵 <audio controls preload="auto" src="${esc(QuizPack.mediaSrc(s.audio))}"></audio></div>` : ""}
   </div>`;
@@ -386,6 +388,8 @@ function countUp() {
 }
 
 let musicKey = "";
+// у каждой мелодии свой инструмент: указанный в пакете или по очереди
+const instrumentFor = (s) => s.instrument || QuizMusic.MELODY_INSTRUMENTS[s.index % QuizMusic.MELODY_INSTRUMENTS.length];
 function soundtrack(s) {
   const key = s.phase + ":" + s.index;
   if (key === musicKey) return;
@@ -395,7 +399,7 @@ function soundtrack(s) {
   if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
   else if (s.phase === "question") {
     if (s.audio || s.melody) M.stop(0.3); else M.play("question");
-    if (s.melody) setTimeout(() => M.melody(s.melody, s.tempo), 600);
+    if (s.melody) setTimeout(() => M.melody(s.melody, s.tempo, instrumentFor(s)), 600);
     else M.sting("start");
   } else if (s.phase === "reveal") { M.stopMelody(); M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders") M.play("leaders");
@@ -649,7 +653,7 @@ function confetti(on) {
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
   if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
-  if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo); return; }
+  if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {

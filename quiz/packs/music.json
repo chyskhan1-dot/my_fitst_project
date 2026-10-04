@@ -1,0 +1,424 @@
+{
+  "title": "Музыкальный раунд",
+  "questions": [
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "When the Saints Go Marching In",
+        "Полёт валькирий — Вагнер",
+        "«Весна» из «Времён года» — Вивальди",
+        "Во поле берёза стояла"
+      ],
+      "answer": 2,
+      "melody": "E4:1 G#4:1 G#4:1 G#4:1 F#4:0.5 E4:0.5 B4:2.5 B4:0.5 A4:0.5 G#4:1 G#4:1 G#4:1 F#4:0.5 E4:0.5 B4:2.5",
+      "tempo": 100,
+      "instrument": "pluck"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Розовое вино — Элджей и Feduk",
+        "Кукла колдуна — Король и Шут",
+        "Группа крови — Кино",
+        "Миллион алых роз — Алла Пугачёва"
+      ],
+      "answer": 0,
+      "emoji": "🌸🍷"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Despacito — Luis Fonsi",
+        "Hello — Adele",
+        "Wind of Change — Scorpions",
+        "Umbrella — Rihanna"
+      ],
+      "answer": 3,
+      "emoji": "☂️☔"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "When the Saints Go Marching In",
+        "Jingle Bells",
+        "Ода к радости — Бетховен",
+        "На прекрасном голубом Дунае — Штраус"
+      ],
+      "answer": 1,
+      "melody": "E4 E4 E4:2 E4 E4 E4:2 E4 G4 C4:1.5 D4:0.5 E4:4 F4 F4 F4:1.5 F4:0.5 F4 E4 E4 E4:0.5 E4:0.5 E4 D4 D4 E4 D4:2 G4:2",
+      "tempo": 180,
+      "instrument": "pluck"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Турецкий марш — Моцарт",
+        "«Весна» из «Времён года» — Вивальди",
+        "Чижик-пыжик",
+        "Jingle Bells"
+      ],
+      "answer": 2,
+      "melody": "E5 C5 E5 C5 F5 E5 D5:2 G4 G4 G4 A4 B4 C5 C5:2",
+      "tempo": 140,
+      "instrument": "epiano"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "«Весна» из «Времён года» — Вивальди",
+        "When the Saints Go Marching In",
+        "На прекрасном голубом Дунае — Штраус",
+        "Чижик-пыжик"
+      ],
+      "answer": 2,
+      "melody": "D4 D4 F#4 A4 A4:2 A5 A5:2 F#5 F#5:2 D4 D4 F#4 A4 A4:2 A5 A5:2 G5 G5:2",
+      "tempo": 150,
+      "instrument": "piano"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Чижик-пыжик",
+        "В пещере горного короля — Григ",
+        "Коробейники (музыка из «Тетриса»)",
+        "Ода к радости — Бетховен"
+      ],
+      "answer": 1,
+      "melody": "B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:1 F4:0.5 C#4:0.5 F4:1 E4:0.5 C4:0.5 E4:1 B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:0.5 A4:0.5 F#4:0.5 D4:0.5 F#4:0.5 A4:2",
+      "tempo": 100,
+      "instrument": "flute"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Полёт валькирий — Вагнер",
+        "Happy Birthday to You",
+        "Чижик-пыжик",
+        "В пещере горного короля — Григ"
+      ],
+      "answer": 0,
+      "melody": "B3:0.75 F#3:0.25 B3:0.5 D4:1.5 B3:1.5 D4:0.75 B3:0.25 D4:0.5 F#4:1.5 D4:1.5 F#4:0.75 D4:0.25 F#4:0.5 A4:1.5 A3:1.5 D4:0.75 A3:0.25 D4:0.5 F#4:3",
+      "tempo": 90,
+      "instrument": "synth"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Миллион алых роз — Алла Пугачёва",
+        "Батарейка — Жуки",
+        "Группа крови — Кино",
+        "Розовое вино — Элджей и Feduk"
+      ],
+      "answer": 2,
+      "emoji": "🩸🅰️🅱️"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Gangnam Style — PSY",
+        "Lemon Tree — Fool's Garden",
+        "Ice Ice Baby — Vanilla Ice",
+        "Purple Rain — Prince"
+      ],
+      "answer": 3,
+      "emoji": "💜🌧️"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "«Весна» из «Времён года» — Вивальди",
+        "Маленькая ночная серенада — Моцарт",
+        "Мерцай, мерцай, звёздочка",
+        "Happy Birthday to You"
+      ],
+      "answer": 1,
+      "melody": "G4:1 R:0.5 D4:0.5 G4:1 R:0.5 D4:0.5 G4:0.5 D4:0.5 G4:0.5 B4:0.5 D5:2 C5:1 R:0.5 A4:0.5 C5:1 R:0.5 A4:0.5 C5:0.5 A4:0.5 F#4:0.5 A4:0.5 D4:2",
+      "tempo": 130,
+      "instrument": "strings"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Кукарача",
+        "Полёт валькирий — Вагнер",
+        "Турецкий марш — Моцарт",
+        "When the Saints Go Marching In"
+      ],
+      "answer": 2,
+      "melody": "B4:0.25 A4:0.25 G#4:0.25 A4:0.25 C5:1 D5:0.25 C5:0.25 B4:0.25 C5:0.25 E5:1 F5:0.25 E5:0.25 D#5:0.25 E5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 C6:1.5",
+      "tempo": 112,
+      "instrument": "marimba"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Группа крови — Кино",
+        "Розовое вино — Элджей и Feduk",
+        "Миллион алых роз — Алла Пугачёва",
+        "Батарейка — Жуки"
+      ],
+      "answer": 2,
+      "emoji": "1️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣🌹"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Happy Birthday to You",
+        "В пещере горного короля — Григ",
+        "Мерцай, мерцай, звёздочка",
+        "Маленькая ночная серенада — Моцарт"
+      ],
+      "answer": 0,
+      "melody": "G4:0.75 G4:0.25 A4 G4 C5 B4:2 G4:0.75 G4:0.25 A4 G4 D5 C5:2 G4:0.75 G4:0.25 G5 E5 C5 B4 A4:2 F5:0.75 F5:0.25 E5 C5 D5 C5:2",
+      "tempo": 100,
+      "instrument": "synth"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Коробейники (музыка из «Тетриса»)",
+        "Чижик-пыжик",
+        "When the Saints Go Marching In",
+        "К Элизе — Бетховен"
+      ],
+      "answer": 3,
+      "melody": "E5:0.25 D#5:0.25 E5:0.25 D#5:0.25 E5:0.25 B4:0.25 D5:0.25 C5:0.25 A4:0.5 R:0.25 C4:0.25 E4:0.25 A4:0.25 B4:0.5 R:0.25 E4:0.25 G#4:0.25 B4:0.25 C5:0.5 R:0.25 E4:0.25 E5:0.25 D#5:0.25 E5:0.25 D#5:0.25 E5:0.25 B4:0.25 D5:0.25 C5:0.25 A4:0.75",
+      "tempo": 72,
+      "instrument": "epiano"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Кукла колдуна — Король и Шут",
+        "Группа крови — Кино",
+        "Батарейка — Жуки",
+        "Розовое вино — Элджей и Feduk"
+      ],
+      "answer": 2,
+      "emoji": "🔋"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Кукарача",
+        "Мерцай, мерцай, звёздочка",
+        "«Весна» из «Времён года» — Вивальди",
+        "Турецкий марш — Моцарт"
+      ],
+      "answer": 0,
+      "melody": "C4 C4 C4 F4:1.5 A4:1.5 C4 C4 C4 F4:1.5 A4:1.5 F4 F4 E4 E4 D4 D4 C4:3",
+      "tempo": 170,
+      "instrument": "marimba"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Ice Ice Baby — Vanilla Ice",
+        "Despacito — Luis Fonsi",
+        "Highway to Hell — AC/DC",
+        "Yellow Submarine — The Beatles"
+      ],
+      "answer": 1,
+      "emoji": "🐢🎶"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Hello — Adele",
+        "Hotel California — Eagles",
+        "Gangnam Style — PSY",
+        "Lemon Tree — Fool's Garden"
+      ],
+      "answer": 2,
+      "emoji": "🐴🕺🇰🇷"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Hello — Adele",
+        "Ice Ice Baby — Vanilla Ice",
+        "Lemon Tree — Fool's Garden",
+        "Despacito — Luis Fonsi"
+      ],
+      "answer": 1,
+      "emoji": "🧊🧊👶"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "«Весна» из «Времён года» — Вивальди",
+        "Мерцай, мерцай, звёздочка",
+        "When the Saints Go Marching In",
+        "Jingle Bells"
+      ],
+      "answer": 1,
+      "melody": "C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2",
+      "tempo": 110,
+      "instrument": "piano"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Белые розы — Ласковый май",
+        "Кукла колдуна — Король и Шут",
+        "Группа крови — Кино",
+        "Розовое вино — Элджей и Feduk"
+      ],
+      "answer": 0,
+      "emoji": "🤍🌹"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "На прекрасном голубом Дунае — Штраус",
+        "В пещере горного короля — Григ",
+        "Jingle Bells",
+        "Канкан — Оффенбах"
+      ],
+      "answer": 3,
+      "melody": "D4 R D4 E4 G4 F#4 E4 A4 R A4 A4 B4 F#4 G4 E4 R E4 E4 G4 F#4 E4 D4 D5 C#5 B4 A4 G4 F#4 E4 D4:2",
+      "tempo": 150,
+      "instrument": "strings"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Lemon Tree — Fool's Garden",
+        "Ice Ice Baby — Vanilla Ice",
+        "Gangnam Style — PSY",
+        "Thriller — Michael Jackson"
+      ],
+      "answer": 3,
+      "emoji": "🧟🌕😱"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Группа крови — Кино",
+        "Белые розы — Ласковый май",
+        "Миллион алых роз — Алла Пугачёва",
+        "Кукла колдуна — Король и Шут"
+      ],
+      "answer": 3,
+      "emoji": "🪆🧙"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Полёт валькирий — Вагнер",
+        "Во поле берёза стояла",
+        "Мерцай, мерцай, звёздочка",
+        "When the Saints Go Marching In"
+      ],
+      "answer": 3,
+      "melody": "C4 E4 F4 G4:4 C4 E4 F4 G4:4 C4 E4 F4 G4:2 E4:2 C4:2 E4:2 D4:4",
+      "tempo": 150,
+      "instrument": "epiano"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Wind of Change — Scorpions",
+        "Hello — Adele",
+        "Highway to Hell — AC/DC",
+        "Umbrella — Rihanna"
+      ],
+      "answer": 1,
+      "emoji": "👋📞"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Lemon Tree — Fool's Garden",
+        "Purple Rain — Prince",
+        "Hello — Adele",
+        "Thriller — Michael Jackson"
+      ],
+      "answer": 0,
+      "emoji": "🍋🌳"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Hotel California — Eagles",
+        "Ice Ice Baby — Vanilla Ice",
+        "Highway to Hell — AC/DC",
+        "Umbrella — Rihanna"
+      ],
+      "answer": 0,
+      "emoji": "🏨🌴☀️"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Hello — Adele",
+        "Lemon Tree — Fool's Garden",
+        "Umbrella — Rihanna",
+        "Highway to Hell — AC/DC"
+      ],
+      "answer": 3,
+      "emoji": "🛣️➡️🔥😈"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Коробейники (музыка из «Тетриса»)",
+        "Во поле берёза стояла",
+        "Ода к радости — Бетховен",
+        "На прекрасном голубом Дунае — Штраус"
+      ],
+      "answer": 0,
+      "melody": "E5:1 B4:0.5 C5:0.5 D5:1 C5:0.5 B4:0.5 A4:1 A4:0.5 C5:0.5 E5:1 D5:0.5 C5:0.5 B4:1.5 C5:0.5 D5:1 E5:1 C5:1 A4:1 A4:2",
+      "tempo": 150,
+      "instrument": "flute"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Маленькая ночная серенада — Моцарт",
+        "Ода к радости — Бетховен",
+        "Во поле берёза стояла",
+        "When the Saints Go Marching In"
+      ],
+      "answer": 1,
+      "melody": "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4:1.5 D4:0.5 D4:2 E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4:1.5 C4:0.5 C4:2",
+      "tempo": 132,
+      "instrument": "piano"
+    },
+    {
+      "q": "🎵 Угадай мелодию",
+      "options": [
+        "Коробейники (музыка из «Тетриса»)",
+        "Во поле берёза стояла",
+        "Канкан — Оффенбах",
+        "Мерцай, мерцай, звёздочка"
+      ],
+      "answer": 1,
+      "melody": "A4 A4 A4 A4 G4 F4 F4 E4 D4:2 R A4 A4 A4 A4 G4 F4 F4 E4 D4:2",
+      "tempo": 120,
+      "instrument": "marimba"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Highway to Hell — AC/DC",
+        "Yellow Submarine — The Beatles",
+        "Wind of Change — Scorpions",
+        "Gangnam Style — PSY"
+      ],
+      "answer": 2,
+      "emoji": "🌬️🔄"
+    },
+    {
+      "q": "🖼 Угадай песню по картинке",
+      "options": [
+        "Yellow Submarine — The Beatles",
+        "Despacito — Luis Fonsi",
+        "Purple Rain — Prince",
+        "Hello — Adele"
+      ],
+      "answer": 0,
+      "emoji": "💛🚢🌊"
+    }
+  ]
+}

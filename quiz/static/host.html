@@ -151,6 +151,51 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 @keyframes up { from { transform: scaleY(0); } }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 
+/* главное меню */
+.setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
+.section-title { font-family: var(--display); font-weight: 700; font-size: .95em; margin: 0 0 14px; }
+.modes { display: flex; flex-direction: column; gap: 12px; }
+.mode {
+  display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 18px; text-align: left;
+  background: var(--panel); border: 2px solid var(--line); color: var(--ink); font: inherit; cursor: pointer;
+}
+.mode .ico { font-size: 1.8em; width: 1.6em; text-align: center; flex: none; }
+.mode b { display: block; font-family: var(--display); font-weight: 700; }
+.mode small { color: var(--muted); }
+.mode.on { border-color: var(--accent); background: rgba(255, 210, 63, .08); }
+.mode:disabled { cursor: default; opacity: .55; }
+.badge { margin-left: auto; flex: none; font-size: .7em; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--line); color: var(--muted); }
+.mode.on .badge { background: var(--accent); color: var(--accent-ink); }
+.rules { display: flex; flex-direction: column; gap: 8px; }
+.rule {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--line); cursor: pointer;
+}
+.rule input { position: absolute; opacity: 0; pointer-events: none; }
+.rule .txt { flex: 1; min-width: 0; }
+.rule .txt b { display: block; font-size: .95em; }
+.rule .txt small { color: var(--muted); font-size: .78em; }
+.switch { width: 48px; height: 28px; border-radius: 99px; background: var(--line); position: relative; flex: none; transition: background .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.rule input:checked + .switch { background: var(--good); }
+.rule input:checked + .switch::after { transform: translateX(20px); }
+.rule input:focus-visible + .switch { outline: 3px solid var(--ink); outline-offset: 2px; }
+.seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--line); flex: none; }
+.seg button { font: 800 .85em var(--body); padding: 6px 12px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.seg button.on { background: var(--ink); color: var(--bg); }
+.seg button:disabled { opacity: .35; cursor: default; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-size: .75em; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.team-col { padding: 14px; border-radius: 16px; background: var(--panel); border-top: 4px solid var(--c); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.team-col h3 { margin: 0; font-family: var(--display); font-size: .9em; color: var(--c); }
+.team-col .chips { gap: 6px; }
+.tdot { width: 1.9em; height: 1.9em; border-radius: 10px; flex: none; background: var(--c); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .2); }
+.row .minus { color: var(--bad); font-size: .9em; }
+.mvp { color: var(--muted); text-align: center; }
+.mvp b { color: var(--ink); }
+@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
+
 .actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 .btn {
   font: 800 1.05em var(--body); padding: 16px 30px; border-radius: 16px; border: 0; cursor: pointer;
@@ -192,7 +237,22 @@ const key = new URLSearchParams(location.search).get("key") || "";
 const $main = document.getElementById("main");
 const $actions = document.getElementById("actions");
 const seen = new Set();
-let version = null, lastSig = "";
+let version = null, lastSig = "", draft = null, lastState = null;
+const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
+const MODES = [
+  { id: "quiz", ico: "❓", name: "Викторина", desc: "Вопросы с вариантами ответов, кто быстрее" },
+  { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Темы и вопросы разной стоимости" },
+  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Угадай самые популярные ответы" },
+];
+const RULES = [
+  { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
+  { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
+  { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
+  { id: "shuffle_questions", name: "Перемешать вопросы", desc: "Каждый раз новый порядок вопросов" },
+  { id: "shuffle_answers", name: "Перемешать варианты", desc: "Правильный ответ не всегда на том же месте" },
+  { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
+];
+const teamDot = (t) => `<span class="tdot" style="--c:${TEAM_COLORS[t]}"></span>`;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
@@ -222,14 +282,15 @@ function options(s, reveal) {
 
 function board(players) {
   const max = Math.max(1, ...players.map((p) => p.score));
+  if (!players.length) return "";
   return `<ol class="board">${players.map((p, i) => {
     const place = i + 1, from = p.prev ? p.prev - place : 0;
     const move = !p.prev ? "" : from > 0 ? `<span class="move up">↑${from}</span>` : from < 0 ? `<span class="move down">↓${-from}</span>` : `<span class="move same">—</span>`;
     return `<li class="row" style="--i:${i};--from:${from};--w:${(p.score / max) * 100}%">
-      <span class="bar"></span><span class="pos">${place}</span>${ava(p.name)}
+      <span class="bar"></span><span class="pos">${place}</span>${p.team != null && p.id == null ? teamDot(p.team) : ava(p.name)}
       <span class="nm">${esc(p.name)}</span>
       ${p.streak >= 2 ? `<span class="fire">🔥 ${p.streak}</span>` : ""}
-      ${p.last ? `<span class="plus">+${p.last}</span>` : ""}
+      ${p.last > 0 ? `<span class="plus">+${p.last}</span>` : p.last < 0 ? `<span class="minus">−${-p.last}</span>` : ""}
       ${move}<span class="sc" data-count="${p.score}">${p.score - p.last}</span></li>`;
   }).join("")}</ol>`;
 }
@@ -254,8 +315,24 @@ function render(s) {
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
 
-  if (s.phase === "lobby") {
+  if (s.phase === "setup") {
+    if (!draft) draft = { ...s.settings };
+    renderSetup(s);
+  } else if (s.phase === "lobby") {
+    draft = null;
     const url = s.join || location.origin;
+    const st = s.settings;
+    const tags = [
+      st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
+      `${st.seconds} сек на ответ`,
+      ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
+    ];
+    const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"}" data-kick="${esc(p.id)}">${ava(p.name)}${esc(p.name)}</button>`;
+    const people = st.teams
+      ? `<div class="teams-grid">${s.teams.slice().sort((a, b) => a.team - b.team).map((t) => `
+          <div class="team-col" style="--c:${TEAM_COLORS[t.team]}"><h3>${esc(t.name)} · ${t.size}</h3>
+          <div class="chips">${s.players.filter((p) => p.team === t.team).map(chip).join("")}</div></div>`).join("")}</div>`
+      : `<div class="chips">${s.players.map(chip).join("")}</div>`;
     $main.innerHTML = `
       <div><div class="eyebrow">Квиз начинается</div><h1>Заходите в игру!</h1></div>
       <div class="join rise">
@@ -267,11 +344,13 @@ function render(s) {
       </div>
       <div>
         <p class="muted ${s.players.length ? "" : "waiting"}">${s.players.length ? `В игре ${s.players.length} (нажми на имя, чтобы убрать):` : "Ждём игроков"}</p>
-        <div class="chips">${s.players.map((p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"}" data-kick="${esc(p.id)}">${ava(p.name)}${esc(p.name)}</button>`).join("")}</div>
-      </div>`;
+        ${people}
+      </div>
+      <div class="tags">${tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`;
     s.players.forEach((p) => seen.add(p.id));
     if (window.QRCode) new QRCode(document.getElementById("qr"), { text: url, width: 180, height: 180 });
-    $actions.innerHTML = `<button class="btn" data-act="next" ${s.players.length ? "" : "disabled"}>Начать игру</button>`;
+    $actions.innerHTML = `<button class="btn ghost" data-act="setup">← Правила</button>
+      <button class="btn" data-act="next" ${s.players.length ? "" : "disabled"}>Начать игру</button>`;
   } else if (s.phase === "question") {
     $main.innerHTML = `
       <div class="qhead">
@@ -290,25 +369,76 @@ function render(s) {
       <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${right} из ${s.players.length}</b></p>`;
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
-    $actions.innerHTML = `<button class="btn" data-act="next">${last ? "Итоги игры" : "Таблица лидеров"}</button>`;
+    const label = last ? "Итоги игры" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
+    $actions.innerHTML = `<button class="btn" data-act="next">${label}</button>`;
   } else if (s.phase === "leaders") {
     $main.innerHTML = `
       <div><div class="eyebrow">После вопроса ${s.index + 1} из ${s.total}</div><h1>Таблица лидеров</h1></div>
-      ${board(s.players)}`;
+      ${s.settings.teams ? board(s.teams) + `<p class="muted" style="margin:0">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : board(s.players)}`;
     countUp();
     $actions.innerHTML = `<button class="btn" data-act="next">Следующий вопрос</button>`;
   } else if (s.phase === "final") {
-    const [p1, p2, p3] = s.players;
-    const step = (p, n) => p ? `<div class="step p${n}">${ava(p.name)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
+    const teamMode = !!s.settings.teams;
+    const [p1, p2, p3] = teamMode ? s.teams : s.players;
+    const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : ava(p.name)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
+    const mvp = s.players[0];
     $main.innerHTML = `
-      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>Победители</h1></div>
-      <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>`;
-    $actions.innerHTML = `<button class="btn" data-act="reset">Сыграть ещё раз</button>`;
+      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1></div>
+      <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
+      ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
+    $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
+      <button class="btn" data-act="reset">Сыграть ещё раз</button>`;
     setTimeout(() => confetti(true), 1500);
   } else {
     location.reload(); // незнакомый этап: значит, страница устарела
   }
 }
+
+function renderSetup(s) {
+  const d = draft;
+  $main.innerHTML = `
+    <div><div class="eyebrow">Главное меню</div><h1>Новая игра</h1></div>
+    <div class="setup">
+      <div>
+        <p class="section-title">Тип игры</p>
+        <div class="modes">${MODES.map((m) => {
+          const ready = m.id === "quiz";
+          return `<button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${ready ? "" : "disabled"}>
+            <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span>
+            <span class="badge">${ready ? (d.mode === m.id ? "Выбрано" : "Готово") : "Скоро"}</span></button>`;
+        }).join("")}</div>
+      </div>
+      <div>
+        <p class="section-title">Правила</p>
+        <div class="rules">
+          <div class="rule"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам, чтобы побеждали не числом</small></span>
+            <span class="seg">${[0, 2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n ? n + " команды" : "Выкл"}</button>`).join("")}</span></div>
+          ${RULES.map((r) => `
+            <label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
+              <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`).join("")}
+          <div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд даётся на каждый вопрос</small></span>
+            <span class="seg">${[10, 20, 30].map((n) => `<button type="button" class="${d.seconds === n ? "on" : ""}" data-seconds="${n}">${n} с</button>`).join("")}</span></div>
+        </div>
+      </div>
+    </div>
+    ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}`;
+  $actions.innerHTML = `<button class="btn" data-act="configure">Создать игру →</button>`;
+}
+
+document.addEventListener("change", (e) => {
+  const r = e.target.closest("[data-rule]");
+  if (r && draft) draft[r.dataset.rule] = r.checked;
+});
+document.addEventListener("click", (e) => {
+  if (!draft) return;
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode]");
+  if (!t || t.disabled) return;
+  e.preventDefault();
+  if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
+  if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
+  if (t.dataset.mode) draft.mode = t.dataset.mode;
+  renderSetup(lastState);
+});
 
 function live(s) {
   const t = document.getElementById("timer");
@@ -327,6 +457,7 @@ async function poll() {
     const s = await (await fetch("/api/state", { cache: "no-store" })).json();
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
+    lastState = s;
     const sig = JSON.stringify([s.phase, s.index, s.players, s.join]);
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
@@ -366,7 +497,7 @@ document.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {
-    if (act) { act.disabled = true; await post(act.dataset.act); }
+    if (act) { act.disabled = true; await post(act.dataset.act, act.dataset.act === "configure" ? { settings: draft } : {}); }
     if (kick) await post("kick", { pid: kick.dataset.kick });
   } catch {
     // связь пропала: кнопка снова станет активной после перерисовки

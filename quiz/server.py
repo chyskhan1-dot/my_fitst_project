@@ -1,7 +1,9 @@
 """Сервер квиза для компании друзей.
 
-Ведущий открывает /host на большом экране, игроки заходят с телефонов
-на главную страницу и вводят имя. Нужен только Python, без библиотек.
+На главной странице любой может нажать «Я ведущий» — сервер создаст комнату
+с кодом из 4 цифр. Игроки нажимают «Я игрок», вводят код и имя.
+Комнат может быть сколько угодно, игры в них идут независимо.
+Нужен только Python, без библиотек.
 
 Запуск на компьютере:  python server.py
 Онлайн (Render и т.п.): порт берётся из переменной окружения PORT.
@@ -30,8 +32,8 @@ VERSION = hashlib.md5(
 ).hexdigest()[:8]
 REVEAL_PAUSE = 1.0  # пауза перед показом ответа, когда все уже ответили
 
-# Ключ ведущего: без него управлять игрой нельзя. Можно задать свой через HOST_KEY.
-HOST_KEY = os.environ.get("HOST_KEY") or secrets.token_urlsafe(6)
+ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
+MAX_ROOMS = 500
 
 lock = threading.Lock()
 DEVICE_COOKIE = "quiz_device"  # метка устройства: один игрок на один телефон
@@ -71,7 +73,11 @@ def clean_settings(data):
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, code, host_device):
+        self.code = code
+        self.host_device = host_device  # управлять игрой может только устройство, создавшее комнату
+        self.host_token = secrets.token_urlsafe(16)
+        self.touched = time.time()
         # id -> {"name", "device", "team", "score", "last_points", "prev_place", "streak"}
         self.players = {}
         self.settings = dict(DEFAULTS)
@@ -235,6 +241,7 @@ class Game:
             "players": self.leaderboard(),
             "teams": self.team_board(),
             "answered": len(self.answers),
+            "room": self.code,
             "join": JOIN_URL,
             "version": VERSION,
         }
@@ -266,7 +273,27 @@ class Game:
         return s
 
 
-game = Game()
+rooms = {}  # код комнаты -> Game
+
+
+def cleanup():
+    now = time.time()
+    for code in [c for c, g in rooms.items() if now - g.touched > ROOM_IDLE]:
+        del rooms[code]
+
+
+def create_room(device):
+    cleanup()
+    # у одного устройства одна комната: старую закрываем
+    for code in [c for c, g in rooms.items() if g.host_device == device]:
+        del rooms[code]
+    if len(rooms) >= MAX_ROOMS:
+        return None
+    code = f"{random.randint(1000, 9999)}"
+    while code in rooms:
+        code = f"{random.randint(1000, 9999)}"
+    rooms[code] = Game(code, device)
+    return rooms[code]
 
 
 def local_ip():
@@ -323,11 +350,15 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/":
             self.send_file("play.html", set_device=True)
         elif url.path == "/host":
-            self.send_file("host.html")
+            self.send_file("host.html", set_device=True)
         elif url.path == "/healthz":
             self.send_json({"ok": True})
         elif url.path == "/api/state":
             with lock:
+                game = rooms.get(query.get("room", [""])[0])
+                if not game:
+                    return self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
+                game.touched = time.time()
                 self.send_json(game.state(query.get("pid", [None])[0], self.device()))
         else:
             self.send_json({"error": "Страница не найдена"}, 404)
@@ -335,11 +366,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         data = self.read_json()
+        device = self.device()
         with lock:
+            if not device:
+                return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
+
+            if path == "/api/rooms":
+                game = create_room(device)
+                if not game:
+                    return self.send_json({"error": "Сервер переполнен, попробуй позже"}, 503)
+                return self.send_json({"room": game.code, "token": game.host_token})
+
+            game = rooms.get(str(data.get("room", "")))
+            if not game:
+                return self.send_json({"error": "Комнаты с таким кодом нет. Проверь код у ведущего"}, 404)
+            game.touched = time.time()
+
             if path == "/api/join":
-                device = self.device()
-                if not device:
-                    return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
                 mine = game.player_of(device)
                 if mine and game.phase not in ("setup", "lobby"):
                     return self.send_json({"pid": mine})  # вернули своего игрока, новый не создаём
@@ -393,8 +436,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok": ok})
 
             if path.startswith("/api/host/"):
-                if data.get("key") != HOST_KEY:
-                    return self.send_json({"error": "Неверный ключ ведущего"}, 403)
+                if data.get("token") != game.host_token or device != game.host_device:
+                    return self.send_json({"error": "Управлять игрой может только ведущий этой комнаты"}, 403)
                 action = path.rsplit("/", 1)[1]
                 if action == "configure":
                     game.configure(data.get("settings") or {})
@@ -426,15 +469,15 @@ def main():
     port = int(os.environ.get("PORT", 8000))
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     if "PORT" in os.environ:
-        print(f"Квиз запущен на порту {port}. Ключ ведущего: {HOST_KEY}", flush=True)
+        print(f"Квиз запущен на порту {port}", flush=True)
     else:
         ip = local_ip()
         JOIN_URL = f"http://{ip}:{port}"
         print("=" * 52)
         print(" Квиз запущен!")
-        print(f" Экран ведущего (открой на этом компьютере):")
-        print(f"   http://localhost:{port}/host?key={HOST_KEY}")
-        print(f" Игрокам (телефоны в том же Wi-Fi):")
+        print(" Открой на этом компьютере и нажми «Я ведущий»:")
+        print(f"   http://localhost:{port}")
+        print(" Игроки (телефоны в том же Wi-Fi) открывают:")
         print(f"   http://{ip}:{port}")
         print(" Остановить: Ctrl+C")
         print("=" * 52, flush=True)

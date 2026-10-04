@@ -3,21 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#111735">
+<meta name="theme-color" content="#0e1330">
 <title>Квиз</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@500;700;800&display=swap">
 <style>
-/* Layout: phone controller — status line on top, one big block of content, answer buttons fill the screen */
+/* Layout: phone controller — player bar on top, one big scene, answer buttons fill the screen */
 :root {
-  --bg: #111735;
-  --panel: #1b2350;
-  --ink: #f3f5ff;
-  --muted: #a3abd6;
-  --line: #2e3874;
+  --bg: #0e1330;
+  --bg2: #1a1050;
+  --panel: rgba(255, 255, 255, .08);
+  --ink: #f4f5ff;
+  --muted: #a7aedb;
+  --line: rgba(255, 255, 255, .12);
   --accent: #ffd23f;
   --accent-ink: #1a1400;
   --a0: #e5484d; --a1: #3e7bfa; --a2: #f2a516; --a3: #26a269;
   --good: #3ddc84; --bad: #ff6b6b;
+  --mood: transparent;
   --display: "Unbounded", "Arial Black", system-ui, sans-serif;
   --body: "Manrope", "Segoe UI", system-ui, sans-serif;
   color-scheme: dark;
@@ -25,66 +27,109 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px;
+  margin: 0; color: var(--ink); font-family: var(--body); font-size: 17px;
+  background: radial-gradient(90% 60% at 50% 100%, var(--mood), transparent 70%) fixed,
+              radial-gradient(120% 80% at 0% 0%, var(--bg2), var(--bg) 65%) fixed, var(--bg);
   padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  transition: background .6s;
 }
+body[data-mood="good"] { --mood: rgba(61, 220, 132, .35); }
+body[data-mood="bad"] { --mood: rgba(255, 107, 107, .3); }
 .app { max-width: 520px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
-.top { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.top { display: flex; align-items: center; gap: 10px; min-height: 36px; font-weight: 800; }
+.top .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .sc { font-family: var(--display); font-size: 15px; padding: 6px 12px; border-radius: 999px; background: var(--panel); font-variant-numeric: tabular-nums; }
 main { flex: 1; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
 h1, h2 { font-family: var(--display); margin: 0; line-height: 1.2; text-wrap: balance; }
 h1 { font-size: 30px; font-weight: 800; }
 h2 { font-size: 20px; font-weight: 500; }
 p { margin: 0; line-height: 1.5; }
 .muted { color: var(--muted); }
-.center { text-align: center; align-items: center; }
+.scene { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 800; color: var(--accent); }
 
-form { display: flex; flex-direction: column; gap: 12px; }
+.rise { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+.pop { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.4); } }
+
+.ava {
+  width: 34px; height: 34px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  font-family: var(--display); font-weight: 800; font-size: 14px; color: #fff; background: var(--c);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .2);
+}
+.ava.xl { width: 84px; height: 84px; font-size: 34px; }
+
+form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 input {
-  font: 700 20px var(--body); padding: 16px; border-radius: 14px; border: 1px solid var(--line);
-  background: var(--panel); color: var(--ink); width: 100%;
+  font: 700 20px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); width: 100%; text-align: center;
 }
 .btn {
-  font: 800 18px var(--body); padding: 16px; border-radius: 14px; border: 0; cursor: pointer;
-  background: var(--accent); color: var(--accent-ink);
+  font: 800 18px var(--body); padding: 16px; border-radius: 16px; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15);
 }
 .btn:disabled { opacity: .5; }
 .error { color: var(--bad); font-weight: 700; min-height: 1.5em; }
 
-.answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1; max-height: 460px; }
+.timebar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.timebar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transform-origin: left; animation: shrink linear forwards; }
+@keyframes shrink { to { transform: scaleX(0); background: var(--bad); } }
+.answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1; max-height: 470px; }
 .ans {
-  border: 0; border-radius: 16px; color: #fff; cursor: pointer; padding: 14px;
+  border: 0; border-radius: 20px; color: #fff; cursor: pointer; padding: 14px; background: var(--c);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   font: 800 16px var(--body); min-height: 120px; min-width: 0; overflow-wrap: anywhere;
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .2); transition: transform .1s;
 }
-.ans .shape { font-size: 34px; line-height: 1; }
-.ans:active { transform: scale(.97); }
-.ans.c0 { background: var(--a0); } .ans.c1 { background: var(--a1); }
-.ans.c2 { background: var(--a2); } .ans.c3 { background: var(--a3); }
+.ans .shape { font-size: 36px; line-height: 1; }
+.ans:active { transform: scale(.95); }
+.ans:disabled { opacity: .5; }
 .ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
-.big { font-family: var(--display); font-weight: 800; font-size: 44px; }
+.big { font-family: var(--display); font-weight: 800; font-size: 46px; line-height: 1.1; }
 .good { color: var(--good); } .bad { color: var(--bad); }
-.pill { align-self: center; padding: 8px 16px; border-radius: 999px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; }
-.picked { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; color: #fff; font-weight: 800; }
-.picked.c0 { background: var(--a0); } .picked.c1 { background: var(--a1); }
-.picked.c2 { background: var(--a2); } .picked.c3 { background: var(--a3); }
-.leave { align-self: center; background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
+.pill { padding: 8px 16px; border-radius: 999px; background: var(--panel); font-weight: 800; font-variant-numeric: tabular-nums; }
+.pill.plus { background: var(--good); color: #062b16; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
+.picked { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 14px; color: #fff; font-weight: 800; background: var(--c); }
+.spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.place { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; }
+.move { font-weight: 800; }
+.move.up { color: var(--good); } .move.down { color: var(--bad); }
+.mini { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.mini li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
+.mini li.me { outline: 2px solid var(--accent); }
+.mini .pos { width: 1.5em; color: var(--muted); font-family: var(--display); }
+.mini .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
+#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }
+  .timebar i { animation: none; }
+}
 </style>
 </head>
 <body>
+<canvas id="confetti" hidden></canvas>
 <div class="app">
-  <div class="top"><span id="who"></span><span id="score"></span></div>
-  <main id="main"><h2 class="muted center">Подключаюсь…</h2></main>
+  <div class="top" id="top"></div>
+  <main id="main"><div class="scene"><div class="spinner"></div><p class="muted">Подключаюсь…</p></div></main>
 </div>
 
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
+const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
 let pid = load(), lastSig = "", sending = false;
 
 function load() { try { return localStorage.getItem("quiz-pid"); } catch { return null; } }
 function save(v) { try { v ? localStorage.setItem("quiz-pid", v) : localStorage.removeItem("quiz-pid"); } catch {} }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
+const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
+const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+const mood = (m) => { document.body.dataset.mood = m || ""; };
 
 async function api(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -92,69 +137,101 @@ async function api(path, body) {
 }
 
 function joinForm() {
+  document.getElementById("top").innerHTML = "";
+  mood("");
   $main.innerHTML = `
-    <h1>Привет! 👋</h1>
-    <p class="muted">Как тебя записать в таблицу?</p>
-    <form id="join">
-      <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
-      <div class="error" id="err"></div>
-      <button class="btn" type="submit">Войти в игру</button>
-    </form>`;
+    <div class="scene">
+      <div class="eyebrow rise">Квиз</div>
+      <h1 class="rise" style="--i:1">Как тебя записать?</h1>
+      <form id="join" class="rise" style="--i:2">
+        <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
+        <div class="error" id="err"></div>
+        <button class="btn" type="submit">Войти в игру</button>
+      </form>
+    </div>`;
   document.getElementById("join").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button"); btn.disabled = true;
     const res = await api("/api/join", { name: document.getElementById("name").value }).catch(() => ({ error: "Нет связи с сервером" }));
     if (res.error) { document.getElementById("err").textContent = res.error; btn.disabled = false; return; }
-    pid = res.pid; save(pid); lastSig = ""; poll();
+    pid = res.pid; save(pid); lastSig = ""; buzz(20); poll();
   });
   document.getElementById("name").focus();
 }
 
+function moveText(me) {
+  if (!me.prev || me.prev === me.place) return "";
+  const d = me.prev - me.place;
+  return d > 0 ? `<span class="move up">↑ поднялся на ${d}</span>` : `<span class="move down">↓ опустился на ${-d}</span>`;
+}
+
 function render(s) {
   const me = s.me;
-  document.getElementById("who").textContent = me ? me.name : "";
-  document.getElementById("score").textContent = me ? `${me.score} очк.` : "";
   if (!me) { pid = null; save(null); joinForm(); return; }
+  document.getElementById("top").innerHTML = `${ava(me.name)}<span class="nm">${esc(me.name)}</span><span class="sc">${me.score}</span>`;
+  mood("");
+  confetti(false);
 
   if (s.phase === "lobby") {
     $main.innerHTML = `
-      <div class="center" style="display:flex;flex-direction:column;gap:14px">
-        <h1>Ты в игре!</h1>
-        <p class="muted">Смотри на экран ведущего. Игра скоро начнётся.</p>
-        <span class="pill">Игроков: ${s.players.length}</span>
+      <div class="scene">
+        <span class="pop">${ava(me.name, "xl")}</span>
+        <h1 class="rise">Ты в игре!</h1>
+        <p class="muted rise" style="--i:1">Смотри на экран ведущего. Игра скоро начнётся.</p>
+        <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
   } else if (s.phase === "question" && me.choice == null) {
     $main.innerHTML = `
+      <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}</div>
+      <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       <h2>${esc(s.question)}</h2>
       <div class="answers">${s.options.map((o, i) => `
-        <button class="ans c${i}" data-choice="${i}"><span class="shape">${SHAPES[i]}</span>${esc(o)}</button>`).join("")}
+        <button class="ans rise" style="--c:var(--a${i});--i:${i}" data-choice="${i}"><span class="shape">${SHAPES[i]}</span>${esc(o)}</button>`).join("")}
       </div>`;
   } else if (s.phase === "question") {
     $main.innerHTML = `
-      <div class="center" style="display:flex;flex-direction:column;gap:14px">
+      <div class="scene">
+        <div class="spinner"></div>
         <h1>Ответ принят</h1>
-        <span class="picked c${me.choice}">${SHAPES[me.choice]} ${esc(s.options[me.choice])}</span>
+        <span class="picked pop" style="--c:var(--a${me.choice})">${SHAPES[me.choice]} ${esc(s.options[me.choice])}</span>
         <p class="muted">Ждём остальных…</p>
       </div>`;
   } else if (s.phase === "reveal") {
     const right = me.choice === s.correct;
+    mood(right ? "good" : "bad");
+    buzz(right ? [30, 60, 30] : 200);
     const text = me.choice == null ? "Не успел!" : right ? "Верно!" : "Мимо!";
     $main.innerHTML = `
-      <div class="center" style="display:flex;flex-direction:column;gap:14px">
-        <span class="big ${right ? "good" : "bad"}">${text}</span>
-        ${right ? `<span class="pill">+${me.last} очков</span>` : `<p class="muted">Правильный ответ: ${SHAPES[s.correct]} ${esc(s.options[s.correct])}</p>`}
-        <p>Ты на <b>${me.place}</b> месте из ${s.players.length}</p>
+      <div class="scene">
+        <span class="big pop ${right ? "good" : "bad"}">${text}</span>
+        ${right ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : `<p class="muted rise" style="--i:2">Правильный ответ:<br><b style="color:var(--ink)">${SHAPES[s.correct]} ${esc(s.options[s.correct])}</b></p>`}
+        ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
+      </div>`;
+  } else if (s.phase === "leaders") {
+    const top = s.players.slice(0, 3);
+    if (!top.some((p) => p.name === me.name)) top.push(s.players[me.place - 1]);
+    $main.innerHTML = `
+      <div class="scene">
+        <div class="eyebrow">Ты на месте</div>
+        <span class="place pop">${me.place}</span>
+        <p class="muted">из ${s.players.length} · ${me.score} очков</p>
+        ${moveText(me)}
+        <ol class="mini">${top.map((p, i) => `
+          <li class="rise ${p.name === me.name ? "me" : ""}" style="--i:${i + 2}">
+            <span class="pos">${s.players.indexOf(p) + 1}</span>${ava(p.name)}<span class="n">${esc(p.name)}</span><span>${p.score}</span></li>`).join("")}
+        </ol>
       </div>`;
   } else if (s.phase === "final") {
     const medal = ["🥇", "🥈", "🥉"][me.place - 1] || "🎉";
     $main.innerHTML = `
-      <div class="center" style="display:flex;flex-direction:column;gap:14px">
-        <span class="big">${medal}</span>
-        <h1>${me.place} место</h1>
-        <p class="muted">${me.score} очков. Спасибо за игру!</p>
+      <div class="scene">
+        <span class="big pop">${medal}</span>
+        <h1 class="rise">${me.place} место</h1>
+        <p class="muted rise" style="--i:1">${me.score} очков. Спасибо за игру!</p>
       </div>`;
+    if (me.place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
   }
 }
 
@@ -165,14 +242,41 @@ async function poll() {
     const sig = JSON.stringify([s.phase, s.index, s.me && s.me.choice, s.me && s.me.score, !!s.me, s.players.length]);
     if (sig !== lastSig) { lastSig = sig; render(s); }
   } catch {
-    if (!document.getElementById("join")) { $main.innerHTML = `<h2 class="error center">Нет связи с сервером…</h2>`; lastSig = ""; }
+    if (!document.getElementById("join")) {
+      $main.innerHTML = `<div class="scene"><div class="spinner"></div><p class="error">Нет связи с сервером…</p></div>`; lastSig = "";
+    }
   }
+}
+
+let confettiRun = 0;
+function confetti(on) {
+  const cv = document.getElementById("confetti");
+  confettiRun++;
+  if (!on || matchMedia("(prefers-reduced-motion: reduce)").matches) { cv.hidden = true; return; }
+  const run = confettiRun, ctx = cv.getContext("2d");
+  cv.hidden = false; cv.width = innerWidth; cv.height = innerHeight;
+  const bits = Array.from({ length: 90 }, () => ({
+    x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5,
+    vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, r: Math.random() * Math.PI,
+    vr: (Math.random() - .5) * .3, s: 5 + Math.random() * 7, c: COLORS[Math.floor(Math.random() * COLORS.length)],
+  }));
+  const t0 = performance.now();
+  (function frame(t) {
+    if (run !== confettiRun) return;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const b of bits) {
+      b.x += b.vx; b.y += b.vy; b.r += b.vr; b.vy += .02;
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.fillStyle = b.c;
+      ctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); ctx.restore();
+    }
+    if (t - t0 < 6000) requestAnimationFrame(frame); else cv.hidden = true;
+  })(t0);
 }
 
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-choice]");
   if (!b || sending) return;
-  sending = true;
+  sending = true; buzz(25);
   document.querySelectorAll(".ans").forEach((x) => (x.disabled = true));
   await api("/api/answer", { pid, choice: Number(b.dataset.choice) }).catch(() => {});
   sending = false; lastSig = ""; poll();

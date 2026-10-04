@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Угадай число</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@400;600;700&display=swap">
+<style>
+/* Layout: one centered column — header, number board, input row, move log */
+:root {
+  --bg: #e9eef6;
+  --panel: #f8fafd;
+  --ink: #15203b;
+  --muted: #5b6784;
+  --line: #cdd6e6;
+  --accent: #2f55e4;
+  --accent-ink: #ffffff;
+  --up: #d9670f;
+  --down: #7a3fd0;
+  --win: #1f9d5c;
+  --off: #d7deea;
+  --off-ink: #9aa5bd;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1526; --panel: #172036; --ink: #e8edf8; --muted: #9aa6c2; --line: #2a3654;
+    --accent: #6f8cff; --accent-ink: #0b1020; --up: #ff9a4a; --down: #b48cff; --win: #4fd08c;
+    --off: #1c2640; --off-ink: #46557a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1526; --panel: #172036; --ink: #e8edf8; --muted: #9aa6c2; --line: #2a3654;
+  --accent: #6f8cff; --accent-ink: #0b1020; --up: #ff9a4a; --down: #b48cff; --win: #4fd08c;
+  --off: #1c2640; --off-ink: #46557a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px;
+  padding: 32px 16px 48px;
+}
+.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 7vw, 40px); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+
+.ranges { display: flex; gap: 8px; flex-wrap: wrap; }
+.ranges button {
+  font: 600 14px var(--body); padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--ink);
+}
+.ranges button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.status {
+  font-family: var(--display); font-weight: 500; font-size: clamp(18px, 4.6vw, 22px);
+  min-height: 1.4em; display: flex; align-items: center; gap: 10px;
+}
+.status.up { color: var(--up); }
+.status.down { color: var(--down); }
+.status.win { color: var(--win); }
+
+.board {
+  display: grid; gap: 6px;
+  grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
+}
+.cell {
+  font: 700 clamp(13px, 3.6vw, 17px) var(--body); font-variant-numeric: tabular-nums;
+  aspect-ratio: 1; max-width: 100%; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); cursor: pointer;
+  transition: background .2s, color .2s, transform .1s;
+}
+.board.dense .cell { border-radius: 6px; font-size: clamp(10px, 2.6vw, 13px); }
+.cell:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.cell:active:not(:disabled) { transform: scale(.94); }
+.cell:disabled { background: var(--off); color: var(--off-ink); border-color: transparent; cursor: default; }
+.cell.hit { background: var(--win); color: var(--accent-ink); border-color: var(--win); }
+
+form { display: flex; gap: 8px; }
+input {
+  flex: 1; min-width: 0; font: 700 18px var(--body); font-variant-numeric: tabular-nums;
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink);
+}
+.go, .again {
+  font: 700 16px var(--body); padding: 12px 20px; border-radius: 12px; border: 0;
+  background: var(--accent); color: var(--accent-ink); cursor: pointer;
+}
+.again { align-self: flex-start; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.meta { display: flex; gap: 20px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.meta b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.log li {
+  font: 600 14px var(--body); font-variant-numeric: tabular-nums;
+  padding: 4px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line);
+}
+.log li.up { color: var(--up); }
+.log li.down { color: var(--down); }
+.log li.win { color: var(--win); border-color: var(--win); }
+.tip { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .cell { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Угадай число</h1>
+    <p class="sub">Я загадал число. Нажми на клетку или введи число в поле. Подскажу, больше оно или меньше.</p>
+  </header>
+
+  <div class="ranges" role="group" aria-label="Диапазон">
+    <button type="button" data-max="10" aria-pressed="true">1–10</button>
+    <button type="button" data-max="50" aria-pressed="false">1–50</button>
+    <button type="button" data-max="100" aria-pressed="false">1–100</button>
+  </div>
+
+  <div class="status" id="status" aria-live="polite">Твой ход!</div>
+
+  <div class="board" id="board"></div>
+
+  <form id="form">
+    <input id="guess" type="number" inputmode="numeric" placeholder="Твой вариант" aria-label="Твой вариант">
+    <button class="go" type="submit">Проверить</button>
+  </form>
+
+  <button class="again" id="again" type="button" hidden>Играть ещё</button>
+
+  <div class="meta">
+    <span>Попыток: <b id="tries">0</b></span>
+    <span>Рекорд: <b id="best">—</b></span>
+  </div>
+
+  <ul class="log" id="log" aria-label="Твои ходы"></ul>
+
+  <p class="tip">Совет: всегда называй середину оставшегося диапазона. Так число от 1 до 10 угадывается максимум за 4 попытки, а от 1 до 100 — за 7.</p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const board = $("board"), statusEl = $("status"), form = $("form"), input = $("guess");
+let max = 10, secret, lo, hi, tries, done;
+
+function bestKey() { return "best-" + max; }
+function readBest() { try { return localStorage.getItem(bestKey()); } catch { return null; } }
+function writeBest(v) { try { localStorage.setItem(bestKey(), v); } catch {} }
+
+function plural(n) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return "попытку";
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return "попытки";
+  return "попыток";
+}
+
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = "status " + (cls || ""); }
+
+function start() {
+  secret = 1 + Math.floor(Math.random() * max);
+  lo = 1; hi = max; tries = 0; done = false;
+  board.innerHTML = "";
+  board.style.setProperty("--cols", max === 10 ? 5 : 10);
+  board.classList.toggle("dense", max > 10);
+  for (let i = 1; i <= max; i++) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "cell"; b.textContent = i; b.dataset.n = i;
+    b.setAttribute("aria-label", "Число " + i);
+    board.appendChild(b);
+  }
+  $("log").innerHTML = ""; $("tries").textContent = "0";
+  $("best").textContent = readBest() || "—";
+  input.min = 1; input.max = max; input.value = ""; input.disabled = false;
+  form.querySelector(".go").disabled = false;
+  $("again").hidden = true;
+  setStatus(`Загадал число от 1 до ${max}. Твой ход!`);
+}
+
+function guess(n) {
+  if (done) return;
+  if (!Number.isInteger(n) || n < 1 || n > max) { setStatus(`Нужно целое число от 1 до ${max}`); return; }
+  tries++; $("tries").textContent = tries;
+  const li = document.createElement("li"); li.textContent = n;
+  if (n < secret) { lo = Math.max(lo, n + 1); setStatus(`${n}? Больше! ↑`, "up"); li.className = "up"; li.textContent += " ↑"; }
+  else if (n > secret) { hi = Math.min(hi, n - 1); setStatus(`${n}? Меньше! ↓`, "down"); li.className = "down"; li.textContent += " ↓"; }
+  else {
+    done = true; li.className = "win"; li.textContent += " ✓";
+    setStatus(`Угадал! Это ${secret}. Ты справился за ${tries} ${plural(tries)}.`, "win");
+    const best = Number(readBest());
+    if (!best || tries < best) { writeBest(tries); $("best").textContent = tries; }
+    input.disabled = true; form.querySelector(".go").disabled = true;
+    $("again").hidden = false; $("again").focus();
+  }
+  $("log").appendChild(li);
+  for (const c of board.children) {
+    const v = Number(c.dataset.n);
+    c.disabled = done ? v !== secret : (v < lo || v > hi);
+    c.classList.toggle("hit", done && v === secret);
+  }
+  input.value = "";
+}
+
+board.addEventListener("click", (e) => {
+  const c = e.target.closest(".cell");
+  if (c && !c.disabled) guess(Number(c.dataset.n));
+});
+form.addEventListener("submit", (e) => { e.preventDefault(); guess(Number(input.value)); input.focus(); });
+$("again").addEventListener("click", start);
+document.querySelectorAll(".ranges button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".ranges button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  max = Number(b.dataset.max); start();
+}));
+start();
+</script>
+</body>
+</html>

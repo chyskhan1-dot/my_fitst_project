@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111735">
+<title>Квиз</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* Layout: phone controller — status line on top, one big block of content, answer buttons fill the screen */
+:root {
+  --bg: #111735;
+  --panel: #1b2350;
+  --ink: #f3f5ff;
+  --muted: #a3abd6;
+  --line: #2e3874;
+  --accent: #ffd23f;
+  --accent-ink: #1a1400;
+  --a0: #e5484d; --a1: #3e7bfa; --a2: #f2a516; --a3: #26a269;
+  --good: #3ddc84; --bad: #ff6b6b;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+.app { max-width: 520px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.top { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+main { flex: 1; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
+h1, h2 { font-family: var(--display); margin: 0; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: 30px; font-weight: 800; }
+h2 { font-size: 20px; font-weight: 500; }
+p { margin: 0; line-height: 1.5; }
+.muted { color: var(--muted); }
+.center { text-align: center; align-items: center; }
+
+form { display: flex; flex-direction: column; gap: 12px; }
+input {
+  font: 700 20px var(--body); padding: 16px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); width: 100%;
+}
+.btn {
+  font: 800 18px var(--body); padding: 16px; border-radius: 14px; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+}
+.btn:disabled { opacity: .5; }
+.error { color: var(--bad); font-weight: 700; min-height: 1.5em; }
+
+.answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; flex: 1; max-height: 460px; }
+.ans {
+  border: 0; border-radius: 16px; color: #fff; cursor: pointer; padding: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  font: 800 16px var(--body); min-height: 120px; min-width: 0; overflow-wrap: anywhere;
+}
+.ans .shape { font-size: 34px; line-height: 1; }
+.ans:active { transform: scale(.97); }
+.ans.c0 { background: var(--a0); } .ans.c1 { background: var(--a1); }
+.ans.c2 { background: var(--a2); } .ans.c3 { background: var(--a3); }
+.ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.big { font-family: var(--display); font-weight: 800; font-size: 44px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+.pill { align-self: center; padding: 8px 16px; border-radius: 999px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; }
+.picked { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; color: #fff; font-weight: 800; }
+.picked.c0 { background: var(--a0); } .picked.c1 { background: var(--a1); }
+.picked.c2 { background: var(--a2); } .picked.c3 { background: var(--a3); }
+.leave { align-self: center; background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><span id="who"></span><span id="score"></span></div>
+  <main id="main"><h2 class="muted center">Подключаюсь…</h2></main>
+</div>
+
+<script>
+const SHAPES = ["▲", "◆", "●", "■"];
+const $main = document.getElementById("main");
+let pid = load(), lastSig = "", sending = false;
+
+function load() { try { return localStorage.getItem("quiz-pid"); } catch { return null; } }
+function save(v) { try { v ? localStorage.setItem("quiz-pid", v) : localStorage.removeItem("quiz-pid"); } catch {} }
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function api(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return r.json();
+}
+
+function joinForm() {
+  $main.innerHTML = `
+    <h1>Привет! 👋</h1>
+    <p class="muted">Как тебя записать в таблицу?</p>
+    <form id="join">
+      <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
+      <div class="error" id="err"></div>
+      <button class="btn" type="submit">Войти в игру</button>
+    </form>`;
+  document.getElementById("join").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button"); btn.disabled = true;
+    const res = await api("/api/join", { name: document.getElementById("name").value }).catch(() => ({ error: "Нет связи с сервером" }));
+    if (res.error) { document.getElementById("err").textContent = res.error; btn.disabled = false; return; }
+    pid = res.pid; save(pid); lastSig = ""; poll();
+  });
+  document.getElementById("name").focus();
+}
+
+function render(s) {
+  const me = s.me;
+  document.getElementById("who").textContent = me ? me.name : "";
+  document.getElementById("score").textContent = me ? `${me.score} очк.` : "";
+  if (!me) { pid = null; save(null); joinForm(); return; }
+
+  if (s.phase === "lobby") {
+    $main.innerHTML = `
+      <div class="center" style="display:flex;flex-direction:column;gap:14px">
+        <h1>Ты в игре!</h1>
+        <p class="muted">Смотри на экран ведущего. Игра скоро начнётся.</p>
+        <span class="pill">Игроков: ${s.players.length}</span>
+        <button class="leave" id="leave">Сменить имя</button>
+      </div>`;
+    document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
+  } else if (s.phase === "question" && me.choice == null) {
+    $main.innerHTML = `
+      <h2>${esc(s.question)}</h2>
+      <div class="answers">${s.options.map((o, i) => `
+        <button class="ans c${i}" data-choice="${i}"><span class="shape">${SHAPES[i]}</span>${esc(o)}</button>`).join("")}
+      </div>`;
+  } else if (s.phase === "question") {
+    $main.innerHTML = `
+      <div class="center" style="display:flex;flex-direction:column;gap:14px">
+        <h1>Ответ принят</h1>
+        <span class="picked c${me.choice}">${SHAPES[me.choice]} ${esc(s.options[me.choice])}</span>
+        <p class="muted">Ждём остальных…</p>
+      </div>`;
+  } else if (s.phase === "reveal") {
+    const right = me.choice === s.correct;
+    const text = me.choice == null ? "Не успел!" : right ? "Верно!" : "Мимо!";
+    $main.innerHTML = `
+      <div class="center" style="display:flex;flex-direction:column;gap:14px">
+        <span class="big ${right ? "good" : "bad"}">${text}</span>
+        ${right ? `<span class="pill">+${me.last} очков</span>` : `<p class="muted">Правильный ответ: ${SHAPES[s.correct]} ${esc(s.options[s.correct])}</p>`}
+        <p>Ты на <b>${me.place}</b> месте из ${s.players.length}</p>
+      </div>`;
+  } else if (s.phase === "final") {
+    const medal = ["🥇", "🥈", "🥉"][me.place - 1] || "🎉";
+    $main.innerHTML = `
+      <div class="center" style="display:flex;flex-direction:column;gap:14px">
+        <span class="big">${medal}</span>
+        <h1>${me.place} место</h1>
+        <p class="muted">${me.score} очков. Спасибо за игру!</p>
+      </div>`;
+  }
+}
+
+async function poll() {
+  try {
+    const s = await (await fetch("/api/state?pid=" + encodeURIComponent(pid || ""), { cache: "no-store" })).json();
+    if (!pid) { if (!document.getElementById("join")) joinForm(); return; }
+    const sig = JSON.stringify([s.phase, s.index, s.me && s.me.choice, s.me && s.me.score, !!s.me, s.players.length]);
+    if (sig !== lastSig) { lastSig = sig; render(s); }
+  } catch {
+    if (!document.getElementById("join")) { $main.innerHTML = `<h2 class="error center">Нет связи с сервером…</h2>`; lastSig = ""; }
+  }
+}
+
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-choice]");
+  if (!b || sending) return;
+  sending = true;
+  document.querySelectorAll(".ans").forEach((x) => (x.disabled = true));
+  await api("/api/answer", { pid, choice: Number(b.dataset.choice) }).catch(() => {});
+  sending = false; lastSig = ""; poll();
+});
+
+poll();
+setInterval(poll, 700);
+</script>
+</body>
+</html>

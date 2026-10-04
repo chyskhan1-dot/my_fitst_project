@@ -18,6 +18,9 @@ import hashlib
 import json
 import mimetypes
 import os
+import random
+import re
+import unicodedata
 import secrets
 import socket
 import threading
@@ -45,6 +48,7 @@ MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
 MAX_QUESTIONS = 200
+QTYPES = ("choice", "multi", "order", "text")  # один ответ, несколько верных, по порядку, свой ответ
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
@@ -60,6 +64,59 @@ PENALTY = 300  # сколько очков снимаем за неверный 
 
 class PackError(ValueError):
     pass
+
+
+TRANSLIT = dict(zip("абвгдеёжзийклмнопрстуфхцчшщъыьэюя", [
+    "a", "b", "v", "g", "d", "e", "e", "zh", "z", "i", "i", "k", "l", "m", "n", "o", "p", "r", "s", "t",
+    "u", "f", "h", "ts", "ch", "sh", "sch", "", "i", "", "e", "iu", "ia",
+]))
+
+
+def sound_key(word):
+    """Упрощённое «звучание» слова латиницей: Холланд, холанд и Haaland дают почти одно и то же."""
+    word = unicodedata.normalize("NFKD", word.lower())
+    word = "".join(TRANSLIT.get(ch, ch) for ch in word if not unicodedata.combining(ch))
+    for a, b in (("kh", "h"), ("ph", "f"), ("ck", "k"), ("q", "k"), ("x", "ks"), ("w", "v"), ("y", "i"), ("j", "i"), ("c", "k")):
+        word = word.replace(a, b)
+    return re.sub(r"(.)\1+", r"\1", re.sub(r"[^a-z0-9]", "", word))  # двойные буквы → одна
+
+
+def distance(a, b):
+    """Сколько букв нужно поменять, вставить или удалить, чтобы из a получить b."""
+    prev = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        cur = [i]
+        for j, y in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x != y)))
+        prev = cur
+    return prev[-1]
+
+
+def close(a, b):
+    if not a or not b:
+        return False
+    allowed = 0 if len(b) <= 4 else 1 if len(b) <= 7 else 2  # короткие слова — без опечаток
+    return distance(a, b) <= allowed
+
+
+def text_matches(given, accepted):
+    """Засчитываем ответ, если он совпадает с одним из верных с точностью до опечатки,
+    или если среди написанных слов есть верная фамилия (последнее слово верного ответа)."""
+    words = [sound_key(w) for w in re.findall(r"[\w'-]+", given)]
+    words = [w for w in words if w]
+    if not words or len(words) > 3:
+        return False
+    whole = "".join(words)
+    for variant in accepted:
+        parts = [sound_key(w) for w in re.findall(r"[\w'-]+", variant)]
+        parts = [w for w in parts if w]
+        if not parts:
+            continue
+        if close(whole, "".join(parts)):
+            return True
+        if any(close(w, parts[-1]) for w in words):
+            return True
+    return False
 
 
 def media_ref(value, kind, store, scope):
@@ -113,18 +170,34 @@ def clean_pack(data, store=None, scope="_"):
         try:
             if not isinstance(q, dict):
                 raise PackError("неверный формат")
+            qtype = q.get("type") or "choice"
+            if qtype not in QTYPES:
+                raise PackError(f"неизвестный тип вопроса: {qtype}")
             text = str(q.get("q") or "").strip()
-            options = [str(o).strip() for o in (q.get("options") or []) if str(o).strip()]
+            options = [str(o).strip()[:100] for o in (q.get("options") or []) if str(o).strip()]
             answer = q.get("answer")
             if not text:
                 raise PackError("нет текста вопроса")
-            if not 2 <= len(options) <= 4:
+            if qtype == "text":
+                variants = answer if isinstance(answer, list) else [answer]
+                answer = [str(v).strip()[:60] for v in variants if str(v or "").strip()][:10]
+                if not answer:
+                    raise PackError("не указан правильный ответ")
+                options = []
+            elif not 2 <= len(options) <= 4:
                 raise PackError("нужно от 2 до 4 вариантов ответа")
-            if not isinstance(answer, int) or not 0 <= answer < len(options):
+            elif qtype == "choice" and (not isinstance(answer, int) or not 0 <= answer < len(options)):
                 raise PackError("не указан правильный ответ")
+            elif qtype == "multi":
+                if not isinstance(answer, list) or not answer or not all(isinstance(a, int) and 0 <= a < len(options) for a in answer):
+                    raise PackError("отметь хотя бы один правильный вариант")
+                answer = sorted(set(answer))
+            elif qtype == "order":
+                answer = list(range(len(options)))  # варианты записаны уже в правильном порядке
             questions.append({
+                "type": qtype,
                 "q": text[:300],
-                "options": [o[:100] for o in options],
+                "options": options,
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
@@ -156,6 +229,7 @@ DEFAULTS = {
     "leaders": True,  # таблица лидеров после каждого вопроса
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
+    "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
 }
 
 
@@ -174,6 +248,8 @@ class Game:
         self.settings = dict(DEFAULTS)
         self.custom = None  # свой пакет, загруженный ведущим
         self.media = {}  # файлы из своего пакета
+        self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
+        self.selected = []
         self.reset()
 
     def clean_settings(self, data):
@@ -190,6 +266,8 @@ class Game:
             s["teams"] = data["teams"]
         if data.get("seconds") in (10, 20, 30):
             s["seconds"] = data["seconds"]
+        if data.get("count") in (0, 10, 20, 30):
+            s["count"] = data["count"]
         return s
 
     @property
@@ -204,8 +282,27 @@ class Game:
         self.phase_at = time.time()
         self.index = -1
         self.started_at = 0.0
-        self.answers = {}  # id -> {"choice", "time"}
+        self.answers = {}  # id -> {"value", "time"}
         self.all_answered_at = None
+        self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
+        if phase == "lobby":
+            self.pick_questions()
+
+    def pick_questions(self):
+        """Выбираем вопросы на игру: случайные и по возможности те, что ещё не попадались."""
+        allq = self.pack["questions"]
+        n = self.settings["count"]
+        if not n or n >= len(allq):
+            self.selected = list(allq) if not n else random.sample(allq, len(allq))
+            return
+        used = self.used.setdefault(self.settings["pack"], set())
+        fresh = [i for i in range(len(allq)) if i not in used]
+        if len(fresh) < n:  # вопросы закончились — начинаем круг заново
+            used.clear()
+            fresh = list(range(len(allq)))
+        chosen = random.sample(fresh, n)
+        used.update(chosen)
+        self.selected = [allq[i] for i in chosen]
 
     def set_phase(self, phase):
         self.phase = phase
@@ -224,6 +321,7 @@ class Game:
             raise PackError("на сервере закончилось место для файлов, попробуй пакет поменьше")
         self.custom, self.media = pack, store
         self.settings["pack"] = "custom"
+        self.used.pop("custom", None)
         return pack
 
     def balance_teams(self):
@@ -242,7 +340,38 @@ class Game:
         return self.settings["seconds"]
 
     def question(self):
-        return self.pack["questions"][self.index]
+        return self.selected[self.index]
+
+    def check(self, value):
+        """Проверяет ответ игрока: None — неверный формат, иначе сам ответ."""
+        q = self.question()
+        n = len(q["options"])
+        if q["type"] == "choice":
+            return value if isinstance(value, int) and 0 <= value < n else None
+        if q["type"] == "multi":
+            ok = isinstance(value, list) and value and all(isinstance(v, int) and 0 <= v < n for v in value)
+            return sorted(set(value)) if ok else None
+        if q["type"] == "order":
+            return value if isinstance(value, list) and sorted(value) == list(range(n)) else None
+        if not isinstance(value, str):
+            return None
+        return value.strip()[:60] or None
+
+    def grade(self, value):
+        """Насколько верен ответ: 1 — полностью, 0 — неверно, между ними — частично."""
+        q = self.question()
+        if value is None:
+            return 0.0
+        if q["type"] == "choice":
+            return 1.0 if value == q["answer"] else 0.0
+        if q["type"] == "text":
+            return 1.0 if text_matches(value, q["answer"]) else 0.0
+        if q["type"] == "multi":
+            right = set(q["answer"])
+            hits, misses = len(right & set(value)), len(set(value) - right)
+            return max(0.0, (hits - misses) / len(right))
+        order = [self.display[i] for i in value]  # что игрок поставил на каждое место
+        return sum(1 for place, item in enumerate(order) if place == item) / len(order)
 
     def tick(self):
         """Двигает игру по времени: конец вопроса и автопереход."""
@@ -266,33 +395,39 @@ class Game:
 
     def finish_question(self):
         rules = self.settings
-        correct = self.question()["answer"]
         # Запоминаем места до начисления очков, чтобы показать стрелки ↑↓.
         for place, row in enumerate(self.leaderboard(), 1):
             self.players[row["id"]]["prev_place"] = place
         self.team_prev = {t["team"]: place for place, t in enumerate(self.team_board(), 1)}
         for pid, p in self.players.items():
             a = self.answers.get(pid)
+            frac = self.grade(a["value"]) if a else 0.0
             points = 0
-            if a and a["choice"] == correct:
+            if frac > 0:
                 if rules["speed"]:
                     # Быстрый правильный ответ даёт до 1000 очков, медленный — от 500.
                     points = round(500 + 500 * max(0.0, 1 - a["time"] / self.seconds))
                 else:
                     points = 1000
+                points = round(points * frac)  # частично верный ответ — часть очков
+            if frac == 1:
                 p["streak"] += 1
                 if rules["streak"] and p["streak"] >= 2:
                     points += min(500, 100 * (p["streak"] - 1))  # +100 за каждый ответ серии, до +500
             else:
                 p["streak"] = 0
-                if a and rules["penalty"]:
+                if a and frac == 0 and rules["penalty"]:
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
+            a = a or {}
+            a["result"] = "right" if frac == 1 else "partial" if frac > 0 else "wrong" if a else "none"
+            if pid in self.answers:
+                self.answers[pid] = a
             p["last_points"] = points
             p["score"] += points
         self.set_phase("reveal")
 
     def next(self):
-        last = self.index + 1 >= len(self.pack["questions"])
+        last = self.index + 1 >= len(self.selected)
         if self.phase == "reveal" and not last and self.settings["leaders"]:
             self.set_phase("leaders")
             return
@@ -300,6 +435,11 @@ class Game:
             self.set_phase("final")
             return
         self.index += 1
+        n = len(self.question()["options"])
+        self.display = list(range(n))
+        if self.question()["type"] == "order":
+            while n > 1 and self.display == sorted(self.display):
+                random.shuffle(self.display)  # на экране варианты перемешаны
         self.set_phase("question")
         self.started_at = time.time()
         self.answers = {}
@@ -354,7 +494,7 @@ class Game:
             "title": self.pack["title"] if self.phase != "setup" else "Квиз",
             "phase": self.phase,
             "index": self.index,
-            "total": len(self.pack["questions"]),
+            "total": len(self.selected) if self.phase != "setup" else len(self.pack["questions"]),
             "seconds": self.seconds,
             "settings": self.settings,
             "team_names": TEAMS,
@@ -372,17 +512,31 @@ class Game:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"])}
         if self.phase in ("question", "reveal"):
             q = self.question()
+            s["qtype"] = q["type"]
             s["question"] = q["q"]
-            s["options"] = q["options"]
+            s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]
             s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
         if self.phase == "reveal":
-            s["correct"] = q["answer"]
-            counts = [0] * len(q["options"])
-            for a in self.answers.values():
-                counts[a["choice"]] += 1
-            s["counts"] = counts
+            results = [a.get("result") for a in self.answers.values()]
+            s["right_count"] = results.count("right")
+            s["partial_count"] = results.count("partial")
+            if q["type"] in ("choice", "multi"):
+                s["correct"] = q["answer"]
+                counts = [0] * len(q["options"])
+                for a in self.answers.values():
+                    for v in a["value"] if isinstance(a["value"], list) else [a["value"]]:
+                        counts[v] += 1
+                s["counts"] = counts
+            elif q["type"] == "order":
+                s["correct_order"] = q["options"]
+            else:
+                s["correct_text"] = q["answer"][0]
+                s["text_answers"] = [
+                    {"name": self.players[pid]["name"], "text": a["value"], "ok": a.get("result") == "right"}
+                    for pid, a in self.answers.items() if pid in self.players
+                ]
         if self.owns(pid, device):
             me = self.players[pid]
             s["me"] = {
@@ -392,7 +546,8 @@ class Game:
                 "last": me["last_points"],
                 "prev": me["prev_place"],
                 "streak": me["streak"],
-                "choice": self.answers.get(pid, {}).get("choice"),
+                "answer": self.answers.get(pid, {}).get("value"),
+                "result": self.answers.get(pid, {}).get("result"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
             if me.get("team") is not None:
@@ -574,17 +729,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok": ok})
 
             if path == "/api/answer":
-                pid, choice = data.get("pid"), data.get("choice")
+                pid = data.get("pid")
                 game.tick()
-                ok = (
-                    game.phase == "question"
-                    and game.owns(pid, device)
-                    and pid not in game.answers
-                    and isinstance(choice, int)
-                    and 0 <= choice < len(game.question()["options"])
-                )
+                ok = game.phase == "question" and game.owns(pid, device) and pid not in game.answers
+                value = game.check(data.get("answer")) if ok else None
+                ok = value is not None
                 if ok:
-                    game.answers[pid] = {"choice": choice, "time": time.time() - game.started_at}
+                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at}
                 return self.send_json({"ok": ok})
 
             if path.startswith("/api/host/"):

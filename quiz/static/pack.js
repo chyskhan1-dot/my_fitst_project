@@ -4,13 +4,26 @@
   const MAX_IMAGE_SIDE = 1280; // картинки больше уменьшаем, чтобы пакет грузился быстро
   const MAX_AUDIO_MB = 8;
 
-  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)"];
+  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип"];
+  // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
+  // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа
   const TEMPLATE_CSV = [
     CSV_HEADER,
-    ["Какая планета самая большая?", "Сатурн", "Юпитер", "Нептун", "Земля", "2", "", ""],
-    ["Сколько струн у классической гитары?", "4", "5", "6", "7", "3", "", ""],
-    ["Столица Франции?", "Париж", "Лион", "", "", "1", "", ""],
+    ["Какая планета самая большая?", "Сатурн", "Юпитер", "Нептун", "Земля", "2", "", "", ""],
+    ["Столица Франции?", "Париж", "Лион", "", "", "1", "", "", ""],
+    ["Какие из этих городов — столицы?", "Москва", "Милан", "Мадрид", "Сидней", "1,3", "", "", "несколько"],
+    ["Расставь планеты по удалённости от Солнца", "Меркурий", "Венера", "Земля", "Марс", "", "", "", "порядок"],
+    ["Кто написал «Евгения Онегина»? Напиши фамилию", "Пушкин", "Александр Пушкин", "", "", "", "", "", "текст"],
   ].map((r) => r.map(csvCell).join(";")).join("\r\n");
+
+  const TYPE_NAMES = { choice: "", multi: "несколько", order: "порядок", text: "текст" };
+  function typeOf(value) {
+    const v = String(value || "").trim().toLowerCase();
+    if (/^(несколько|multi)/.test(v)) return "multi";
+    if (/^(порядок|order|по порядку)/.test(v)) return "order";
+    if (/^(текст|text|свой)/.test(v)) return "text";
+    return "choice";
+  }
 
   function csvCell(v) {
     v = String(v ?? "");
@@ -56,19 +69,26 @@
     const rows = parseCSV(text);
     const questions = [];
     rows.forEach((r, i) => {
+      if (i === 0 && /^вопрос/i.test((r[0] || "").trim())) return; // строка заголовков
       const options = r.slice(1, 5).map((o) => (o || "").trim());
       const filled = options.filter(Boolean);
-      const answer = answerIndex(r[5], options);
-      if (i === 0 && answer < 0) return; // строка заголовков
-      // правильный ответ считаем по исходным колонкам, а пустые варианты убираем
-      const correct = options[answer];
-      questions.push({
-        q: (r[0] || "").trim(),
-        options: filled,
-        answer: correct ? filled.indexOf(correct) : -1,
-        image: (r[6] || "").trim() || null,
-        audio: (r[7] || "").trim() || null,
-      });
+      const type = typeOf(r[8]);
+      const q = { type, q: (r[0] || "").trim(), image: (r[6] || "").trim() || null, audio: (r[7] || "").trim() || null };
+      if (type === "text") {
+        q.answer = filled;
+      } else if (type === "order") {
+        q.options = filled;
+      } else if (type === "multi") {
+        // номера считаем по исходным колонкам, а пустые варианты убираем
+        const picked = String(r[5] || "").split(/[^0-9а-яa-z]+/i).map((v) => answerIndex(v, options)).filter((k) => k >= 0 && options[k]);
+        q.options = filled;
+        q.answer = [...new Set(picked.map((k) => filled.indexOf(options[k])))];
+      } else {
+        const answer = answerIndex(r[5], options);
+        q.options = filled;
+        q.answer = options[answer] ? filled.indexOf(options[answer]) : -1;
+      }
+      questions.push(q);
     });
     return { title, questions };
   }
@@ -76,9 +96,12 @@
   function packToCSV(pack) {
     const rows = [CSV_HEADER];
     for (const q of pack.questions) {
-      const opts = [0, 1, 2, 3].map((i) => q.options[i] || "");
+      const type = q.type || "choice";
+      const src = type === "text" ? q.answer : q.options;
+      const opts = [0, 1, 2, 3].map((i) => (src || [])[i] || "");
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
-      rows.push([q.q, ...opts, q.answer + 1, media(q.image), media(q.audio)]);
+      const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";
+      rows.push([q.q, ...opts, right, media(q.image), media(q.audio), TYPE_NAMES[type]]);
     }
     return rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
   }

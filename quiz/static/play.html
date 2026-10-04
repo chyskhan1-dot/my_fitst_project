@@ -124,6 +124,17 @@ input {
 .role:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .code-input { font-family: var(--display); font-size: 40px; letter-spacing: .3em; padding: 14px 10px 14px calc(10px + .3em); }
 .qimg { display: block; max-width: 100%; max-height: 28vh; margin: 0 auto; border-radius: 12px; background: #fff; }
+.ans { position: relative; }
+.ans.sel { outline: 4px solid var(--ink); outline-offset: -4px; filter: brightness(1.1); }
+.ans:not(.sel) .badge-num:empty { display: none; }
+.badge-num { position: absolute; top: 8px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 800 16px var(--display); display: grid; place-items: center; }
+.badge-num:empty { display: none; }
+.hint { color: var(--muted); text-align: center; font-weight: 700; font-size: 14px; }
+.row2 { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.btn.ghost { background: var(--panel); color: var(--ink); }
+.text-form { display: flex; flex-direction: column; gap: 10px; }
+.text-form input { font: 700 22px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: center; width: 100%; }
+.stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
@@ -254,6 +265,64 @@ function joinForm() {
   document.getElementById("name").focus();
 }
 
+let draftQ = -1, picks = [], typed = "", lastQuestion = null;
+
+function answerControls(s) {
+  const btn = (i, attr, extra = "") => `<button class="ans rise ${extra}" style="--c:var(--a${i});--i:${i}" ${attr}="${i}">
+    <span class="shape">${SHAPES[i]}</span>${esc(s.options[i])}<span class="badge-num"></span></button>`;
+  if (s.qtype === "multi") {
+    return `<p class="hint">Отметь все верные варианты</p>
+      <div class="answers">${s.options.map((_, i) => btn(i, "data-pick", picks.includes(i) ? "sel" : "")).join("")}</div>
+      <button class="btn" id="submit" ${picks.length ? "" : "disabled"}>Ответить</button>`;
+  }
+  if (s.qtype === "order") {
+    return `<p class="hint">Нажимай варианты по порядку: первый, второй…</p>
+      <div class="answers">${s.options.map((_, i) => btn(i, "data-seq")).join("")}</div>
+      <div class="row2"><button class="btn ghost" id="reset">Сначала</button><button class="btn" id="submit" disabled>Ответить</button></div>`;
+  }
+  if (s.qtype === "text") {
+    return `<form id="text-form" class="text-form">
+      <input id="answer-text" maxlength="60" autocomplete="off" autocapitalize="words" placeholder="Твой ответ" aria-label="Твой ответ">
+      <button class="btn" type="submit">Ответить</button></form>
+      <p class="hint">Регистр и небольшие опечатки не важны</p>`;
+  }
+  return `<div class="answers">${s.options.map((_, i) => btn(i, "data-choice")).join("")}</div>`;
+}
+
+// номера на кнопках «по порядку»
+function paintOrder() {
+  document.querySelectorAll("[data-seq]").forEach((b) => {
+    const k = picks.indexOf(Number(b.dataset.seq));
+    b.classList.toggle("sel", k >= 0);
+    b.querySelector(".badge-num").textContent = k >= 0 ? k + 1 : "";
+  });
+  const submit = document.getElementById("submit");
+  if (submit) submit.disabled = picks.length !== document.querySelectorAll("[data-seq]").length;
+}
+
+function answerSummary(s, answer) {
+  const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : SHAPES[i] + " "}${esc(s.options[i])}</span>`;
+  if (s.qtype === "text") return `<span class="pill pop">«${esc(answer)}»</span>`;
+  if (Array.isArray(answer)) return `<div class="stack">${answer.map((i, k) => chip(i, s.qtype === "order" ? k + 1 : 0)).join("")}</div>`;
+  return chip(answer, 0);
+}
+
+function correctAnswer(s) {
+  const b = (t) => `<br><b style="color:var(--ink)">${esc(t)}</b>`;
+  if (s.qtype === "text") return b(s.correct_text);
+  if (s.qtype === "order") return s.correct_order.map((o, i) => b(`${i + 1}. ${o}`)).join("");
+  if (Array.isArray(s.correct)) return s.correct.map((i) => b(`${SHAPES[i]} ${s.options[i]}`)).join("");
+  return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
+}
+
+async function send(answer) {
+  if (sending) return;
+  sending = true; buzz(25);
+  document.querySelectorAll(".ans, #submit, #text-form button").forEach((x) => (x.disabled = true));
+  await api("/api/answer", { pid, answer }).catch(() => {});
+  sending = false; lastSig = ""; poll();
+}
+
 function moveText(me) {
   if (!me.prev || me.prev === me.place) return "";
   const d = me.prev - me.place;
@@ -288,34 +357,42 @@ function render(s) {
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
-  } else if (s.phase === "question" && me.choice == null) {
+  } else if (s.phase === "question" && me.answer == null) {
+    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; }
     $main.innerHTML = `
       <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}</div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       <h2>${esc(s.question)}</h2>
       ${s.image ? `<img class="qimg" src="${esc(mediaSrc(s.image))}" alt="Картинка к вопросу">` : ""}
-      <div class="answers">${s.options.map((o, i) => `
-        <button class="ans rise" style="--c:var(--a${i});--i:${i}" data-choice="${i}"><span class="shape">${SHAPES[i]}</span>${esc(o)}</button>`).join("")}
-      </div>`;
+      ${answerControls(s)}`;
+    if (s.qtype === "text") {
+      const input = document.getElementById("answer-text");
+      input.value = typed;
+      input.addEventListener("input", () => { typed = input.value; });
+      document.getElementById("text-form").addEventListener("submit", (e) => { e.preventDefault(); if (typed.trim()) send(typed.trim()); });
+      input.focus();
+    }
+    lastQuestion = s;
+    if (s.qtype === "order") paintOrder();
   } else if (s.phase === "question") {
     $main.innerHTML = `
       <div class="scene">
         <div class="spinner"></div>
         <h1>Ответ принят</h1>
-        <span class="picked pop" style="--c:var(--a${me.choice})">${SHAPES[me.choice]} ${esc(s.options[me.choice])}</span>
+        ${answerSummary(s, me.answer)}
         <p class="muted">Ждём остальных…</p>
       </div>`;
   } else if (s.phase === "reveal") {
-    const right = me.choice === s.correct;
-    mood(right ? "good" : "bad");
-    buzz(right ? [30, 60, 30] : 200);
-    const text = me.choice == null ? "Не успел!" : right ? "Верно!" : "Мимо!";
+    const res = me.result || "none";
+    mood(res === "right" || res === "partial" ? "good" : "bad");
+    buzz(res === "right" ? [30, 60, 30] : res === "partial" ? [30] : 200);
+    const text = { right: "Верно!", partial: "Почти!", wrong: "Мимо!", none: "Не успел!" }[res];
     $main.innerHTML = `
       <div class="scene">
-        <span class="big pop ${right ? "good" : "bad"}">${text}</span>
-        ${right ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : `
-          ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
-          <p class="muted rise" style="--i:2">Правильный ответ:<br><b style="color:var(--ink)">${SHAPES[s.correct]} ${esc(s.options[s.correct])}</b></p>`}
+        <span class="big pop ${res === "right" || res === "partial" ? "good" : "bad"}">${text}</span>
+        ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
+        ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
+        ${res !== "right" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
       </div>`;
   } else if (s.phase === "leaders" && myTeam) {
@@ -420,12 +497,25 @@ document.addEventListener("click", async (e) => {
     else { pickTeam = team; document.querySelectorAll("[data-team]").forEach((x) => x.classList.toggle("on", x === t)); }
     return;
   }
-  const b = e.target.closest("[data-choice]");
-  if (!b || sending) return;
-  sending = true; buzz(25);
-  document.querySelectorAll(".ans").forEach((x) => (x.disabled = true));
-  await api("/api/answer", { pid, choice: Number(b.dataset.choice) }).catch(() => {});
-  sending = false; lastSig = ""; poll();
+  const choice = e.target.closest("[data-choice]");
+  if (choice) return send(Number(choice.dataset.choice));
+  const pick = e.target.closest("[data-pick]");
+  if (pick) {
+    const i = Number(pick.dataset.pick);
+    picks = picks.includes(i) ? picks.filter((x) => x !== i) : [...picks, i];
+    pick.classList.toggle("sel", picks.includes(i));
+    document.getElementById("submit").disabled = !picks.length;
+    buzz(10);
+    return;
+  }
+  const seq = e.target.closest("[data-seq]");
+  if (seq) {
+    const i = Number(seq.dataset.seq);
+    if (!picks.includes(i)) { picks.push(i); buzz(10); }
+    return paintOrder();
+  }
+  if (e.target.closest("#reset")) { picks = []; return paintOrder(); }
+  if (e.target.closest("#submit") && picks.length) send(lastQuestion && lastQuestion.qtype === "multi" ? picks.slice().sort() : picks.slice());
 });
 
 if (room) poll(); else startScreen();

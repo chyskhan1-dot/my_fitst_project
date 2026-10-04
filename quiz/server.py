@@ -32,14 +32,13 @@ JOIN_URL = None  # адрес для игроков; онлайн берётся
 
 class Game:
     def __init__(self):
-        self.players = {}  # id -> {"name", "score", "last_points"}
+        self.players = {}  # id -> {"name", "score", "last_points", "prev_place", "streak"}
         self.reset()
 
     def reset(self):
         for p in self.players.values():
-            p["score"] = 0
-            p["last_points"] = 0
-        self.phase = "lobby"  # lobby -> question -> reveal -> ... -> final
+            p.update(score=0, last_points=0, prev_place=0, streak=0)
+        self.phase = "lobby"  # lobby -> question -> reveal -> leaders -> ... -> final
         self.index = -1
         self.started_at = 0.0
         self.answers = {}  # id -> {"choice", "time"}
@@ -62,6 +61,9 @@ class Game:
 
     def finish_question(self):
         correct = self.question()["answer"]
+        # Запоминаем места до начисления очков, чтобы показать стрелки ↑↓.
+        for place, row in enumerate(self.leaderboard(), 1):
+            self.players[row["id"]]["prev_place"] = place
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             points = 0
@@ -71,10 +73,15 @@ class Game:
                 points = round(500 + 500 * speed)
             p["last_points"] = points
             p["score"] += points
+            p["streak"] = p["streak"] + 1 if points else 0
         self.phase = "reveal"
 
     def next(self):
-        if self.index + 1 >= len(QUIZ["questions"]):
+        last = self.index + 1 >= len(QUIZ["questions"])
+        if self.phase == "reveal" and not last:
+            self.phase = "leaders"
+            return
+        if last:
             self.phase = "final"
             return
         self.index += 1
@@ -85,10 +92,17 @@ class Game:
 
     def leaderboard(self):
         rows = [
-            {"id": pid, "name": p["name"], "score": p["score"], "last": p["last_points"]}
+            {
+                "id": pid,
+                "name": p["name"],
+                "score": p["score"],
+                "last": p["last_points"],
+                "prev": p["prev_place"],
+                "streak": p["streak"],
+            }
             for pid, p in self.players.items()
         ]
-        rows.sort(key=lambda r: -r["score"])
+        rows.sort(key=lambda r: (-r["score"], r["name"].lower()))
         return rows
 
     def state(self, pid=None):
@@ -120,6 +134,8 @@ class Game:
                 "name": me["name"],
                 "score": me["score"],
                 "last": me["last_points"],
+                "prev": me["prev_place"],
+                "streak": me["streak"],
                 "choice": self.answers.get(pid, {}).get("choice"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
@@ -194,7 +210,7 @@ class Handler(BaseHTTPRequestHandler):
                 if name.lower() in taken:
                     return self.send_json({"error": "Это имя уже занято"}, 400)
                 pid = secrets.token_urlsafe(8)
-                game.players[pid] = {"name": name, "score": 0, "last_points": 0}
+                game.players[pid] = {"name": name, "score": 0, "last_points": 0, "prev_place": 0, "streak": 0}
                 return self.send_json({"pid": pid})
 
             if path == "/api/answer":

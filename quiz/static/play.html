@@ -102,6 +102,16 @@ input {
 .mini li.me { outline: 2px solid var(--accent); }
 .mini .pos { width: 1.5em; color: var(--muted); font-family: var(--display); }
 .mini .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill.minus { background: var(--bad); color: #2b0606; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
+.teampick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.teampick button {
+  font: 800 16px var(--body); padding: 14px 10px; border-radius: 14px; cursor: pointer; color: var(--ink);
+  background: var(--panel); border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.teampick button::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: var(--c); flex: none; }
+.teampick button.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
+.teampick small { color: var(--muted); font-weight: 700; }
+.teambadge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; font-weight: 800; background: var(--c); color: #fff; }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
@@ -121,7 +131,14 @@ input {
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
-let pid = load(), version = null, lastSig = "", sending = false;
+let pid = load(), version = null, lastSig = "", sending = false, lastState = null, pickTeam = null, joinTeams = -1;
+const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
+
+function teamPicker(s, selected) {
+  return `<div class="teampick">${s.teams.slice().sort((a, b) => a.team - b.team).map((t) => `
+    <button type="button" class="${t.team === selected ? "on" : ""}" style="--c:${TEAM_COLORS[t.team]}" data-team="${t.team}">
+      ${esc(t.name)} <small>${t.size}</small></button>`).join("")}</div>`;
+}
 
 function load() { try { return localStorage.getItem("quiz-pid"); } catch { return null; } }
 function save(v) { try { v ? localStorage.setItem("quiz-pid", v) : localStorage.removeItem("quiz-pid"); } catch {} }
@@ -137,14 +154,23 @@ async function api(path, body) {
 }
 
 function joinForm() {
+  const s = lastState;
   document.getElementById("top").innerHTML = "";
   mood("");
+  // во время игры команду назначит сервер — выбирать её можно только в лобби
+  const teams = s && s.phase === "lobby" ? s.settings.teams : 0;
+  joinTeams = teams;
+  if (teams && (pickTeam == null || pickTeam >= teams)) {
+    const smallest = s.teams.slice().sort((a, b) => a.size - b.size || a.team - b.team)[0];
+    pickTeam = smallest.team;
+  }
   $main.innerHTML = `
     <div class="scene">
       <div class="eyebrow rise">Квиз</div>
       <h1 class="rise" style="--i:1">Как тебя записать?</h1>
       <form id="join" class="rise" style="--i:2">
         <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
+        ${teams ? `<p class="muted">Выбери команду:</p>${teamPicker(s, pickTeam)}` : ""}
         <div class="error" id="err"></div>
         <button class="btn" type="submit">Войти в игру</button>
       </form>
@@ -152,7 +178,7 @@ function joinForm() {
   document.getElementById("join").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button"); btn.disabled = true;
-    const res = await api("/api/join", { name: document.getElementById("name").value }).catch(() => ({ error: "Нет связи с сервером" }));
+    const res = await api("/api/join", { name: document.getElementById("name").value, team: joinTeams ? pickTeam : null }).catch(() => ({ error: "Нет связи с сервером" }));
     if (res.error) { document.getElementById("err").textContent = res.error; btn.disabled = false; return; }
     pid = res.pid; save(pid); lastSig = ""; buzz(20); poll();
   });
@@ -172,11 +198,22 @@ function render(s) {
   mood("");
   confetti(false);
 
-  if (s.phase === "lobby") {
+  const myTeam = me.team != null ? s.team_names[me.team] : null;
+  if (s.phase === "setup") {
     $main.innerHTML = `
       <div class="scene">
         <span class="pop">${ava(me.name, "xl")}</span>
         <h1 class="rise">Ты в игре!</h1>
+        <div class="spinner"></div>
+        <p class="muted rise" style="--i:1">Ведущий выбирает правила. Игра скоро начнётся.</p>
+      </div>`;
+  } else if (s.phase === "lobby") {
+    $main.innerHTML = `
+      <div class="scene">
+        <span class="pop">${ava(me.name, "xl")}</span>
+        <h1 class="rise">Ты в игре!</h1>
+        ${myTeam ? `<span class="teambadge rise" style="--c:${TEAM_COLORS[me.team]}">Команда: ${esc(myTeam)}</span>
+          <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
         <p class="muted rise" style="--i:1">Смотри на экран ведущего. Игра скоро начнётся.</p>
         <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
         <button class="leave" id="leave">Сменить имя</button>
@@ -206,8 +243,22 @@ function render(s) {
     $main.innerHTML = `
       <div class="scene">
         <span class="big pop ${right ? "good" : "bad"}">${text}</span>
-        ${right ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : `<p class="muted rise" style="--i:2">Правильный ответ:<br><b style="color:var(--ink)">${SHAPES[s.correct]} ${esc(s.options[s.correct])}</b></p>`}
+        ${right ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : `
+          ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
+          <p class="muted rise" style="--i:2">Правильный ответ:<br><b style="color:var(--ink)">${SHAPES[s.correct]} ${esc(s.options[s.correct])}</b></p>`}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
+      </div>`;
+  } else if (s.phase === "leaders" && myTeam) {
+    $main.innerHTML = `
+      <div class="scene">
+        <span class="teambadge" style="--c:${TEAM_COLORS[me.team]}">${esc(myTeam)}</span>
+        <div class="eyebrow">Команда на месте</div>
+        <span class="place pop">${me.team_place}</span>
+        <ol class="mini">${s.teams.map((t, i) => `
+          <li class="rise ${t.team === me.team ? "me" : ""}" style="--i:${i + 1}">
+            <span class="pos">${i + 1}</span><span class="n">${esc(t.name)}</span><span>${t.score}</span></li>`).join("")}
+        </ol>
+        <p class="muted">Ты лично: ${me.place} место · ${me.score} очков</p>
       </div>`;
   } else if (s.phase === "leaders") {
     const top = s.players.slice(0, 3);
@@ -224,24 +275,30 @@ function render(s) {
         </ol>
       </div>`;
   } else if (s.phase === "final") {
-    const medal = ["🥇", "🥈", "🥉"][me.place - 1] || "🎉";
+    const place = myTeam ? me.team_place : me.place;
+    const medal = ["🥇", "🥈", "🥉"][place - 1] || "🎉";
     $main.innerHTML = `
       <div class="scene">
         <span class="big pop">${medal}</span>
-        <h1 class="rise">${me.place} место</h1>
-        <p class="muted rise" style="--i:1">${me.score} очков. Спасибо за игру!</p>
+        <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
+        <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
       </div>`;
-    if (me.place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
+    if (place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
   }
 }
 
 async function poll() {
   try {
     const s = await (await fetch("/api/state?pid=" + encodeURIComponent(pid || ""), { cache: "no-store" })).json();
-    if (!pid) { if (!document.getElementById("join")) joinForm(); return; }
+    lastState = s;
+    if (!pid) {
+      const teams = s.phase === "lobby" ? s.settings.teams : 0;
+      if (!document.getElementById("join") || joinTeams !== teams) joinForm();
+      return;
+    }
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
-    const sig = JSON.stringify([s.phase, s.index, s.me && s.me.choice, s.me && s.me.score, !!s.me, s.players.length]);
+    const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]);
     if (sig !== lastSig) { lastSig = sig; render(s); }
   } catch {
     if (!document.getElementById("join")) {
@@ -276,6 +333,13 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-team]");
+  if (t) {
+    const team = Number(t.dataset.team);
+    if (pid) { await api("/api/team", { pid, team }).catch(() => {}); lastSig = ""; poll(); }
+    else { pickTeam = team; document.querySelectorAll("[data-team]").forEach((x) => x.classList.toggle("on", x === t)); }
+    return;
+  }
   const b = e.target.closest("[data-choice]");
   if (!b || sending) return;
   sending = true; buzz(25);

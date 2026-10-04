@@ -10,6 +10,7 @@
 import hashlib
 import json
 import os
+import random
 import secrets
 import socket
 import threading
@@ -22,7 +23,6 @@ from urllib.parse import parse_qs, urlparse
 BASE = Path(__file__).parent
 STATIC = BASE / "static"
 QUIZ = json.loads((BASE / "questions.json").read_text(encoding="utf-8"))
-SECONDS = QUIZ.get("seconds", 20)
 # Версия сайта: меняется при каждом обновлении файлов. Открытые страницы
 # сравнивают её со своей и перезагружаются, если сервер обновился.
 VERSION = hashlib.md5(
@@ -38,22 +38,92 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 
+TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
+MODES = ["quiz"]  # «Своя игра» и «100 к 1» пока в разработке
+PENALTY = 300  # сколько очков снимаем за неверный ответ
+DEFAULTS = {
+    "mode": "quiz",
+    "penalty": False,  # штраф за неверный ответ
+    "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
+    "speed": True,  # бонус за скорость ответа
+    "streak": False,  # бонус за серию правильных ответов
+    "shuffle_questions": False,
+    "shuffle_answers": False,
+    "leaders": True,  # таблица лидеров после каждого вопроса
+    "seconds": QUIZ.get("seconds", 20),
+}
+
+
+def clean_settings(data):
+    """Берём из присланных настроек только то, что знаем, и проверяем значения."""
+    s = dict(DEFAULTS)
+    for key, default in DEFAULTS.items():
+        value = data.get(key, default)
+        if isinstance(default, bool):
+            s[key] = bool(value)
+    if data.get("mode") in MODES:
+        s["mode"] = data["mode"]
+    if data.get("teams") in (0, 2, 3, 4):
+        s["teams"] = data["teams"]
+    if data.get("seconds") in (10, 20, 30):
+        s["seconds"] = data["seconds"]
+    return s
+
+
 class Game:
     def __init__(self):
-        self.players = {}  # id -> {"name", "device", "score", "last_points", "prev_place", "streak"}
+        # id -> {"name", "device", "team", "score", "last_points", "prev_place", "streak"}
+        self.players = {}
+        self.settings = dict(DEFAULTS)
         self.reset()
 
-    def reset(self):
+    def reset(self, phase="setup"):
         for p in self.players.values():
             p.update(score=0, last_points=0, prev_place=0, streak=0)
-        self.phase = "lobby"  # lobby -> question -> reveal -> leaders -> ... -> final
+        self.team_prev = {}
+        self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.index = -1
+        self.order = list(range(len(QUIZ["questions"])))
+        self.current = None
         self.started_at = 0.0
         self.answers = {}  # id -> {"choice", "time"}
         self.all_answered_at = None
 
+    def configure(self, data):
+        self.settings = clean_settings(data)
+        self.reset("lobby")
+        if self.settings["shuffle_questions"]:
+            random.shuffle(self.order)
+        self.balance_teams()
+
+    def balance_teams(self):
+        """Раздаём команды тем, у кого её нет: в самую маленькую."""
+        n = self.settings["teams"]
+        for p in self.players.values():
+            if not n:
+                p["team"] = None
+            elif p.get("team") is None or p["team"] >= n:
+                p["team"] = None
+                sizes = [sum(1 for x in self.players.values() if x.get("team") == t) for t in range(n)]
+                p["team"] = sizes.index(min(sizes))
+
+    @property
+    def seconds(self):
+        return self.settings["seconds"]
+
     def question(self):
-        return QUIZ["questions"][self.index]
+        return self.current
+
+    def load_question(self):
+        q = QUIZ["questions"][self.order[self.index]]
+        idx = list(range(len(q["options"])))
+        if self.settings["shuffle_answers"]:
+            random.shuffle(idx)
+        self.current = {
+            "q": q["q"],
+            "options": [q["options"][i] for i in idx],
+            "answer": idx.index(q["answer"]),
+        }
 
     def tick(self):
         """Заканчивает вопрос, когда вышло время или ответили все."""
@@ -63,36 +133,47 @@ class Game:
         everyone = self.players and len(self.answers) >= len(self.players)
         if everyone and self.all_answered_at is None:
             self.all_answered_at = now
-        time_up = now - self.started_at >= SECONDS
+        time_up = now - self.started_at >= self.seconds
         if time_up or (self.all_answered_at and now - self.all_answered_at >= REVEAL_PAUSE):
             self.finish_question()
 
     def finish_question(self):
+        rules = self.settings
         correct = self.question()["answer"]
         # Запоминаем места до начисления очков, чтобы показать стрелки ↑↓.
         for place, row in enumerate(self.leaderboard(), 1):
             self.players[row["id"]]["prev_place"] = place
+        self.team_prev = {t["team"]: place for place, t in enumerate(self.team_board(), 1)}
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             points = 0
             if a and a["choice"] == correct:
-                # Быстрый правильный ответ даёт до 1000 очков, медленный — от 500.
-                speed = max(0.0, 1 - a["time"] / SECONDS)
-                points = round(500 + 500 * speed)
+                if rules["speed"]:
+                    # Быстрый правильный ответ даёт до 1000 очков, медленный — от 500.
+                    points = round(500 + 500 * max(0.0, 1 - a["time"] / self.seconds))
+                else:
+                    points = 1000
+                p["streak"] += 1
+                if rules["streak"] and p["streak"] >= 2:
+                    points += min(500, 100 * (p["streak"] - 1))  # +100 за каждый ответ серии, до +500
+            else:
+                p["streak"] = 0
+                if a and rules["penalty"]:
+                    points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
             p["last_points"] = points
             p["score"] += points
-            p["streak"] = p["streak"] + 1 if points else 0
         self.phase = "reveal"
 
     def next(self):
-        last = self.index + 1 >= len(QUIZ["questions"])
-        if self.phase == "reveal" and not last:
+        last = self.index + 1 >= len(self.order)
+        if self.phase == "reveal" and not last and self.settings["leaders"]:
             self.phase = "leaders"
             return
-        if last:
+        if last and self.phase in ("reveal", "leaders"):
             self.phase = "final"
             return
         self.index += 1
+        self.load_question()
         self.phase = "question"
         self.started_at = time.time()
         self.answers = {}
@@ -103,6 +184,7 @@ class Game:
             {
                 "id": pid,
                 "name": p["name"],
+                "team": p.get("team"),
                 "score": p["score"],
                 "last": p["last_points"],
                 "prev": p["prev_place"],
@@ -111,6 +193,23 @@ class Game:
             for pid, p in self.players.items()
         ]
         rows.sort(key=lambda r: (-r["score"], r["name"].lower()))
+        return rows
+
+    def team_board(self):
+        """Счёт команды — среднее по игрокам, чтобы большая команда не выигрывала числом."""
+        rows = []
+        for t in range(self.settings["teams"]):
+            members = [p for p in self.players.values() if p.get("team") == t]
+            n = max(1, len(members))
+            rows.append({
+                "team": t,
+                "name": TEAMS[t],
+                "size": len(members),
+                "score": round(sum(p["score"] for p in members) / n),
+                "last": round(sum(p["last_points"] for p in members) / n),
+                "prev": self.team_prev.get(t, 0),
+            })
+        rows.sort(key=lambda r: (-r["score"], r["team"]))
         return rows
 
     def player_of(self, device):
@@ -129,9 +228,12 @@ class Game:
             "title": QUIZ.get("title", "Квиз"),
             "phase": self.phase,
             "index": self.index,
-            "total": len(QUIZ["questions"]),
-            "seconds": SECONDS,
+            "total": len(self.order),
+            "seconds": self.seconds,
+            "settings": self.settings,
+            "team_names": TEAMS,
             "players": self.leaderboard(),
+            "teams": self.team_board(),
             "answered": len(self.answers),
             "join": JOIN_URL,
             "version": VERSION,
@@ -140,7 +242,7 @@ class Game:
             q = self.question()
             s["question"] = q["q"]
             s["options"] = q["options"]
-            s["left"] = max(0, round(SECONDS - (time.time() - self.started_at), 1))
+            s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
         if self.phase == "reveal":
             s["correct"] = self.question()["answer"]
             counts = [0] * len(self.question()["options"])
@@ -151,6 +253,7 @@ class Game:
             me = self.players[pid]
             s["me"] = {
                 "name": me["name"],
+                "team": me.get("team"),
                 "score": me["score"],
                 "last": me["last_points"],
                 "prev": me["prev_place"],
@@ -158,6 +261,8 @@ class Game:
                 "choice": self.answers.get(pid, {}).get("choice"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
+            if me.get("team") is not None:
+                s["me"]["team_place"] = [t["team"] for t in s["teams"]].index(me["team"]) + 1
         return s
 
 
@@ -236,7 +341,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not device:
                     return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
                 mine = game.player_of(device)
-                if mine and game.phase != "lobby":
+                if mine and game.phase not in ("setup", "lobby"):
                     return self.send_json({"pid": mine})  # вернули своего игрока, новый не создаём
                 name = str(data.get("name", "")).strip()[:20]
                 if not name:
@@ -244,14 +349,34 @@ class Handler(BaseHTTPRequestHandler):
                 taken = {p["name"].lower() for pid, p in game.players.items() if pid != mine}
                 if name.lower() in taken:
                     return self.send_json({"error": "Это имя уже занято"}, 400)
+                team = data.get("team")
+                if not (isinstance(team, int) and 0 <= team < game.settings["teams"]):
+                    team = None
                 if mine:
                     game.players[mine]["name"] = name  # с этого телефона уже играют: просто меняем имя
+                    if team is not None:
+                        game.players[mine]["team"] = team
+                    game.balance_teams()
                     return self.send_json({"pid": mine})
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
-                    "name": name, "device": device, "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
+                    "name": name, "device": device, "team": team,
+                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
                 }
+                game.balance_teams()
                 return self.send_json({"pid": pid})
+
+            if path == "/api/team":
+                pid, team = data.get("pid"), data.get("team")
+                ok = (
+                    game.phase == "lobby"
+                    and game.owns(pid, self.device())
+                    and isinstance(team, int)
+                    and 0 <= team < game.settings["teams"]
+                )
+                if ok:
+                    game.players[pid]["team"] = team
+                return self.send_json({"ok": ok})
 
             if path == "/api/answer":
                 pid, choice = data.get("pid"), data.get("choice")
@@ -271,14 +396,22 @@ class Handler(BaseHTTPRequestHandler):
                 if data.get("key") != HOST_KEY:
                     return self.send_json({"error": "Неверный ключ ведущего"}, 403)
                 action = path.rsplit("/", 1)[1]
-                if action == "next":
+                if action == "configure":
+                    game.configure(data.get("settings") or {})
+                elif action == "setup":
+                    game.reset("setup")  # назад в меню, игроки остаются
+                elif action == "next":
+                    if game.phase in ("setup", "final"):
+                        return self.send_json({"error": "Сначала создай игру"}, 400)
                     game.tick()
                     if game.phase == "question":
                         game.finish_question()  # ведущий может показать ответ досрочно
                     else:
                         game.next()
                 elif action == "reset":
-                    game.reset()
+                    game.reset("lobby")  # та же игра с теми же правилами ещё раз
+                    if game.settings["shuffle_questions"]:
+                        random.shuffle(game.order)
                 elif action == "kick":
                     game.players.pop(data.get("pid"), None)
                 elif action != "check":

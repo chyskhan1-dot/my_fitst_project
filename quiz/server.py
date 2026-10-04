@@ -7,6 +7,7 @@
 Онлайн (Render и т.п.): порт берётся из переменной окружения PORT.
 """
 
+import hashlib
 import json
 import os
 import secrets
@@ -22,6 +23,11 @@ BASE = Path(__file__).parent
 STATIC = BASE / "static"
 QUIZ = json.loads((BASE / "questions.json").read_text(encoding="utf-8"))
 SECONDS = QUIZ.get("seconds", 20)
+# Версия сайта: меняется при каждом обновлении файлов. Открытые страницы
+# сравнивают её со своей и перезагружаются, если сервер обновился.
+VERSION = hashlib.md5(
+    b"".join(f.read_bytes() for f in [Path(__file__), *sorted(STATIC.glob("*.html"))])
+).hexdigest()[:8]
 REVEAL_PAUSE = 1.0  # пауза перед показом ответа, когда все уже ответили
 
 # Ключ ведущего: без него управлять игрой нельзя. Можно задать свой через HOST_KEY.
@@ -128,6 +134,7 @@ class Game:
             "players": self.leaderboard(),
             "answered": len(self.answers),
             "join": JOIN_URL,
+            "version": VERSION,
         }
         if self.phase in ("question", "reveal"):
             q = self.question()
@@ -188,6 +195,7 @@ class Handler(BaseHTTPRequestHandler):
         body = (STATIC / name).read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
         if set_device and not self.device():
             self.send_header(
                 "Set-Cookie",

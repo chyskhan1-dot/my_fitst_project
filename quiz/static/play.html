@@ -121,7 +121,7 @@ input {
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
-let pid = load(), lastSig = "", sending = false;
+let pid = load(), version = null, lastSig = "", sending = false;
 
 function load() { try { return localStorage.getItem("quiz-pid"); } catch { return null; } }
 function save(v) { try { v ? localStorage.setItem("quiz-pid", v) : localStorage.removeItem("quiz-pid"); } catch {} }
@@ -239,6 +239,8 @@ async function poll() {
   try {
     const s = await (await fetch("/api/state?pid=" + encodeURIComponent(pid || ""), { cache: "no-store" })).json();
     if (!pid) { if (!document.getElementById("join")) joinForm(); return; }
+    if (version && s.version !== version) return location.reload(); // сервер обновился
+    version = s.version;
     const sig = JSON.stringify([s.phase, s.index, s.me && s.me.choice, s.me && s.me.score, !!s.me, s.players.length]);
     if (sig !== lastSig) { lastSig = sig; render(s); }
   } catch {

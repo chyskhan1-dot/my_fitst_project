@@ -13,6 +13,7 @@ import secrets
 import socket
 import threading
 import time
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -27,12 +28,13 @@ REVEAL_PAUSE = 1.0  # пауза перед показом ответа, ког�
 HOST_KEY = os.environ.get("HOST_KEY") or secrets.token_urlsafe(6)
 
 lock = threading.Lock()
+DEVICE_COOKIE = "quiz_device"  # метка устройства: один игрок на один телефон
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 
 class Game:
     def __init__(self):
-        self.players = {}  # id -> {"name", "score", "last_points", "prev_place", "streak"}
+        self.players = {}  # id -> {"name", "device", "score", "last_points", "prev_place", "streak"}
         self.reset()
 
     def reset(self):
@@ -105,7 +107,17 @@ class Game:
         rows.sort(key=lambda r: (-r["score"], r["name"].lower()))
         return rows
 
-    def state(self, pid=None):
+    def player_of(self, device):
+        """Игрок, который уже зашёл с этого устройства."""
+        for pid, p in self.players.items():
+            if device and p["device"] == device:
+                return pid
+        return None
+
+    def owns(self, pid, device):
+        return pid in self.players and device and self.players[pid]["device"] == device
+
+    def state(self, pid=None, device=None):
         self.tick()
         s = {
             "title": QUIZ.get("title", "Квиз"),
@@ -128,7 +140,7 @@ class Game:
             for a in self.answers.values():
                 counts[a["choice"]] += 1
             s["counts"] = counts
-        if pid in self.players:
+        if self.owns(pid, device):
             me = self.players[pid]
             s["me"] = {
                 "name": me["name"],
@@ -168,10 +180,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def send_file(self, name):
+    def device(self):
+        cookie = SimpleCookie(self.headers.get("Cookie", ""))
+        return cookie[DEVICE_COOKIE].value if DEVICE_COOKIE in cookie else None
+
+    def send_file(self, name, set_device=False):
         body = (STATIC / name).read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        if set_device and not self.device():
+            self.send_header(
+                "Set-Cookie",
+                f"{DEVICE_COOKIE}={secrets.token_urlsafe(12)}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax",
+            )
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -187,14 +208,14 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         if url.path == "/":
-            self.send_file("play.html")
+            self.send_file("play.html", set_device=True)
         elif url.path == "/host":
             self.send_file("host.html")
         elif url.path == "/healthz":
             self.send_json({"ok": True})
         elif url.path == "/api/state":
             with lock:
-                self.send_json(game.state(query.get("pid", [None])[0]))
+                self.send_json(game.state(query.get("pid", [None])[0], self.device()))
         else:
             self.send_json({"error": "Страница не найдена"}, 404)
 
@@ -203,14 +224,25 @@ class Handler(BaseHTTPRequestHandler):
         data = self.read_json()
         with lock:
             if path == "/api/join":
+                device = self.device()
+                if not device:
+                    return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
+                mine = game.player_of(device)
+                if mine and game.phase != "lobby":
+                    return self.send_json({"pid": mine})  # вернули своего игрока, новый не создаём
                 name = str(data.get("name", "")).strip()[:20]
                 if not name:
                     return self.send_json({"error": "Введи имя"}, 400)
-                taken = {p["name"].lower() for p in game.players.values()}
+                taken = {p["name"].lower() for pid, p in game.players.items() if pid != mine}
                 if name.lower() in taken:
                     return self.send_json({"error": "Это имя уже занято"}, 400)
+                if mine:
+                    game.players[mine]["name"] = name  # с этого телефона уже играют: просто меняем имя
+                    return self.send_json({"pid": mine})
                 pid = secrets.token_urlsafe(8)
-                game.players[pid] = {"name": name, "score": 0, "last_points": 0, "prev_place": 0, "streak": 0}
+                game.players[pid] = {
+                    "name": name, "device": device, "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
+                }
                 return self.send_json({"pid": pid})
 
             if path == "/api/answer":
@@ -218,7 +250,7 @@ class Handler(BaseHTTPRequestHandler):
                 game.tick()
                 ok = (
                     game.phase == "question"
-                    and pid in game.players
+                    and game.owns(pid, self.device())
                     and pid not in game.answers
                     and isinstance(choice, int)
                     and 0 <= choice < len(game.question()["options"])

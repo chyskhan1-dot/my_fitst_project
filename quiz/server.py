@@ -51,6 +51,7 @@ MAX_QUESTIONS = 200
 OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
 AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙", "🦄", "🐲", "🐺",
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
+INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth")
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
 QTYPES = ("choice", "multi", "order", "text")  # один ответ, несколько верных, по порядку, свой ответ
 
@@ -220,6 +221,8 @@ def clean_pack(data, store=None, scope="_"):
                 "image": media_ref(q.get("image"), "image", store, scope),
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
+                "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
+                "instrument": q.get("instrument") if q.get("instrument") in INSTRUMENTS else None,
             })
         except PackError as e:
             raise PackError(f"вопрос {n}: {e}")
@@ -546,6 +549,8 @@ class Game:
             s["audio"] = q["audio"]
             s["melody"] = q.get("melody")
             s["tempo"] = q.get("tempo")
+            s["emoji"] = q.get("emoji")
+            s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
         if self.phase == "reveal":
             results = [a.get("result") for a in self.answers.values()]

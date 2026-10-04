@@ -70,6 +70,8 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 /* лобби */
 .join { display: flex; gap: 36px; align-items: center; flex-wrap: wrap; padding: 28px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line); }
 .join-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.room-code { font-family: var(--display); font-weight: 800; font-size: clamp(48px, 8vw, 110px); letter-spacing: .12em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+a.btn { text-decoration: none; display: inline-block; }
 .join-url { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 4vw, 52px); color: var(--accent); word-break: break-all; }
 #qr { background: #fff; padding: 12px; border-radius: 16px; line-height: 0; }
 #qr:empty { display: none; }
@@ -233,7 +235,8 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
-const key = new URLSearchParams(location.search).get("key") || "";
+const room = new URLSearchParams(location.search).get("room") || "";
+const token = (() => { try { return localStorage.getItem("quiz-host-" + room) || ""; } catch { return ""; } })();
 const $main = document.getElementById("main");
 const $actions = document.getElementById("actions");
 const seen = new Set();
@@ -261,7 +264,7 @@ const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(nam
 async function post(action, extra = {}) {
   const r = await fetch("/api/host/" + action, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, ...extra }),
+    body: JSON.stringify({ room, token, ...extra }),
   });
   return r.json();
 }
@@ -309,7 +312,7 @@ function countUp() {
 }
 
 function render(s) {
-  document.getElementById("brand").textContent = s.title;
+  document.getElementById("brand").textContent = `${s.title} · комната ${s.room}`;
   document.title = s.title + " — ведущий";
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
@@ -320,7 +323,7 @@ function render(s) {
     renderSetup(s);
   } else if (s.phase === "lobby") {
     draft = null;
-    const url = s.join || location.origin;
+    const url = (s.join || location.origin) + "/?room=" + s.room;
     const st = s.settings;
     const tags = [
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
@@ -338,8 +341,10 @@ function render(s) {
       <div class="join rise">
         <div id="qr"></div>
         <div class="join-text">
-          <span class="muted">Наведи камеру на QR-код или открой на телефоне:</span>
-          <span class="join-url">${esc(url.replace(/^https?:\/\//, ""))}</span>
+          <span class="muted">Наведи камеру на QR-код или открой на телефоне</span>
+          <span class="join-url">${esc((s.join || location.origin).replace(/^https?:\/\//, ""))}</span>
+          <span class="muted">и введи код комнаты</span>
+          <span class="room-code">${s.room}</span>
         </div>
       </div>
       <div>
@@ -454,7 +459,8 @@ function live(s) {
 
 async function poll() {
   try {
-    const s = await (await fetch("/api/state", { cache: "no-store" })).json();
+    const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store" })).json();
+    if (s.phase === "gone") return stop("Эта комната закрылась", "Комнаты без активности удаляются через 3 часа, а при обновлении сервера — сразу.");
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
@@ -506,15 +512,18 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+let timer = null;
+function stop(title, text) {
+  clearInterval(timer);
+  $main.innerHTML = `<h2 class="error">${esc(title)}</h2><p class="muted">${esc(text)}</p>`;
+  $actions.innerHTML = `<a class="btn" href="/">Создать новую игру</a>`;
+}
+
 (async () => {
   const check = await post("check").catch(() => ({ error: "Нет связи с сервером." }));
-  if (check.error) {
-    $main.innerHTML = `<h2 class="error">${esc(check.error)}</h2>
-      <p class="muted">Открой ссылку для ведущего целиком, вместе с <b>?key=…</b></p>`;
-    return;
-  }
+  if (check.error) return stop(check.error, "Создай свою игру на главной странице: нажми «Я ведущий».");
   poll();
-  setInterval(poll, 500);
+  timer = setInterval(poll, 500);
 })();
 </script>
 </body>

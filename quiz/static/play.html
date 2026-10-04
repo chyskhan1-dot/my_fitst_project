@@ -112,6 +112,17 @@ input {
 .teampick button.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
 .teampick small { color: var(--muted); font-weight: 700; }
 .teambadge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; font-weight: 800; background: var(--c); color: #fff; }
+.roles { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.role {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 14px; text-align: left; align-items: center;
+  padding: 18px; border-radius: 18px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
+}
+.role .ico { grid-row: span 2; font-size: 34px; }
+.role b { font-family: var(--display); font-size: 19px; }
+.role small { color: var(--muted); }
+.role:first-child { border-color: var(--accent); }
+.role:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.code-input { font-family: var(--display); font-size: 40px; letter-spacing: .3em; padding: 14px 10px 14px calc(10px + .3em); }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
@@ -131,7 +142,8 @@ input {
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
-let pid = load(), version = null, lastSig = "", sending = false, lastState = null, pickTeam = null, joinTeams = -1;
+let room = (new URLSearchParams(location.search).get("room") || "").replace(/\D/g, "").slice(0, 4);
+let pid = room ? load() : null, version = null, lastSig = "", sending = false, lastState = null, pickTeam = null, joinTeams = -1;
 const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
 
 function teamPicker(s, selected) {
@@ -140,8 +152,8 @@ function teamPicker(s, selected) {
       ${esc(t.name)} <small>${t.size}</small></button>`).join("")}</div>`;
 }
 
-function load() { try { return localStorage.getItem("quiz-pid"); } catch { return null; } }
-function save(v) { try { v ? localStorage.setItem("quiz-pid", v) : localStorage.removeItem("quiz-pid"); } catch {} }
+function load() { try { return localStorage.getItem("quiz-pid-" + room); } catch { return null; } }
+function save(v) { try { v ? localStorage.setItem("quiz-pid-" + room, v) : localStorage.removeItem("quiz-pid-" + room); } catch {} }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
 const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
@@ -149,8 +161,61 @@ const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch
 const mood = (m) => { document.body.dataset.mood = m || ""; };
 
 async function api(path, body) {
-  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room, ...body }) });
   return r.json();
+}
+
+function setRoom(code) {
+  room = code; pid = code ? load() : null; lastSig = ""; lastState = null; joinTeams = -1;
+  history.replaceState(null, "", code ? "/?room=" + code : "/");
+}
+
+function startScreen() {
+  setRoom("");
+  document.getElementById("top").innerHTML = "";
+  mood("");
+  $main.innerHTML = `
+    <div class="scene">
+      <div class="eyebrow rise">Квиз</div>
+      <h1 class="rise" style="--i:1">Кто ты сегодня?</h1>
+      <div class="roles">
+        <button class="role rise" style="--i:2" id="as-player"><span class="ico">📱</span><b>Я игрок</b><small>Есть код комнаты от ведущего</small></button>
+        <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
+      </div>
+      <div class="error" id="err"></div>
+    </div>`;
+  document.getElementById("as-player").onclick = codeForm;
+  document.getElementById("as-host").onclick = async (e) => {
+    e.currentTarget.disabled = true;
+    const res = await api("/api/rooms", {}).catch(() => ({ error: "Нет связи с сервером" }));
+    if (res.error) { document.getElementById("err").textContent = res.error; e.currentTarget.disabled = false; return; }
+    try { localStorage.setItem("quiz-host-" + res.room, res.token); } catch {}
+    location.href = "/host?room=" + res.room;
+  };
+}
+
+function codeForm() {
+  $main.innerHTML = `
+    <div class="scene">
+      <div class="eyebrow rise">Вход в игру</div>
+      <h1 class="rise" style="--i:1">Код комнаты</h1>
+      <p class="muted rise" style="--i:1">Он на экране у ведущего</p>
+      <form id="code" class="rise" style="--i:2">
+        <input id="room" class="code-input" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="0000" aria-label="Код комнаты" required>
+        <div class="error" id="err"></div>
+        <button class="btn" type="submit">Дальше</button>
+      </form>
+      <button class="leave" id="back">Назад</button>
+    </div>`;
+  document.getElementById("back").onclick = startScreen;
+  document.getElementById("code").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = document.getElementById("room").value.replace(/\D/g, "");
+    const r = await fetch("/api/state?room=" + code, { cache: "no-store" }).catch(() => null);
+    if (!r || !r.ok) { document.getElementById("err").textContent = r ? "Комнаты с таким кодом нет" : "Нет связи с сервером"; return; }
+    setRoom(code); poll();
+  });
+  document.getElementById("room").focus();
 }
 
 function joinForm() {
@@ -166,7 +231,7 @@ function joinForm() {
   }
   $main.innerHTML = `
     <div class="scene">
-      <div class="eyebrow rise">Квиз</div>
+      <div class="eyebrow rise">Комната ${esc(room)}</div>
       <h1 class="rise" style="--i:1">Как тебя записать?</h1>
       <form id="join" class="rise" style="--i:2">
         <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
@@ -174,7 +239,9 @@ function joinForm() {
         <div class="error" id="err"></div>
         <button class="btn" type="submit">Войти в игру</button>
       </form>
+      <button class="leave" id="other">Другая комната</button>
     </div>`;
+  document.getElementById("other").onclick = startScreen;
   document.getElementById("join").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button"); btn.disabled = true;
@@ -289,7 +356,17 @@ function render(s) {
 
 async function poll() {
   try {
-    const s = await (await fetch("/api/state?pid=" + encodeURIComponent(pid || ""), { cache: "no-store" })).json();
+    if (!room) return;
+    const s = await (await fetch(`/api/state?room=${encodeURIComponent(room)}&pid=${encodeURIComponent(pid || "")}`, { cache: "no-store" })).json();
+    if (s.phase === "gone") {
+      if (!document.getElementById("gone")) {
+        document.getElementById("top").innerHTML = ""; mood("");
+        $main.innerHTML = `<div class="scene" id="gone"><h1>Комната закрыта</h1>
+          <p class="muted">Ведущий закончил игру или ввёл другой код.</p><button class="btn" id="restart">На главную</button></div>`;
+        document.getElementById("restart").onclick = startScreen;
+      }
+      return;
+    }
     lastState = s;
     if (!pid) {
       const teams = s.phase === "lobby" ? s.settings.teams : 0;
@@ -348,7 +425,7 @@ document.addEventListener("click", async (e) => {
   sending = false; lastSig = ""; poll();
 });
 
-poll();
+if (room) poll(); else startScreen();
 setInterval(poll, 700);
 </script>
 </body>

@@ -171,7 +171,8 @@ a.btn { text-decoration: none; display: inline-block; }
 .qimg.small { max-height: 18vh; }
 .qaudio { display: flex; align-items: center; gap: 10px; font-size: 1.4em; }
 .qaudio audio { max-width: min(480px, 80vw); }
-.auto-next { align-self: center; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.auto-next { align-self: center; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
+.auto-next .ava { font-size: .8em; }
 .mode.pack { padding: 12px 18px; }
 .pack-tools { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn.small { padding: 10px 16px; font-size: .8em; cursor: pointer; }
@@ -186,6 +187,50 @@ a.btn { text-decoration: none; display: inline-block; }
 .chip.said.ok { border-color: var(--good); }
 .chip.said.no { color: var(--muted); }
 .chip.said:hover { text-decoration: none; }
+
+/* «Своя игра» */
+.si-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.si-board { display: grid; grid-template-columns: minmax(120px, 1.6fr) repeat(var(--cols), minmax(0, 1fr)); gap: 8px; }
+.si-theme { display: flex; align-items: center; padding: 10px 14px; border-radius: 12px; background: var(--panel); font-weight: 800; font-size: .9em; min-width: 0; overflow-wrap: anywhere; }
+.si-cell { font: 800 1.3em var(--display); color: var(--accent); background: #1d2a8a; border: 0; border-radius: 12px; padding: 14px 4px; cursor: pointer;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .25); transition: transform .1s, background .15s; }
+.si-cell:hover { background: #2a3bb0; transform: translateY(-2px); }
+.si-cell.played { background: transparent; border: 1px dashed var(--line); box-shadow: none; cursor: default; }
+.si-scores { display: flex; flex-direction: column; gap: 8px; }
+.si-score { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font-weight: 700; }
+.si-score .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.si-score b { font-family: var(--display); font-variant-numeric: tabular-nums; }
+.si-score b.neg { color: var(--bad); }
+.si-score.hl { border-color: var(--accent); background: rgba(255, 210, 63, .12); }
+.si-score.off { opacity: .5; }
+.si-q { display: flex; flex-direction: column; gap: 16px; }
+.si-text { font-size: clamp(24px, 3.2vw, 44px); white-space: pre-line; }
+.si-text-small { margin: 0; white-space: pre-line; }
+.si-timer { font-weight: 800; color: var(--accent); font-size: 1.2em; margin: 0; min-height: 1.4em; }
+.si-who { font-size: 1.4em; margin: 0; display: flex; align-items: center; gap: 10px; }
+.si-splash { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+.si-splash .lead { font-size: 1.4em; margin: 0; }
+.si-verdicts { display: flex; flex-direction: column; gap: 8px; }
+.si-verdict { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.si-verdict.ok { border-color: var(--good); }
+.si-verdict .d { font-family: var(--display); margin-left: auto; }
+.si-verdict.ok .d { color: var(--good); } .si-verdict.no .d { color: var(--bad); }
+@media (max-width: 900px) { .si-layout { grid-template-columns: 1fr; } }
+
+/* главное меню v2 */
+.mode-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.mode-row .mode { padding: 14px 16px; }
+.pack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.pack-grid .mode { padding: 12px 16px; }
+.pack-tools { margin-top: 10px; }
+.rules-line { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.modal-back { position: fixed; inset: 0; background: rgba(5, 8, 25, .7); z-index: 20; }
+.modal { position: fixed; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px); overflow-y: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 24px; padding: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .5); display: flex; flex-direction: column; gap: 16px; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.modal-head h2 { font-size: 1.4em; }
+@media (max-width: 760px) { .mode-row { grid-template-columns: 1fr; } }
 
 /* главное меню */
 .setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
@@ -258,6 +303,9 @@ a.btn { text-decoration: none; display: inline-block; }
 </head>
 <body>
 <canvas id="confetti" hidden></canvas>
+<!-- поля выбора файлов вне меню: меню перерисовывается, а выбранный файл не должен теряться -->
+<input type="file" id="pack-file" accept=".json,.csv,.txt,.xlsx" hidden>
+<input type="file" id="siq-file" accept=".siq" hidden>
 <div class="stage">
   <div class="top">
     <span class="brand" id="brand">Квиз</span>
@@ -281,9 +329,9 @@ const seen = new Set();
 let version = null, lastSig = "", draft = null, lastState = null;
 const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
 const MODES = [
-  { id: "quiz", ico: "❓", name: "Викторина", desc: "Вопросы с вариантами ответов, кто быстрее" },
-  { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Темы и вопросы разной стоимости" },
-  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Угадай самые популярные ответы" },
+  { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто быстрее", ready: true },
+  { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
+  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Скоро" },
 ];
 const RULES = [
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
@@ -420,6 +468,7 @@ function render(s) {
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
+  if (s.phase.startsWith("si_")) return renderSi(s);
   soundtrack(s);
 
   if (s.phase === "setup") {
@@ -430,9 +479,10 @@ function render(s) {
     const url = (s.join || location.origin) + "/?room=" + s.room;
     const st = s.settings;
     const tags = [
+      ...(st.mode === "jeopardy" ? ["🎯 Своя игра"] : []),
       `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
-      st.count ? `${s.total} случайных вопросов` : "Все вопросы",
+      ...(st.mode === "jeopardy" ? [] : [st.count ? `${s.total} случайных вопросов` : "Все вопросы"]),
       `${st.seconds} сек на ответ`,
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
@@ -509,60 +559,195 @@ function render(s) {
   }
 }
 
+// ---------- «Своя игра» ----------
+const SPECIAL_NAMES = { cat: "🐱 Кот в мешке", auction: "🔨 Аукцион", norisk: "🤝 Вопрос без риска" };
+let siMusicKey = "";
+
+function siScores(s, highlight) {
+  return `<aside class="si-scores">${s.players.map((p) => `
+    <div class="si-score ${highlight && highlight.id === p.id ? "hl" : ""} ${p.online ? "" : "off"}">${avaP(p)}<span class="nm">${esc(p.name)}</span>
+      <b class="${p.score < 0 ? "neg" : ""}">${p.score}</b></div>`).join("")}</aside>`;
+}
+
+function siMedia(c) {
+  const parts = [];
+  if (c.image) parts.push(`<img class="qimg" src="${esc(QuizPack.mediaSrc(c.image))}" alt="Картинка к вопросу">`);
+  if (c.video) parts.push(`<video class="qimg" src="${esc(c.video)}" controls autoplay playsinline></video>`);
+  if (c.audio) parts.push(`<div class="qaudio">🎵 <audio controls autoplay src="${esc(QuizPack.mediaSrc(c.audio))}"></audio></div>`);
+  if (c.melody) parts.push(`<div class="melody"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию</div>`);
+  if (c.melody || c.audio || c.video) parts.push(`<button class="btn ghost small" data-si-replay type="button">▶ Ещё раз</button>`);
+  return parts.length ? `<div class="qmedia si-media">${parts.join("")}</div>` : "";
+}
+
+function siSound(s) {
+  const si = s.si, c = si.cur || {};
+  const key = s.phase + ":" + si.round_index + ":" + (c.theme || "") + c.price;
+  if (key === siMusicKey || !window.QuizMusic) return;
+  siMusicKey = key;
+  const M = QuizMusic;
+  if (s.phase === "si_round") { M.stop(0.3); M.sting("start"); }
+  else if (s.phase === "si_board") M.play("lobby");
+  else if (s.phase === "si_question") {
+    if (c.melody || c.audio || c.video) { M.stop(0.3); if (c.melody) setTimeout(() => M.melody(c.melody, c.tempo, c.instrument || "piano"), 500); }
+    else M.play("question");
+  } else if (s.phase === "si_reveal") { M.stopMelody(); M.stop(0.3); M.sting("reveal"); }
+  else if (s.phase === "si_final_bet") M.play("question");
+  else if (s.phase === "si_final_reveal") { M.stop(0.3); M.sting("reveal"); }
+}
+
+function renderSi(s) {
+  const si = s.si, c = si.cur || {}, f = si.final || {};
+  siSound(s);
+  document.getElementById("progress").innerHTML = si.round_name && !s.phase.startsWith("si_final")
+    ? `${esc(si.round_name)} · ${si.round_index + 1} из ${si.rounds_total}` : "Финал";
+  const head = c.theme ? `<div class="eyebrow">${esc(c.theme)} · ${c.stake}${c.special !== "simple" ? " · " + SPECIAL_NAMES[c.special] : ""}</div>` : "";
+  let body = "", actions = "";
+  if (s.phase === "si_round") {
+    body = `<div class="si-splash"><div class="eyebrow">Своя игра</div><h1>${esc(si.round_name)}</h1>
+      <p class="muted">${(si.board || []).map((t) => esc(t.name)).join(" · ")}</p></div>`;
+    actions = `<button class="btn" data-act="next">Дальше</button>`;
+  } else if (s.phase === "si_board") {
+    body = `<div class="si-layout"><div class="si-board" style="--cols:${Math.max(...si.board.map((t) => t.cells.length))}">${si.board.map((t, ti) => `
+        <div class="si-theme">${esc(t.name)}</div>${t.cells.map((cell, qi) => cell.played
+          ? `<div class="si-cell played"></div>`
+          : `<button class="si-cell" data-si-pick="${ti},${qi}">${cell.price}</button>`).join("")}`).join("")}</div>
+      ${siScores(s, si.chooser)}</div>`;
+    actions = `<span class="auto-next">Выбирает ${si.chooser ? avaP(si.chooser) + " " + esc(si.chooser.name) : "…"} — на телефоне или кликни клетку</span>`;
+  } else if (s.phase === "si_cat_give") {
+    body = `<div class="si-splash"><h1>🐱 Кот в мешке!</h1><p class="lead">${esc(si.chooser.name)} отдаёт вопрос сопернику</p>
+      <p class="muted">Тема: <b>${esc(c.theme)}</b> · стоимость ${c.stake}</p></div>${siScores(s, si.chooser)}`;
+    actions = `<button class="btn ghost" data-act="next">Решить за игрока</button>`;
+  } else if (s.phase === "si_stake") {
+    body = `<div class="si-splash"><h1>🔨 Аукцион</h1><p class="lead">${esc(si.chooser.name)} делает ставку</p>
+      <p class="muted">Тема: <b>${esc(c.theme)}</b> · от ${c.price} до ${c.max_stake}</p></div>${siScores(s, si.chooser)}`;
+    actions = `<button class="btn ghost" data-act="next">Ставка по номиналу</button>`;
+  } else if (s.phase === "si_question" || s.phase === "si_answer") {
+    const who = c.answerer ? `<p class="si-who">✋ Отвечает ${avaP(c.answerer)} <b>${esc(c.answerer.name)}</b></p>` : "";
+    body = `<div class="si-layout"><div class="si-q">${head}<h2 class="si-text">${esc(c.text || "")}</h2>${siMedia(c)}
+      ${who}<p class="si-timer" id="si-timer"></p></div>${siScores(s, c.answerer)}</div>`;
+    actions = s.phase === "si_question" && !c.exclusive && !c.buzz_open ? `<button class="btn ghost" data-act="next">Открыть кнопки</button>`
+      : s.phase === "si_answer" ? `<button class="btn ghost" data-act="next">Время вышло</button>` : "";
+  } else if (s.phase === "si_reveal") {
+    const v = si.verdicts || [];
+    body = `<div class="si-layout"><div class="si-q">${head}<p class="muted si-text-small">${esc(c.text || "")}</p>
+        <div class="text-answer">${esc(c.answer)}</div>
+        ${c.answer_image ? `<img class="qimg small" src="${esc(c.answer_image)}" alt="">` : ""}
+        ${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}
+        <div class="si-verdicts">${v.length ? v.map((x, i) => `
+          <div class="si-verdict ${x.ok ? "ok" : "no"}">${avaP(x.player)} <b>${esc(x.player.name)}</b>: «${esc(x.text || "—")}»
+            <span class="d">${x.delta > 0 ? "+" : ""}${x.delta}</span>
+            <button class="btn ghost small" data-si-ovr="${i}" type="button">${x.ok ? "✗ Не засчитывать" : "✓ Засчитать"}</button></div>`).join("")
+          : `<p class="muted">Никто не ответил</p>`}</div></div>${siScores(s, null)}</div>`;
+    actions = `<button class="btn" data-act="next">Дальше</button>`;
+  } else if (s.phase === "si_final_bet") {
+    body = `<div class="si-splash"><div class="eyebrow">Финал</div><h1>Тема: ${esc(f.theme)}</h1>
+      <p class="lead">Участники делают ставки на телефонах</p>
+      <div class="chips">${f.eligible.map((p) => `<span class="chip said ${f.bets_done.includes(p.id) ? "ok" : ""}">${avaP(p)} ${esc(p.name)} ${f.bets_done.includes(p.id) ? "✓" : "…"}</span>`).join("")}</div></div>`;
+    actions = `<button class="btn ghost" data-act="next">Хватит ждать</button>`;
+  } else if (s.phase === "si_final_q") {
+    body = `<div class="si-q"><div class="eyebrow">Финал · ${esc(f.theme)}</div><h2 class="si-text">${esc(f.text || "")}</h2>${siMedia(f)}
+      <div class="chips">${f.eligible.map((p) => `<span class="chip said ${f.answered.includes(p.id) ? "ok" : ""}">${avaP(p)} ${esc(p.name)} ${f.answered.includes(p.id) ? "✓" : "…"}</span>`).join("")}</div>
+      <p class="si-timer" id="si-timer"></p></div>`;
+    actions = `<button class="btn ghost" data-act="next">Открыть ответы</button>`;
+  } else if (s.phase === "si_final_reveal") {
+    body = `<div class="si-layout"><div class="si-q"><div class="eyebrow">Финал · ${esc(f.theme)}</div><div class="text-answer">${esc(f.answer)}</div>
+      <div class="si-verdicts">${(si.verdicts || []).map((x, i) => `
+        <div class="si-verdict ${x.ok ? "ok" : "no"}">${avaP(x.player)} <b>${esc(x.player.name)}</b>: «${esc(x.text || "—")}» · ставка ${x.bet}
+          <span class="d">${x.delta > 0 ? "+" : ""}${x.delta}</span>
+          <button class="btn ghost small" data-si-ovr="${i}" type="button">${x.ok ? "✗ Не засчитывать" : "✓ Засчитать"}</button></div>`).join("")}</div></div>
+      ${siScores(s, null)}</div>`;
+    actions = `<button class="btn" data-act="next">Итоги игры</button>`;
+  }
+  $main.innerHTML = body;
+  $actions.innerHTML = actions;
+  live(s);
+}
+
+let rulesOpen = false;
+
+function packCards(s, d) {
+  const si = d.mode === "jeopardy";
+  const list = si
+    ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.rounds} раунд. · ${p.count} вопр.${p.final ? " · финал" : ""}` }))
+    : s.packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.count} вопросов` }));
+  const custom = si ? s.si_custom : s.custom;
+  if (custom) list.push({ id: "custom", title: custom.title, sub: "Свой пакет · " + (si ? `${custom.rounds} раунд. · ${custom.count} вопр.` : `${custom.count} вопросов`) });
+  const cur = si ? d.si_pack : d.pack, attr = si ? "data-sipack" : "data-pack";
+  return `<div class="pack-grid">${list.map((p) => `
+    <button class="mode pack ${cur === p.id ? "on" : ""}" ${attr}="${esc(p.id)}"><span><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></span></button>`).join("")}</div>
+    <div class="pack-tools">
+      ${si ? `<label class="btn ghost small" for="siq-file">📦 Загрузить пакет SIGame (.siq)</label>`
+           : `<label class="btn ghost small" for="pack-file">Загрузить свой (.json, .csv)</label>
+              <a class="btn ghost small" href="/editor" target="_blank" rel="noopener">Редактор вопросов</a>`}
+    </div>
+    <p class="error" id="pack-err" role="alert"></p>`;
+}
+
+function rulesSummary(d) {
+  if (d.mode === "jeopardy") return [`${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
+  return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
+    ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
+}
+
+function rulesModal(d) {
+  const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
+  const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
+    <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
+  const body = d.mode === "jeopardy"
+    ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у игрока после нажатия «Ответить»</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       ${toggle({ id: "auto", name: "Автопереход", desc: "Через 6 секунд после ответа — снова табло" })}`
+    : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
+       <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
+       <div class="rule"><span class="txt"><b>Время на ответ</b></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       ${RULES.map(toggle).join("")}`;
+  return `<div class="modal-back" data-close-rules></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Правила">
+      <div class="modal-head"><h2>Правила</h2><button class="btn small" data-close-rules type="button">Готово</button></div>
+      <div class="rules">${body}</div>
+    </div>`;
+}
+
 function renderSetup(s) {
   const d = draft;
   $main.innerHTML = `
     <div><div class="eyebrow">Главное меню</div><h1>Новая игра</h1></div>
-    <div class="setup">
-      <div>
-        <p class="section-title">Тип игры</p>
-        <div class="modes">${MODES.map((m) => {
-          const ready = m.id === "quiz";
-          return `<button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${ready ? "" : "disabled"}>
-            <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span>
-            <span class="badge">${ready ? (d.mode === m.id ? "Выбрано" : "Готово") : "Скоро"}</span></button>`;
-        }).join("")}</div>
-        <p class="section-title" style="margin-top:28px">Вопросы</p>
-        <div class="modes">${s.packs.map((p) => `
-          <button class="mode pack ${d.pack === p.id ? "on" : ""}" data-pack="${esc(p.id)}">
-            <span><b>${esc(p.title)}</b><small>${p.count} вопросов</small></span>
-            ${d.pack === p.id ? `<span class="badge">Выбрано</span>` : ""}</button>`).join("")}
-          ${s.custom ? `<button class="mode pack ${d.pack === "custom" ? "on" : ""}" data-pack="custom">
-            <span><b>${esc(s.custom.title)}</b><small>Свой пакет · ${s.custom.count} вопросов</small></span>
-            ${d.pack === "custom" ? `<span class="badge">Выбрано</span>` : ""}</button>` : ""}
-          <div class="pack-tools">
-            <label class="btn ghost small" for="pack-file">Загрузить свой (.json, .csv)</label>
-            <input type="file" id="pack-file" accept=".json,.csv,.txt,.xlsx" hidden>
-            <a class="btn ghost small" href="/editor" target="_blank" rel="noopener">Редактор вопросов</a>
-          </div>
-          <p class="error" id="pack-err" role="alert"></p>
-        </div>
-      </div>
-      <div>
-        <p class="section-title">Правила</p>
-        <div class="rules">
-          <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам, чтобы побеждали не числом</small></span>
-            <span class="seg">${[0, 2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n ? n + " команды" : "Выкл"}</button>`).join("")}</span></div>
-          ${RULES.map((r) => `
-            <label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
-              <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`).join("")}
-          <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, в следующей игре — без повторов</small></span>
-            <span class="seg">${[10, 20, 30, 0].map((n) => `<button type="button" class="${d.count === n ? "on" : ""}" data-count="${n}">${n || "Все"}</button>`).join("")}</span></div>
-          <div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд даётся на каждый вопрос</small></span>
-            <span class="seg">${[10, 20, 30].map((n) => `<button type="button" class="${d.seconds === n ? "on" : ""}" data-seconds="${n}">${n} с</button>`).join("")}</span></div>
-        </div>
-      </div>
-    </div>
-    ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}`;
+    <section><p class="section-title">1 · Тип игры</p>
+      <div class="mode-row">${MODES.map((m) => `
+        <button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${m.ready ? "" : "disabled"}>
+          <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span></button>`).join("")}</div>
+    </section>
+    <section><p class="section-title">2 · Вопросы</p>${packCards(s, d)}</section>
+    <section class="rules-line"><button class="btn ghost small" data-open-rules type="button">⚙ Правила</button>
+      <span class="tags">${rulesSummary(d).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</span></section>
+    ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}
+    ${rulesOpen ? rulesModal(d) : ""}`;
   $actions.innerHTML = `<button class="btn" data-act="configure">Создать игру →</button>`;
 }
 
 document.addEventListener("change", async (e) => {
-  if (e.target.id === "pack-file" && e.target.files[0]) {
-    const err = document.getElementById("pack-err");
-    err.textContent = "Загружаю…";
+  if (e.target.id === "siq-file" && e.target.files[0]) {
+    const file = e.target.files[0], err = document.getElementById("pack-err");
+    e.target.value = ""; // чтобы тот же файл можно было выбрать снова
+    if (err) err.textContent = `Загружаю ${(file.size / 1048576).toFixed(1)} МБ…`;
     try {
-      const pack = await QuizPack.readPackFile(e.target.files[0]);
+      const r = await fetch(`/api/host/upload_siq?room=${encodeURIComponent(room)}&token=${encodeURIComponent(token)}`,
+        { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file });
+      const res = await r.json();
+      if (res.error) throw new Error(res.error);
+      draft.mode = "jeopardy"; draft.si_pack = "custom";
+      lastSig = ""; await poll();
+    } catch (x) {
+      const el = document.getElementById("pack-err");
+      if (el) el.textContent = x.message || "Не получилось загрузить файл";
+    }
+    return;
+  }
+  if (e.target.id === "pack-file" && e.target.files[0]) {
+    const file = e.target.files[0], err = document.getElementById("pack-err");
+    e.target.value = "";
+    if (err) err.textContent = "Загружаю…";
+    try {
+      const pack = await QuizPack.readPackFile(file);
       const res = await post("upload", { pack });
       if (res.error) throw new Error(res.error);
       draft.pack = "custom";
@@ -578,9 +763,12 @@ document.addEventListener("change", async (e) => {
 });
 document.addEventListener("click", (e) => {
   if (!draft) return;
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-count]");
+  if (e.target.closest("[data-open-rules]")) { rulesOpen = true; return renderSetup(lastState); }
+  if (e.target.closest("[data-close-rules]")) { rulesOpen = false; return renderSetup(lastState); }
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-count]");
   if (!t || t.disabled) return;
   e.preventDefault();
+  if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
   if (t.dataset.mode) draft.mode = t.dataset.mode;
@@ -589,7 +777,19 @@ document.addEventListener("click", (e) => {
   renderSetup(lastState);
 });
 
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && rulesOpen) { rulesOpen = false; renderSetup(lastState); }
+});
+
 function live(s) {
+  const st = document.getElementById("si-timer");
+  if (st && s.si) {
+    const c = s.si.cur || {}, f = s.si.final || {};
+    if (s.phase === "si_question" && !c.exclusive) st.textContent = c.buzz_open ? `Жмите «Ответить»! · ${Math.ceil(c.left)} с` : `Читаем… кнопки откроются через ${Math.ceil(c.buzz_in)} с`;
+    else if (s.phase === "si_question") st.textContent = `Готовится отвечать · ${Math.ceil(c.buzz_in)} с`;
+    else if (s.phase === "si_answer") st.textContent = `Осталось ${Math.ceil(c.left)} с`;
+    else if (s.phase === "si_final_q") st.textContent = `Осталось ${Math.ceil(f.left)} с`;
+  }
   if (window.QuizMusic) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
   soundButton();
   const nx = document.getElementById("auto-next");
@@ -615,7 +815,8 @@ async function poll() {
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
-    const sig = JSON.stringify([s.phase, s.index, s.players, s.join]);
+    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" ? undefined : v)) : "";
+    const sig = JSON.stringify([s.phase, s.index, s.players, s.join]) + siKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {
@@ -654,6 +855,16 @@ document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
   if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
   if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
+  const pick = e.target.closest("[data-si-pick]");
+  if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
+  const ovr = e.target.closest("[data-si-ovr]");
+  if (ovr) { await post("si_override", { index: Number(ovr.dataset.siOvr) }); lastSig = ""; return poll(); }
+  if (e.target.closest("[data-si-replay]") && lastState && lastState.si) {
+    const c = lastState.si.cur || {};
+    if (c.melody) QuizMusic.melody(c.melody, c.tempo, c.instrument || "piano");
+    const a = document.querySelector(".si-media audio, .si-media video"); if (a) { a.currentTime = 0; a.play().catch(() => {}); }
+    return;
+  }
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {

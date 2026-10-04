@@ -30,6 +30,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+from siq import SiqError, answer_variants, parse_siq
+
 BASE = Path(__file__).parent
 STATIC = BASE / "static"
 PACKS_DIR = BASE / "packs"
@@ -46,6 +48,7 @@ LEADERS_SECONDS = 5  # автопереход: сколько показывае
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
+MAX_SIQ = 60 * 1024 * 1024  # самый большой пакет «Своей игры» (.siq)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
 MAX_QUESTIONS = 200
 OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
@@ -63,7 +66,8 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
-MODES = ["quiz"]  # «Своя игра» и «100 к 1» пока в разработке
+MODES = ["quiz", "jeopardy"]  # «100 к 1» пока в разработке
+SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 
 
@@ -241,6 +245,62 @@ for f in sorted(PACKS_DIR.glob("*.json")):
         print(f"Пакет {f.name} пропущен: {e}", flush=True)
 DEFAULT_PACK = "general" if "general" in PACKS else next(iter(PACKS), None)
 
+
+def clean_si_json(raw):
+    """Пакет «Своей игры» в нашем формате .json (как после чтения .siq, но ссылки на файлы — как в викторине)."""
+    rounds = []
+    for r in raw.get("rounds", []):
+        themes = []
+        for t in r.get("themes", []):
+            qs = []
+            for q in t.get("questions", []):
+                answers = q["answer"] if isinstance(q.get("answer"), list) else [q.get("answer")]
+                melody, tempo = clean_melody(q.get("melody"), q.get("tempo"))
+                qs.append({
+                    "price": int(q.get("price", 0)), "special": q.get("special", "simple"),
+                    "cat_cost": q.get("cat_cost"), "cat_theme": q.get("cat_theme"),
+                    "text": str(q.get("text", "")), "image": media_ref(q.get("image"), "image", BUILTIN_MEDIA, "_"),
+                    "audio": media_ref(q.get("audio"), "audio", BUILTIN_MEDIA, "_"), "video": None,
+                    "melody": melody, "tempo": tempo, "instrument": q.get("instrument"),
+                    "answer": [str(a) for a in answers if a], "answer_text": str(answers[0]),
+                    "answer_image": None, "answer_audio": None, "answer_note": q.get("note"),
+                })
+            themes.append({"name": t["name"], "questions": qs})
+        rounds.append({"name": r["name"], "final": bool(r.get("final")), "themes": themes})
+    return {"title": raw.get("title", "Своя игра"), "rounds": rounds}
+
+
+SI_PACKS = {}
+for f in sorted(SI_DIR.glob("*")) if SI_DIR.exists() else []:
+    try:
+        if f.suffix == ".siq":
+            SI_PACKS[f.stem] = parse_siq(f.read_bytes(), BUILTIN_MEDIA, "_")
+        elif f.suffix == ".json":
+            SI_PACKS[f.stem] = clean_si_json(json.loads(f.read_text(encoding="utf-8")))
+    except (SiqError, PackError, KeyError, ValueError, json.JSONDecodeError) as e:
+        print(f"Пакет «Своей игры» {f.name} пропущен: {e}", flush=True)
+
+
+def si_info(pack):
+    rounds = [r for r in pack["rounds"] if not r["final"]]
+    count = sum(len(t["questions"]) for r in rounds for t in r["themes"])
+    return {"title": pack["title"], "rounds": len(rounds), "count": count, "final": any(r["final"] for r in pack["rounds"])}
+
+
+def si_match(given, answers):
+    """Проверка ответа в «Своей игре»: как в викторине, плюс если ответ — заметная часть правильного."""
+    variants = answer_variants(answers)
+    if text_matches(given, variants):
+        return True
+    g = sound_key(given)
+    if len(g) < 4:
+        return False
+    for v in variants:
+        k = sound_key(v)
+        if k and (g in k or k in g) and min(len(g), len(k)) / max(len(g), len(k)) >= 0.6:
+            return True
+    return False
+
 DEFAULTS = {
     "mode": "quiz",
     "pack": DEFAULT_PACK,
@@ -252,11 +312,356 @@ DEFAULTS = {
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
+    "si_pack": next(iter(SI_PACKS), None),  # пакет «Своей игры»
 }
 
 
 def media_total():
     return sum(len(d) for g in rooms.values() for _, d in g.media.values())
+
+
+class SiEngine:
+    """«Своя игра»: табло тем и цен, кнопка «Ответить», кот в мешке, аукцион, вопрос без риска, финал.
+
+    Этапы (game.phase): si_round → si_board → [si_cat_give | si_stake] → si_question ⇄ si_answer
+    → si_reveal → si_board … → si_final_bet → si_final_q → si_final_reveal → final.
+    """
+
+    ROUND_SECONDS = 4  # заставка раунда
+    BUZZ_WINDOW = 12  # сколько секунд ждём нажатия «Ответить»
+    REBUZZ_WINDOW = 8  # после неверного ответа — для остальных
+    REVEAL_SECONDS = 6  # показ правильного ответа, потом табло
+
+    def __init__(self, game, pack):
+        self.g = game
+        self.pack = pack
+        self.rounds = [r for r in pack["rounds"] if not r["final"]]
+        finals = [(t["name"], t["questions"][0]) for r in pack["rounds"] if r["final"] for t in r["themes"] if t["questions"]]
+        self.final = random.choice(finals) if finals else None
+        self.r = -1
+        self.played = set()
+        self.chooser = None
+        self.cur = None
+        self.verdicts = []
+        self.bets, self.final_answers = {}, {}
+
+    # ---------- служебное ----------
+    @property
+    def answer_time(self):
+        return self.g.settings["seconds"]
+
+    def phase(self, name):
+        self.g.set_phase(name)
+
+    def players(self):
+        return self.g.players
+
+    def score(self, pid, delta):
+        p = self.players().get(pid)
+        if p is not None:
+            p["score"] += delta
+            p["last_points"] = delta
+
+    def pick_chooser(self):
+        if self.chooser not in self.players():
+            online = self.g.online() or list(self.players())
+            self.chooser = random.choice(online) if online else None
+
+    def round(self):
+        return self.rounds[self.r]
+
+    def round_done(self):
+        return all((ti, qi) in self.played for ti, t in enumerate(self.round()["themes"]) for qi in range(len(t["questions"])))
+
+    # ---------- ход игры ----------
+    def start(self):
+        for p in self.players().values():
+            p.update(score=0, last_points=0)
+        self.next_round()
+
+    def next_round(self):
+        self.r += 1
+        self.played = set()
+        if self.r < len(self.rounds):
+            self.phase("si_round")
+        else:
+            self.start_final()
+
+    def to_board(self):
+        self.cur, self.verdicts = None, []
+        self.pick_chooser()
+        self.phase("si_board")
+
+    def pick(self, ti, qi):
+        if self.g.phase != "si_board":
+            return False
+        themes = self.round()["themes"]
+        if not (0 <= ti < len(themes) and 0 <= qi < len(themes[ti]["questions"])) or (ti, qi) in self.played:
+            return False
+        self.played.add((ti, qi))
+        q = themes[ti]["questions"][qi]
+        self.cur = {
+            "q": q, "theme": themes[ti]["name"], "special": q["special"], "stake": q["price"],
+            "answerer": None, "exclusive": False, "tried": set(), "false_start": {},
+            "buzz_at": 0.0, "deadline": 0.0,
+        }
+        self.verdicts = []
+        if q["special"] == "cat":
+            self.cur["stake"] = q["cat_cost"] or q["price"]
+            self.cur["theme"] = q["cat_theme"] or themes[ti]["name"]
+            others = [pid for pid in self.players() if pid != self.chooser]
+            if not others:  # играет один — вопрос остаётся ему
+                return self.give(self.chooser, self.chooser, force=True)
+            self.phase("si_cat_give")
+        elif q["special"] == "auction":
+            have = self.players().get(self.chooser, {}).get("score", 0)
+            if have <= q["price"]:
+                return self.stake(self.chooser, q["price"], force=True)
+            self.phase("si_stake")
+        elif q["special"] == "norisk":
+            self.cur.update(answerer=self.chooser, exclusive=True, stake=q["price"] * 2)
+            self.show()
+        else:
+            self.show()
+        return True
+
+    def give(self, pid, target, force=False):
+        if not force and (self.g.phase != "si_cat_give" or pid != self.chooser or target == pid or target not in self.players()):
+            return False
+        self.cur.update(answerer=target, exclusive=True)
+        self.show()
+        return True
+
+    def stake(self, pid, amount, force=False):
+        if not force:
+            if self.g.phase != "si_stake" or pid != self.chooser or not isinstance(amount, int):
+                return False
+            have = self.players()[pid]["score"]
+            if not self.cur["q"]["price"] <= amount <= max(have, self.cur["q"]["price"]):
+                return False
+        self.cur.update(stake=amount, answerer=self.chooser, exclusive=True)
+        self.show()
+        return True
+
+    def show(self):
+        q = self.cur["q"]
+        read = len(q["text"]) / 14 + (1.5 if q["image"] else 0) + (4 if q["audio"] or q.get("melody") or q["video"] else 0)
+        now = time.time()
+        self.cur["buzz_at"] = now + min(10, max(2, read))
+        self.cur["deadline"] = self.cur["buzz_at"] + self.BUZZ_WINDOW
+        self.phase("si_question")
+
+    def open_buzz(self):
+        """Ведущий: «Открыть кнопки» — не ждать конца чтения."""
+        now = time.time()
+        self.cur["buzz_at"] = now
+        self.cur["deadline"] = now + self.BUZZ_WINDOW
+
+    def buzz(self, pid):
+        if self.g.phase != "si_question" or self.cur["exclusive"] or pid not in self.players() or pid in self.cur["tried"]:
+            return "no"
+        now = time.time()
+        if now < self.cur["buzz_at"]:
+            self.cur["false_start"][pid] = now + 1.0  # фальстарт: кнопка заблокирована на секунду
+            return "early"
+        if self.cur["false_start"].get(pid, 0) > now:
+            return "early"
+        self.cur["answerer"] = pid
+        self.cur["deadline"] = now + self.answer_time
+        self.phase("si_answer")
+        return "ok"
+
+    def answer(self, pid, text):
+        # в коте в мешке, аукционе и вопросе без риска отвечающий известен — можно отвечать сразу
+        early = self.g.phase == "si_question" and self.cur["exclusive"]
+        if (self.g.phase != "si_answer" and not early) or pid != self.cur["answerer"]:
+            return False
+        self.judge(pid, str(text or "").strip()[:80])
+        return True
+
+    def delta(self, ok):
+        stake = self.cur["stake"]
+        if self.cur["special"] == "norisk":
+            return stake if ok else 0
+        return stake if ok else -stake
+
+    def judge(self, pid, text):
+        ok = bool(text) and si_match(text, self.cur["q"]["answer"])
+        d = self.delta(ok)
+        self.score(pid, d)
+        self.verdicts.append({"pid": pid, "text": text, "ok": ok, "delta": d})
+        if ok:
+            self.chooser = pid
+            return self.phase("si_reveal")
+        self.cur["tried"].add(pid)
+        left = [x for x in self.g.online() if x not in self.cur["tried"]]
+        if self.cur["exclusive"] or not left:
+            return self.phase("si_reveal")
+        now = time.time()  # остальные могут попробовать
+        self.cur.update(answerer=None, buzz_at=now, deadline=now + self.REBUZZ_WINDOW)
+        self.phase("si_question")
+
+    def override(self, i):
+        """Ведущий исправляет проверку: засчитать или не засчитывать ответ."""
+        if self.g.phase == "si_final_reveal":
+            if not 0 <= i < len(self.verdicts):
+                return False
+            v = self.verdicts[i]
+            self.score(v["pid"], -2 * v["delta"])
+            v["ok"], v["delta"] = not v["ok"], -v["delta"]
+            return True
+        if self.g.phase != "si_reveal" or not 0 <= i < len(self.verdicts):
+            return False
+        v = self.verdicts[i]
+        self.score(v["pid"], -v["delta"])
+        v["ok"] = not v["ok"]
+        v["delta"] = self.delta(v["ok"])
+        self.score(v["pid"], v["delta"])
+        if v["ok"]:
+            self.chooser = v["pid"]
+        self.g.phase_at = time.time()  # дать время посмотреть
+        return True
+
+    def after_reveal(self):
+        if self.round_done():
+            self.next_round()
+        else:
+            self.to_board()
+
+    # ---------- финал ----------
+    def eligible(self):
+        return [pid for pid, p in self.players().items() if p["score"] > 0]
+
+    def start_final(self):
+        self.cur, self.verdicts = None, []
+        if not self.final or not self.eligible():
+            return self.g.set_phase("final")
+        self.bets, self.final_answers = {}, {}
+        self.phase("si_final_bet")
+
+    def bet(self, pid, amount):
+        if self.g.phase != "si_final_bet" or pid not in self.eligible() or not isinstance(amount, int):
+            return False
+        if not 1 <= amount <= self.players()[pid]["score"]:
+            return False
+        self.bets[pid] = amount
+        return True
+
+    def final_question(self):
+        for pid in self.eligible():
+            self.bets.setdefault(pid, 1)
+        self.cur = {"deadline": time.time() + max(30, self.answer_time * 2)}
+        self.phase("si_final_q")
+
+    def final_answer(self, pid, text):
+        if self.g.phase != "si_final_q" or pid not in self.bets:
+            return False
+        self.final_answers[pid] = str(text or "").strip()[:80]
+        return True
+
+    def final_reveal(self):
+        q = self.final[1]
+        self.verdicts = []
+        for pid, bet in self.bets.items():
+            text = self.final_answers.get(pid, "")
+            ok = bool(text) and si_match(text, q["answer"])
+            d = bet if ok else -bet
+            self.score(pid, d)
+            self.verdicts.append({"pid": pid, "text": text, "ok": ok, "delta": d, "bet": bet})
+        self.phase("si_final_reveal")
+
+    # ---------- время и ведущий ----------
+    def tick(self):
+        ph, now = self.g.phase, time.time()
+        waited = now - self.g.phase_at
+        if ph == "si_round" and waited >= self.ROUND_SECONDS:
+            self.to_board()
+        elif ph == "si_question":
+            if self.cur["exclusive"] and now >= self.cur["buzz_at"]:
+                self.cur["deadline"] = now + self.answer_time
+                self.phase("si_answer")
+            elif not self.cur["exclusive"] and now >= self.cur["deadline"]:
+                self.phase("si_reveal")  # никто не ответил
+        elif ph == "si_answer" and now >= self.cur["deadline"]:
+            self.judge(self.cur["answerer"], "")  # время вышло
+        elif ph == "si_reveal" and self.g.settings["auto"] and waited >= self.REVEAL_SECONDS:
+            self.after_reveal()
+        elif ph == "si_final_bet" and (waited >= 30 or all(pid in self.bets for pid in self.eligible())):
+            self.final_question()
+        elif ph == "si_final_q" and (now >= self.cur["deadline"] or all(pid in self.final_answers for pid in self.bets)):
+            self.final_reveal()
+
+    def host_next(self):
+        ph = self.g.phase
+        if ph == "si_round":
+            self.to_board()
+        elif ph == "si_cat_give":  # игрок не выбрал — вопрос уходит случайному сопернику
+            self.give(self.chooser, random.choice([p for p in self.players() if p != self.chooser]), force=True)
+        elif ph == "si_stake":
+            self.stake(self.chooser, self.cur["q"]["price"], force=True)
+        elif ph == "si_question":
+            self.open_buzz() if not self.cur["exclusive"] else self.tick()
+        elif ph == "si_answer":
+            self.judge(self.cur["answerer"], "")
+        elif ph == "si_reveal":
+            self.after_reveal()
+        elif ph == "si_final_bet":
+            self.final_question()
+        elif ph == "si_final_q":
+            self.final_reveal()
+        elif ph == "si_final_reveal":
+            self.g.set_phase("final")
+
+    # ---------- что показать ----------
+    def name(self, pid):
+        p = self.players().get(pid)
+        return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
+
+    def state(self, pid):
+        ph, now = self.g.phase, time.time()
+        s = {"round_index": self.r, "rounds_total": len(self.rounds), "chooser": self.name(self.chooser)}
+        if 0 <= self.r < len(self.rounds):
+            s["round_name"] = self.round()["name"]
+        if ph in ("si_round", "si_board") and 0 <= self.r < len(self.rounds):
+            s["board"] = [{"name": t["name"], "cells": [{"price": q["price"], "played": (ti, qi) in self.played}
+                                                        for qi, q in enumerate(t["questions"])]}
+                          for ti, t in enumerate(self.round()["themes"])]
+        if self.cur and "q" in self.cur and ph in ("si_cat_give", "si_stake", "si_question", "si_answer", "si_reveal"):
+            q, c = self.cur["q"], self.cur
+            cur = {"theme": c["theme"], "price": q["price"], "stake": c["stake"], "special": c["special"],
+                   "answerer": self.name(c["answerer"]), "exclusive": c["exclusive"],
+                   "tried": list(c["tried"]), "max_stake": max(self.players().get(self.chooser, {}).get("score", 0), q["price"])}
+            if ph in ("si_question", "si_answer", "si_reveal"):
+                cur.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"],
+                           melody=q.get("melody"), tempo=q.get("tempo"), instrument=q.get("instrument"))
+                cur["buzz_open"] = now >= c["buzz_at"]
+                cur["buzz_in"] = max(0, round(c["buzz_at"] - now, 1))
+                cur["left"] = max(0, round(c["deadline"] - now, 1))
+            if ph == "si_reveal":
+                cur.update(answer=q["answer_text"], answer_image=q["answer_image"], answer_audio=q["answer_audio"], note=q["answer_note"])
+            s["cur"] = cur
+        if ph in ("si_reveal", "si_final_reveal"):
+            s["verdicts"] = [dict(v, player=self.name(v["pid"])) for v in self.verdicts]
+        if ph.startswith("si_final"):
+            theme, q = self.final
+            f = {"theme": theme, "eligible": [self.name(x) for x in self.eligible() if ph == "si_final_bet"] or [self.name(x) for x in self.bets],
+                 "bets_done": list(self.bets), "answered": list(self.final_answers)}
+            if ph in ("si_final_q", "si_final_reveal"):
+                f.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"],
+                         left=max(0, round(self.cur["deadline"] - now, 1)) if ph == "si_final_q" else 0)
+            if ph == "si_final_reveal":
+                f["answer"] = q["answer_text"]
+            s["final"] = f
+        if pid in self.players():
+            me = {"is_chooser": pid == self.chooser}
+            if self.cur and "q" in self.cur:
+                me.update(is_answerer=pid == self.cur.get("answerer"), tried=pid in self.cur.get("tried", ()),
+                          blocked=self.cur.get("false_start", {}).get(pid, 0) > now)
+            if ph.startswith("si_final"):
+                me.update(eligible=pid in self.eligible() or pid in self.bets, bet=self.bets.get(pid),
+                          answered=pid in self.final_answers)
+            s["me"] = me
+        return s
 
 
 class Game:
@@ -272,6 +677,9 @@ class Game:
         self.media = {}  # файлы из своего пакета
         self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
         self.selected = []
+        self.si = None  # «Своя игра», если выбран этот режим
+        self.si_custom = None  # загруженный пакет .siq
+        self.si_media = {}
         self.reset()
 
     def clean_settings(self, data):
@@ -290,7 +698,24 @@ class Game:
             s["seconds"] = data["seconds"]
         if data.get("count") in (0, 10, 20, 30):
             s["count"] = data["count"]
+        if data.get("si_pack") in SI_PACKS or (data.get("si_pack") == "custom" and self.si_custom):
+            s["si_pack"] = data["si_pack"]
         return s
+
+    @property
+    def si_pack(self):
+        key = self.settings.get("si_pack")
+        return self.si_custom if key == "custom" else SI_PACKS.get(key)
+
+    def upload_siq(self, data):
+        store = {}
+        pack = parse_siq(data, store, self.code)
+        size = sum(len(d) for _, d in store.values())
+        if media_total() - sum(len(d) for _, d in self.si_media.values()) + size > MAX_MEDIA_TOTAL:
+            raise SiqError("на сервере закончилось место для файлов, попробуй пакет поменьше")
+        self.si_custom, self.si_media = pack, store
+        self.settings["si_pack"] = "custom"
+        return pack
 
     @property
     def pack(self):
@@ -307,8 +732,12 @@ class Game:
         self.answers = {}  # id -> {"value", "time"}
         self.all_answered_at = None
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
+        self.si = None
         if phase == "lobby":
-            self.pick_questions()
+            if self.settings["mode"] == "jeopardy" and self.si_pack:
+                self.si = SiEngine(self, self.si_pack)
+            else:
+                self.pick_questions()
 
     def pick_questions(self):
         """Выбираем вопросы на игру: случайные и по возможности те, что ещё не попадались."""
@@ -397,6 +826,8 @@ class Game:
 
     def tick(self):
         """Двигает игру по времени: конец вопроса и автопереход."""
+        if self.si and self.phase.startswith("si_"):
+            return self.si.tick()
         now = time.time()
         if self.phase == "question":
             online = self.online()
@@ -406,7 +837,7 @@ class Game:
             time_up = now - self.started_at >= self.seconds
             if time_up or (self.all_answered_at and now - self.all_answered_at >= REVEAL_PAUSE):
                 self.finish_question()
-        elif self.settings["auto"] and self.auto_left() == 0:
+        elif self.settings["auto"] and self.auto_left() == 0 and not self.phase.startswith("si_"):
             self.next()
 
     def auto_left(self):
@@ -536,11 +967,17 @@ class Game:
             "version": VERSION,
             "auto_left": self.auto_left(),
         }
+        if self.si:
+            s["title"] = self.si_pack["title"]
+            s["si"] = self.si.state(pid if self.owns(pid, device) else None)
         if self.phase == "setup":
+            s["si_packs"] = [{"id": k, **si_info(p)} for k, p in SI_PACKS.items()]
+            if self.si_custom:
+                s["si_custom"] = si_info(self.si_custom)
             s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()]
             if self.custom:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"])}
-        if self.phase in ("question", "reveal"):
+        if self.phase in ("question", "reveal") and not self.si:
             q = self.question()
             s["qtype"] = q["type"]
             s["question"] = q["q"]
@@ -685,8 +1122,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_bytes(path.read_bytes(), mime, cache="public, max-age=86400")
         elif parts[0] == "m" and len(parts) == 3:
             with lock:
-                store = BUILTIN_MEDIA if parts[1] == "_" else getattr(rooms.get(parts[1]), "media", {})
-                item = store.get(parts[2])
+                room = rooms.get(parts[1])
+                if parts[1] == "_":
+                    item = BUILTIN_MEDIA.get(parts[2])
+                else:
+                    item = room and (room.media.get(parts[2]) or room.si_media.get(parts[2]))
             if not item:
                 return self.send_json({"error": "Файл не найден"}, 404)
             self.send_bytes(item[1], item[0], cache="public, max-age=86400")
@@ -704,8 +1144,32 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_json({"error": "Страница не найдена"}, 404)
 
+    def upload_siq(self, url):
+        query = parse_qs(url.query)
+        length = int(self.headers.get("Content-Length") or 0)
+        if length > MAX_SIQ:
+            return self.send_json({"error": "Пакет больше 60 МБ — уменьши картинки или раздели на части"}, 413)
+        body = self.rfile.read(length)
+        with lock:
+            game = rooms.get(query.get("room", [""])[0])
+            if not game:
+                return self.send_json({"error": "Комната не найдена"}, 404)
+            if query.get("token", [""])[0] != game.host_token or self.device() != game.host_device:
+                return self.send_json({"error": "Управлять игрой может только ведущий этой комнаты"}, 403)
+            if game.phase != "setup":
+                return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
+            try:
+                pack = game.upload_siq(body)
+            except SiqError as e:
+                return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
+            game.settings["mode"] = "jeopardy"
+            return self.send_json({"ok": True, **si_info(pack)})
+
     def do_POST(self):
-        path = urlparse(self.path).path
+        url = urlparse(self.path)
+        path = url.path
+        if path == "/api/host/upload_siq":
+            return self.upload_siq(url)
         data = self.read_json()
         if data is None:
             return self.send_json({"error": "Файл слишком большой: максимум 25 МБ вместе с картинками и аудио"}, 413)
@@ -764,6 +1228,32 @@ class Handler(BaseHTTPRequestHandler):
                 game.balance_teams()
                 return self.send_json({"pid": pid})
 
+            if path.startswith("/api/si/"):
+                pid, si = data.get("pid"), game.si
+                if not si or not game.owns(pid, device):
+                    return self.send_json({"ok": False})
+                game.tick()
+                action = path.rsplit("/", 1)[1]
+                if action == "pick" and pid == si.chooser:
+                    ok = si.pick(data.get("theme"), data.get("question"))
+                elif action == "give":
+                    ok = si.give(pid, data.get("to"))
+                elif action == "stake":
+                    ok = si.stake(pid, data.get("amount"))
+                elif action == "buzz":
+                    res = si.buzz(pid)
+                    return self.send_json({"ok": res == "ok", "result": res})
+                elif action == "answer":
+                    ok = si.answer(pid, data.get("text"))
+                elif action == "bet":
+                    ok = si.bet(pid, data.get("amount"))
+                elif action == "final":
+                    ok = si.final_answer(pid, data.get("text"))
+                else:
+                    ok = False
+                game.tick()
+                return self.send_json({"ok": bool(ok)})
+
             if path == "/api/avatar":
                 pid, avatar = data.get("pid"), data.get("avatar")
                 ok = game.owns(pid, device) and avatar in AVATARS
@@ -810,6 +1300,15 @@ class Handler(BaseHTTPRequestHandler):
                     game.configure(data.get("settings") or {})
                 elif action == "setup":
                     game.reset("setup")  # назад в меню, игроки остаются
+                elif action == "si_pick" and game.si:
+                    game.si.pick(data.get("theme"), data.get("question"))
+                elif action == "si_override" and game.si:
+                    game.si.override(data.get("index"))
+                elif action == "next" and game.si and game.phase == "lobby":
+                    game.si.start()
+                elif action == "next" and game.si and game.phase.startswith("si_"):
+                    game.tick()
+                    game.si.host_next()
                 elif action == "next":
                     if game.phase in ("setup", "final"):
                         return self.send_json({"error": "Сначала создай игру"}, 400)

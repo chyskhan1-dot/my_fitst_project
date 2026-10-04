@@ -76,6 +76,7 @@ textarea { resize: vertical; min-height: 54px; }
 .opt .mark span { transition: opacity .15s; }
 .opt.right .mark span { opacity: 0; }
 .opt .mark { position: relative; }
+.opt .mark.num { cursor: default; font-family: var(--display); font-weight: 800; }
 .media { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .slot { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: var(--bg); min-width: 0; }
 .slot-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: var(--muted); }
@@ -142,10 +143,32 @@ textarea { resize: vertical; min-height: 54px; }
 const SHAPES = ["▲", "◆", "●", "■"];
 const DRAFT = "quiz-editor-draft";
 const $list = document.getElementById("list");
-let pack = loadDraft() || blank();
+let pack = loadDraft();
+pack = pack ? fromPack(toPackRaw(pack)) : blank();
+function toPackRaw(p) { // черновик старого формата: у вопросов не было типа
+  return { title: p.title, questions: p.questions.map((q) => (q.type ? q : { ...q, type: "choice" })).map((q) => {
+    const filled = q.options.filter((o) => String(o).trim());
+    if (q.type === "text") return { ...q, answer: filled };
+    if (q.type === "order") return q;
+    if (q.type === "multi") return q;
+    return q;
+  }) };
+}
 
 function blank() { return { title: "", questions: [emptyQ()] }; }
-function emptyQ() { return { q: "", options: ["", "", "", ""], answer: 0, image: null, audio: null }; }
+function emptyQ() { return { type: "choice", q: "", options: ["", "", "", ""], answer: -1, image: null, audio: null }; }
+const TYPES = [
+  ["choice", "Один верный"],
+  ["multi", "Несколько верных"],
+  ["order", "По порядку"],
+  ["text", "Свой ответ (текст)"],
+];
+const TYPE_HINTS = {
+  choice: "Нажми на значок слева от правильного варианта.",
+  multi: "Отметь все правильные варианты.",
+  order: "Впиши варианты в правильном порядке — игрокам они покажутся перемешанными. За частично верный порядок — часть очков.",
+  text: "Игрок печатает ответ сам. Регистр, «ё» и небольшие опечатки не важны; русская и латинская запись сравниваются по звучанию, фамилия засчитывается и без имени. Добавь другие написания, если они сильно отличаются.",
+};
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // В редакторе у вопроса всегда 4 поля для вариантов
@@ -153,8 +176,13 @@ function fromPack(p) {
   return {
     title: String(p.title || ""),
     questions: (p.questions || []).map((q) => {
-      const options = [0, 1, 2, 3].map((i) => String((q.options || [])[i] ?? ""));
-      return { q: String(q.q || ""), options, answer: Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1, image: q.image || null, audio: q.audio || null };
+      const type = ["multi", "order", "text"].includes(q.type) ? q.type : "choice";
+      const src = type === "text" ? [].concat(q.answer || []) : q.options || [];
+      const options = [0, 1, 2, 3].map((i) => String(src[i] ?? ""));
+      let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
+        : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
+      if (type === "order" || type === "text") answer = -1;
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null };
     }),
   };
 }
@@ -165,7 +193,12 @@ function toPack() {
     title: pack.title.trim() || "Мой пакет",
     questions: pack.questions.map((q) => {
       const kept = q.options.map((text, i) => ({ text: text.trim(), i })).filter((o) => o.text);
-      const q2 = { q: q.q.trim(), options: kept.map((o) => o.text), answer: kept.findIndex((o) => o.i === q.answer) };
+      const q2 = { q: q.q.trim() };
+      if (q.type !== "choice") q2.type = q.type;
+      if (q.type === "text") q2.answer = kept.map((o) => o.text);
+      else q2.options = kept.map((o) => o.text);
+      if (q.type === "choice") q2.answer = kept.findIndex((o) => o.i === q.answer);
+      if (q.type === "multi") q2.answer = kept.map((o, k) => (q.answer.includes(o.i) ? k : -1)).filter((k) => k >= 0);
       if (q.image) q2.image = q.image;
       if (q.audio) q2.audio = q.audio;
       return q2;
@@ -176,8 +209,11 @@ function toPack() {
 function problems(q) {
   const errs = [];
   if (!q.q.trim()) errs.push("нет текста вопроса");
-  if (q.options.filter((o) => o.trim()).length < 2) errs.push("нужно минимум 2 варианта");
-  if (!q.options[q.answer] || !q.options[q.answer].trim()) errs.push("отметь правильный ответ (нажми на значок слева от варианта)");
+  const filled = q.options.filter((o) => o.trim()).length;
+  if (q.type === "text") { if (!filled) errs.push("впиши правильный ответ"); return errs; }
+  if (filled < 2) errs.push("нужно минимум 2 варианта");
+  if (q.type === "choice" && (!q.options[q.answer] || !q.options[q.answer].trim())) errs.push("отметь правильный ответ (нажми на значок слева от варианта)");
+  if (q.type === "multi" && !q.answer.some((k) => q.options[k] && q.options[k].trim())) errs.push("отметь хотя бы один правильный вариант");
   return errs;
 }
 
@@ -212,6 +248,18 @@ function slot(q, i, kind) {
   </div>`;
 }
 
+function optionRow(q, i, o, k) {
+  const right = q.type === "choice" ? q.answer === k : q.type === "multi" ? q.answer.includes(k) : false;
+  const placeholder = q.type === "text" ? (k ? "Другое написание (необязательно)" : "Правильный ответ")
+    : q.type === "order" ? `${k + 1}-й по порядку${k > 1 ? " (необязательно)" : ""}`
+    : `Вариант ${k + 1}${k > 1 ? " (необязательно)" : ""}`;
+  const mark = q.type === "order" ? `<span class="mark num" style="--c:var(--a${k})">${k + 1}</span>`
+    : q.type === "text" ? `<span class="mark num" style="--c:var(--good)">✓</span>`
+    : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>`;
+  return `<div class="opt ${right ? "right" : ""}">${mark}
+    <input type="text" data-opt="${k}" data-i="${i}" maxlength="${q.type === "text" ? 60 : 100}" value="${esc(o)}" placeholder="${placeholder}" aria-label="${placeholder}"></div>`;
+}
+
 function card(q, i) {
   const errs = problems(q);
   return `<section class="panel card ${errs.length ? "bad" : ""}" data-card="${i}">
@@ -222,13 +270,12 @@ function card(q, i) {
       <button class="btn icon" data-copy="${i}" aria-label="Копировать">⧉</button>
       <button class="btn icon danger" data-del="${i}" aria-label="Удалить">✕</button>
     </div>
-    <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
-    <div class="opts">${q.options.map((o, k) => `
-      <div class="opt ${q.answer === k ? "right" : ""}">
-        <button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Сделать правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>
-        <input type="text" data-opt="${k}" data-i="${i}" maxlength="100" value="${esc(o)}" placeholder="Вариант ${k + 1}${k > 1 ? " (необязательно)" : ""}" aria-label="Вариант ${k + 1}">
-      </div>`).join("")}
+    <div class="row">
+      <select data-type="${i}" aria-label="Тип вопроса ${i + 1}" style="width:auto">${TYPES.map(([v, n]) => `<option value="${v}" ${q.type === v ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <span class="help" style="flex:1 1 260px">${TYPE_HINTS[q.type]}</span>
     </div>
+    <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
+    <div class="opts">${q.options.map((o, k) => optionRow(q, i, o, k)).join("")}</div>
     <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}</div>
     <div class="errs" data-errs="${i}">${errs.length ? "Нужно поправить: " + errs.join(", ") : ""}</div>
   </section>`;
@@ -273,6 +320,15 @@ $list.addEventListener("input", (e) => {
 
 $list.addEventListener("change", async (e) => {
   const t = e.target, i = Number(t.dataset.i);
+  if (t.dataset.type != null) {
+    const q = pack.questions[Number(t.dataset.type)], was = q.type;
+    q.type = t.value;
+    if (q.type === "multi") q.answer = was === "choice" && q.answer >= 0 ? [q.answer] : [];
+    else if (q.type === "choice") q.answer = was === "multi" && q.answer.length ? q.answer[0] : -1;
+    else q.answer = -1;
+    render();
+    return;
+  }
   if (t.dataset.link) {
     const v = t.value.trim();
     if (v && !/^https?:\/\//.test(v)) { toast("Ссылка должна начинаться с https://"); return; }
@@ -291,7 +347,12 @@ $list.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   const i = Number(b.dataset.i);
-  if (b.dataset.right != null) { pack.questions[i].answer = Number(b.dataset.right); render(); }
+  if (b.dataset.right != null) {
+    const q = pack.questions[i], k = Number(b.dataset.right);
+    if (q.type === "multi") q.answer = q.answer.includes(k) ? q.answer.filter((x) => x !== k) : [...q.answer, k];
+    else q.answer = k;
+    render();
+  }
   else if (b.dataset.clear) { pack.questions[i][b.dataset.clear] = null; render(); }
   else if (b.dataset.move) {
     const j = i + Number(b.dataset.move), qs = pack.questions;

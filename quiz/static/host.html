@@ -164,6 +164,17 @@ a.btn { text-decoration: none; display: inline-block; }
 .pack-tools { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn.small { padding: 10px 16px; font-size: .8em; cursor: pointer; }
 
+/* интерактивные вопросы */
+.qhint { margin: 0; font-size: 1.3em; font-weight: 800; color: var(--accent); text-align: center; }
+.order-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.order-list li { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); font-weight: 800; font-size: 1.15em; }
+.order-list .num { font-family: var(--display); color: var(--accent-ink); background: var(--accent); width: 1.8em; height: 1.8em; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.text-answer { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 5vw, 64px); color: var(--good); }
+.chip.said { cursor: default; padding: 8px 14px; font-size: .85em; }
+.chip.said.ok { border-color: var(--good); }
+.chip.said.no { color: var(--muted); }
+.chip.said:hover { text-decoration: none; }
+
 /* главное меню */
 .setup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
 .section-title { font-family: var(--display); font-weight: 700; font-size: .95em; margin: 0 0 14px; }
@@ -295,10 +306,35 @@ function media(s) {
   </div>`;
 }
 
+const HINTS = {
+  multi: "☑️ Выбери на телефоне все верные варианты",
+  order: "🔢 Расставь на телефоне по порядку",
+  text: "✍️ Напиши ответ на телефоне",
+};
+
+function questionBody(s) {
+  const hint = HINTS[s.qtype] ? `<p class="qhint rise">${HINTS[s.qtype]}</p>` : "";
+  if (s.qtype === "text") return hint;
+  return hint + options(s, false);
+}
+
+function revealBody(s) {
+  if (s.qtype === "order") {
+    return `<ol class="order-list">${s.correct_order.map((o, i) => `<li class="rise" style="--i:${i}"><span class="num">${i + 1}</span>${esc(o)}</li>`).join("")}</ol>`;
+  }
+  if (s.qtype === "text") {
+    return `<div class="text-answer rise">${esc(s.correct_text)}</div>
+      ${s.text_answers.length ? `<div class="chips">${s.text_answers.map((a) =>
+        `<span class="chip said ${a.ok ? "ok" : "no"}">${a.ok ? "✓" : "✗"} ${esc(a.name)}: «${esc(a.text)}»</span>`).join("")}</div>` : ""}`;
+  }
+  return options(s, true);
+}
+
 function options(s, reveal) {
   const total = reveal ? Math.max(1, s.counts.reduce((a, b) => a + b, 0)) : 1;
   return `<div class="options">${s.options.map((o, i) => {
-    const cls = reveal ? (i === s.correct ? "right" : "dim") : "rise";
+    const right = Array.isArray(s.correct) ? s.correct.includes(i) : i === s.correct;
+    const cls = reveal ? (right ? "right" : "dim") : "rise";
     const fill = reveal ? `<span class="fill" style="--w:0%" data-w="${(s.counts[i] / total) * 100}%"></span>` : "";
     const count = reveal ? `<span class="count">${s.counts[i]}</span>` : "";
     return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span><span class="label">${esc(o)}</span>${count}</div>`;
@@ -348,8 +384,9 @@ function render(s) {
     const url = (s.join || location.origin) + "/?room=" + s.room;
     const st = s.settings;
     const tags = [
-      `Вопросы: ${s.title} (${s.total})`,
+      `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
+      st.count ? `${s.total} случайных вопросов` : "Все вопросы",
       `${st.seconds} сек на ответ`,
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
@@ -386,19 +423,19 @@ function render(s) {
         <div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="bar" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><span id="timer">${Math.ceil(s.left)}</span></div>
       </div>
       ${media(s)}
-      ${options(s, false)}
+      ${questionBody(s)}
       <p class="muted" id="answered"></p>`;
     const audio = document.querySelector(".qaudio audio");
     if (audio) audio.play().catch(() => {}); // если браузер не дал включить звук сам — есть кнопка ▶
     $actions.innerHTML = `<button class="btn ghost" data-act="next">Показать ответ</button>`;
   } else if (s.phase === "reveal") {
     const last = s.index + 1 >= s.total;
-    const right = s.players.filter((p) => p.last > 0).length;
+    const partial = s.partial_count ? `, частично: <b style="color:var(--ink)">${s.partial_count}</b>` : "";
     $main.innerHTML = `
       <div><div class="eyebrow">Правильный ответ</div><h2>${esc(s.question)}</h2></div>
       ${s.image ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
-      ${options(s, true)}
-      <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${right} из ${s.players.length}</b></p>`;
+      ${revealBody(s)}
+      <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>`;
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
     const label = last ? "Итоги игры" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
@@ -463,6 +500,8 @@ function renderSetup(s) {
           ${RULES.map((r) => `
             <label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
               <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`).join("")}
+          <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, в следующей игре — без повторов</small></span>
+            <span class="seg">${[10, 20, 30, 0].map((n) => `<button type="button" class="${d.count === n ? "on" : ""}" data-count="${n}">${n || "Все"}</button>`).join("")}</span></div>
           <div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд даётся на каждый вопрос</small></span>
             <span class="seg">${[10, 20, 30].map((n) => `<button type="button" class="${d.seconds === n ? "on" : ""}" data-seconds="${n}">${n} с</button>`).join("")}</span></div>
         </div>
@@ -493,13 +532,14 @@ document.addEventListener("change", async (e) => {
 });
 document.addEventListener("click", (e) => {
   if (!draft) return;
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack]");
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-count]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
   if (t.dataset.mode) draft.mode = t.dataset.mode;
   if (t.dataset.pack) draft.pack = t.dataset.pack;
+  if (t.dataset.count) draft.count = Number(t.dataset.count);
   renderSetup(lastState);
 });
 

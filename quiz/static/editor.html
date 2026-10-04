@@ -139,6 +139,7 @@ textarea { resize: vertical; min-height: 54px; }
 </div>
 
 <script src="/static/pack.js"></script>
+<script src="/static/music.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const DRAFT = "quiz-editor-draft";
@@ -182,7 +183,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110 };
     }),
   };
 }
@@ -201,13 +202,20 @@ function toPack() {
       if (q.type === "multi") q2.answer = kept.map((o, k) => (q.answer.includes(o.i) ? k : -1)).filter((k) => k >= 0);
       if (q.image) q2.image = q.image;
       if (q.audio) q2.audio = q.audio;
+      if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; }
       return q2;
     }),
   };
 }
 
+function melodyError(m) {
+  const notes = String(m || "").trim().split(/\s+/).filter(Boolean);
+  return notes.length && !notes.every((n) => /^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$/.test(n)) ? "мелодия записана неправильно" : "";
+}
+
 function problems(q) {
   const errs = [];
+  if (melodyError(q.melody)) errs.push("мелодия записана неправильно (пример: E4 E4 F4 G4:2)");
   if (!q.q.trim()) errs.push("нет текста вопроса");
   const filled = q.options.filter((o) => o.trim()).length;
   if (q.type === "text") { if (!filled) errs.push("впиши правильный ответ"); return errs; }
@@ -277,6 +285,14 @@ function card(q, i) {
     <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
     <div class="opts">${q.options.map((o, k) => optionRow(q, i, o, k)).join("")}</div>
     <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}</div>
+    <details class="slot" ${q.melody ? "open" : ""}><summary class="slot-head" style="cursor:pointer">🎼 Мелодия нотами (для «Угадай мелодию»)</summary>
+      <div class="row">
+        <input type="text" data-melody="${i}" value="${esc(q.melody || "")}" placeholder="E4 E4 F4 G4 G4 F4 E4 D4 C4:2" aria-label="Ноты" style="flex:1 1 300px">
+        <input type="text" data-tempo="${i}" value="${esc(q.tempo || 110)}" inputmode="numeric" aria-label="Темп" style="width:90px" title="Темп, ударов в минуту">
+        <button class="btn" data-listen="${i}" type="button">▶ Послушать</button>
+      </div>
+      <span class="help">Ноты через пробел: буква, диез #, октава (C4 — до первой октавы). После двоеточия — длительность в долях: E4:2 — вдвое дольше, E4:0.5 — вдвое короче. Пауза — R. Справа — темп.</span>
+    </details>
     <div class="errs" data-errs="${i}">${errs.length ? "Нужно поправить: " + errs.join(", ") : ""}</div>
   </section>`;
 }
@@ -312,6 +328,8 @@ document.getElementById("title").addEventListener("input", (e) => { pack.title =
 
 $list.addEventListener("input", (e) => {
   const t = e.target, i = Number(t.dataset.i ?? t.dataset.q);
+  if (t.dataset.melody != null) { pack.questions[Number(t.dataset.melody)].melody = t.value; return refreshCard(Number(t.dataset.melody)); }
+  if (t.dataset.tempo != null) { pack.questions[Number(t.dataset.tempo)].tempo = Number(t.value) || 110; return summary(); }
   if (t.dataset.q != null) pack.questions[i].q = t.value;
   else if (t.dataset.opt != null) pack.questions[i].options[Number(t.dataset.opt)] = t.value;
   else return;
@@ -347,6 +365,11 @@ $list.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   const i = Number(b.dataset.i);
+  if (b.dataset.listen != null) {
+    const q = pack.questions[Number(b.dataset.listen)];
+    if (q.melody && !melodyError(q.melody)) QuizMusic.melody(q.melody, Number(q.tempo) || 110);
+    return;
+  }
   if (b.dataset.right != null) {
     const q = pack.questions[i], k = Number(b.dataset.right);
     if (q.type === "multi") q.answer = q.answer.includes(k) ? q.answer.filter((x) => x !== k) : [...q.answer, k];

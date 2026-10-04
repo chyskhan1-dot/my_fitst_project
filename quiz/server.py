@@ -48,6 +48,10 @@ MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
 MAX_QUESTIONS = 200
+OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
+AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙", "🦄", "🐲", "🐺",
+           "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
+NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
 QTYPES = ("choice", "multi", "order", "text")  # один ответ, несколько верных, по порядку, свой ответ
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
@@ -155,6 +159,20 @@ def media_ref(value, kind, store, scope):
     raise PackError(f"файл не найден: {value}")
 
 
+def clean_melody(value, tempo):
+    """Мелодия для музыкального раунда: ноты через пробел, например «E4 E4 F4 G4:2»."""
+    if not value:
+        return None, None
+    notes = str(value).split()
+    if not 1 <= len(notes) <= 300 or not all(NOTE_RE.match(n) for n in notes):
+        raise PackError("мелодия записана неправильно: ноты вроде E4, C#5:0.5, пауза R")
+    try:
+        tempo = int(tempo or 110)
+    except (TypeError, ValueError):
+        tempo = 110
+    return " ".join(notes), max(40, min(240, tempo))
+
+
 def clean_pack(data, store=None, scope="_"):
     """Проверяет пакет вопросов и приводит его к единому виду."""
     if not isinstance(data, dict):
@@ -201,6 +219,7 @@ def clean_pack(data, store=None, scope="_"):
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
+                **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
             })
         except PackError as e:
             raise PackError(f"вопрос {n}: {e}")
@@ -377,7 +396,8 @@ class Game:
         """Двигает игру по времени: конец вопроса и автопереход."""
         now = time.time()
         if self.phase == "question":
-            everyone = self.players and len(self.answers) >= len(self.players)
+            online = self.online()
+            everyone = online and all(pid in self.answers for pid in online)
             if everyone and self.all_answered_at is None:
                 self.all_answered_at = now
             time_up = now - self.started_at >= self.seconds
@@ -445,6 +465,10 @@ class Game:
         self.answers = {}
         self.all_answered_at = None
 
+    def online(self):
+        now = time.time()
+        return [pid for pid, p in self.players.items() if now - p.get("seen", now) <= OFFLINE_AFTER]
+
     def leaderboard(self):
         rows = [
             {
@@ -455,6 +479,8 @@ class Game:
                 "last": p["last_points"],
                 "prev": p["prev_place"],
                 "streak": p["streak"],
+                "avatar": p.get("avatar"),
+                "online": time.time() - p.get("seen", 0) <= OFFLINE_AFTER,
             }
             for pid, p in self.players.items()
         ]
@@ -498,6 +524,7 @@ class Game:
             "seconds": self.seconds,
             "settings": self.settings,
             "team_names": TEAMS,
+            "avatars": AVATARS,
             "players": self.leaderboard(),
             "teams": self.team_board(),
             "answered": len(self.answers),
@@ -517,6 +544,8 @@ class Game:
             s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]
+            s["melody"] = q.get("melody")
+            s["tempo"] = q.get("tempo")
             s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
         if self.phase == "reveal":
             results = [a.get("result") for a in self.answers.values()]
@@ -539,8 +568,10 @@ class Game:
                 ]
         if self.owns(pid, device):
             me = self.players[pid]
+            me["seen"] = time.time()
             s["me"] = {
                 "name": me["name"],
+                "avatar": me.get("avatar"),
                 "team": me.get("team"),
                 "score": me["score"],
                 "last": me["last_points"],
@@ -696,25 +727,44 @@ class Handler(BaseHTTPRequestHandler):
                 name = str(data.get("name", "")).strip()[:20]
                 if not name:
                     return self.send_json({"error": "Введи имя"}, 400)
-                taken = {p["name"].lower() for pid, p in game.players.items() if pid != mine}
-                if name.lower() in taken:
-                    return self.send_json({"error": "Это имя уже занято"}, 400)
+                avatar = data.get("avatar") if data.get("avatar") in AVATARS else None
+                same = next((pid for pid, p in game.players.items() if pid != mine and p["name"].lower() == name.lower()), None)
+                if same:
+                    if same in game.online():
+                        return self.send_json({"error": "Это имя уже занято"}, 400)
+                    # игрок с таким именем вылетел — возвращаем его вместе с очками на этот телефон
+                    if mine:
+                        del game.players[mine]
+                    back = game.players[same]
+                    back.update(device=device, seen=time.time())
+                    if avatar:
+                        back["avatar"] = avatar
+                    return self.send_json({"pid": same, "restored": True, "score": back["score"]})
                 team = data.get("team")
                 if not (isinstance(team, int) and 0 <= team < game.settings["teams"]):
                     team = None
                 if mine:
                     game.players[mine]["name"] = name  # с этого телефона уже играют: просто меняем имя
+                    if avatar:
+                        game.players[mine]["avatar"] = avatar
                     if team is not None:
                         game.players[mine]["team"] = team
                     game.balance_teams()
                     return self.send_json({"pid": mine})
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
-                    "name": name, "device": device, "team": team,
+                    "name": name, "device": device, "team": team, "avatar": avatar, "seen": time.time(),
                     "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
                 }
                 game.balance_teams()
                 return self.send_json({"pid": pid})
+
+            if path == "/api/avatar":
+                pid, avatar = data.get("pid"), data.get("avatar")
+                ok = game.owns(pid, device) and avatar in AVATARS
+                if ok:
+                    game.players[pid]["avatar"] = avatar
+                return self.send_json({"ok": ok})
 
             if path == "/api/team":
                 pid, team = data.get("pid"), data.get("team")
@@ -736,6 +786,7 @@ class Handler(BaseHTTPRequestHandler):
                 ok = value is not None
                 if ok:
                     game.answers[pid] = {"value": value, "time": time.time() - game.started_at}
+                    game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 
             if path.startswith("/api/host/"):

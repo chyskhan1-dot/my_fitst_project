@@ -40,6 +40,7 @@ body::after { background: #c2316b; bottom: -18vmax; left: -14vmax; animation: dr
 @keyframes drift { to { transform: translate(6vmax, 4vmax) scale(1.1); } }
 
 .stage { max-width: 1200px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.row-right { display: flex; align-items: center; gap: 12px; }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); }
 .brand { font-family: var(--display); font-weight: 800; color: var(--ink); font-size: 1.05em; display: flex; align-items: center; gap: 10px; }
 .brand::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: var(--accent); transform: rotate(45deg); }
@@ -137,6 +138,16 @@ a.btn { text-decoration: none; display: inline-block; }
 .podium { display: flex; justify-content: center; align-items: flex-end; gap: 14px; }
 .step { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(240px, 31%); }
 .step .ava { font-size: 1.5em; }
+.ava.emo { background: var(--panel); box-shadow: none; font-size: 1.15em; }
+.chip.off { opacity: .5; }
+.sound { font: inherit; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.sound.blocked { border-color: var(--accent); color: var(--accent); animation: blink2 1.2s ease-in-out infinite; }
+@keyframes blink2 { 50% { opacity: .5; } }
+.melody { display: flex; align-items: center; gap: 18px; justify-content: center; font-size: 1.4em; font-weight: 800; }
+.melody .eq { display: flex; gap: 5px; align-items: flex-end; height: 40px; }
+.melody .eq i { width: 8px; background: var(--accent); border-radius: 4px; animation: eq 0.9s ease-in-out infinite; }
+.melody .eq i:nth-child(2) { animation-delay: .2s; } .melody .eq i:nth-child(3) { animation-delay: .4s; } .melody .eq i:nth-child(4) { animation-delay: .6s; }
+@keyframes eq { 0%, 100% { height: 20%; } 50% { height: 100%; } }
 .step .nm { font-weight: 800; text-align: center; overflow-wrap: anywhere; }
 .step .block {
   width: 100%; border-radius: 16px 16px 0 0; background: var(--panel-solid); border: 1px solid var(--line);
@@ -249,7 +260,7 @@ a.btn { text-decoration: none; display: inline-block; }
 <div class="stage">
   <div class="top">
     <span class="brand" id="brand">Квиз</span>
-    <span id="progress"></span>
+    <span class="row-right"><span id="progress"></span> <button class="sound" id="sound" type="button" aria-label="Звук">🔊</button></span>
   </div>
   <main id="main"><h2 class="muted waiting">Подключаюсь к серверу</h2></main>
   <div class="actions" id="actions"></div>
@@ -257,6 +268,7 @@ a.btn { text-decoration: none; display: inline-block; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="/static/pack.js"></script>
+<script src="/static/music.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
@@ -284,6 +296,8 @@ const teamDot = (t) => `<span class="tdot" style="--c:${TEAM_COLORS[t]}"></span>
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
 const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
+// аватарка игрока: выбранный значок или первая буква имени
+const avaP = (p) => (p.avatar ? `<span class="ava emo">${esc(p.avatar)}</span>` : ava(p.name));
 
 async function post(action, extra = {}) {
   const r = await fetch("/api/host/" + action, {
@@ -299,6 +313,8 @@ function dots(s) {
 }
 
 function media(s) {
+  if (s.melody) return `<div class="melody rise"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию
+    <button class="btn ghost small" data-replay type="button">▶ Ещё раз</button></div>`;
   if (!s.image && !s.audio) return "";
   return `<div class="qmedia rise">
     ${s.image ? `<img class="qimg" src="${esc(QuizPack.mediaSrc(s.image))}" alt="Картинка к вопросу">` : ""}
@@ -348,7 +364,7 @@ function board(players) {
     const place = i + 1, from = p.prev ? p.prev - place : 0;
     const move = !p.prev ? "" : from > 0 ? `<span class="move up">↑${from}</span>` : from < 0 ? `<span class="move down">↓${-from}</span>` : `<span class="move same">—</span>`;
     return `<li class="row" style="--i:${i};--from:${from};--w:${(p.score / max) * 100}%">
-      <span class="bar"></span><span class="pos">${place}</span>${p.team != null && p.id == null ? teamDot(p.team) : ava(p.name)}
+      <span class="bar"></span><span class="pos">${place}</span>${p.team != null && p.id == null ? teamDot(p.team) : avaP(p)}
       <span class="nm">${esc(p.name)}</span>
       ${p.streak >= 2 ? `<span class="fire">🔥 ${p.streak}</span>` : ""}
       ${p.last > 0 ? `<span class="plus">+${p.last}</span>` : p.last < 0 ? `<span class="minus">−${-p.last}</span>` : ""}
@@ -369,12 +385,38 @@ function countUp() {
   });
 }
 
+let musicKey = "";
+function soundtrack(s) {
+  const key = s.phase + ":" + s.index;
+  if (key === musicKey) return;
+  musicKey = key;
+  const M = window.QuizMusic;
+  if (!M) return;
+  if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
+  else if (s.phase === "question") {
+    if (s.audio || s.melody) M.stop(0.3); else M.play("question");
+    if (s.melody) setTimeout(() => M.melody(s.melody, s.tempo), 600);
+    else M.sting("start");
+  } else if (s.phase === "reveal") { M.stopMelody(); M.stop(0.3); M.sting("reveal"); }
+  else if (s.phase === "leaders") M.play("leaders");
+  else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
+}
+
+function soundButton() {
+  const b = document.getElementById("sound"), M = window.QuizMusic;
+  if (!b || !M) return;
+  const blocked = M.blocked && !M.muted;
+  b.textContent = M.muted ? "🔇 Звук выкл" : blocked ? "🔈 Включить звук" : "🔊";
+  b.classList.toggle("blocked", blocked);
+}
+
 function render(s) {
   document.getElementById("brand").textContent = `${s.title} · комната ${s.room}`;
   document.title = s.title + " — ведущий";
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
+  soundtrack(s);
 
   if (s.phase === "setup") {
     if (!draft) draft = { ...s.settings };
@@ -390,7 +432,7 @@ function render(s) {
       `${st.seconds} сек на ответ`,
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
-    const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"}" data-kick="${esc(p.id)}">${ava(p.name)}${esc(p.name)}</button>`;
+    const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"} ${p.online ? "" : "off"}" data-kick="${esc(p.id)}" title="${p.online ? "" : "Не на связи"}">${avaP(p)}${esc(p.name)}${p.online ? "" : " · нет связи"}</button>`;
     const people = st.teams
       ? `<div class="teams-grid">${s.teams.slice().sort((a, b) => a.team - b.team).map((t) => `
           <div class="team-col" style="--c:${TEAM_COLORS[t.team]}"><h3>${esc(t.name)} · ${t.size}</h3>
@@ -449,7 +491,7 @@ function render(s) {
   } else if (s.phase === "final") {
     const teamMode = !!s.settings.teams;
     const [p1, p2, p3] = teamMode ? s.teams : s.players;
-    const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : ava(p.name)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
+    const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
     const mvp = s.players[0];
     $main.innerHTML = `
       <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1></div>
@@ -544,6 +586,8 @@ document.addEventListener("click", (e) => {
 });
 
 function live(s) {
+  if (window.QuizMusic) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
+  soundButton();
   const nx = document.getElementById("auto-next");
   if (s.auto_left != null) {
     if (!nx) $actions.insertAdjacentHTML("afterbegin", `<span class="auto-next" id="auto-next"></span>`);
@@ -557,7 +601,7 @@ function live(s) {
     ring.classList.toggle("low", s.left <= 5);
   }
   const a = document.getElementById("answered");
-  if (a) a.textContent = `Ответили ${s.answered} из ${s.players.length}`;
+  if (a) a.textContent = `Ответили ${s.answered} из ${s.players.filter((p) => p.online).length}`;
 }
 
 async function poll() {
@@ -603,6 +647,9 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
+  if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
+  if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo); return; }
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {

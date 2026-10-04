@@ -120,7 +120,12 @@ input {
 .role .ico { grid-row: span 2; font-size: 34px; }
 .role b { font-family: var(--display); font-size: 19px; }
 .role small { color: var(--muted); }
-.role:first-child { border-color: var(--accent); }
+.role { transition: border-color .15s, background .15s, transform .1s; }
+.role:hover { border-color: var(--muted); }
+.role:active { transform: scale(.98); }
+.role.on { border-color: var(--accent); background: rgba(255, 210, 63, .14); }
+.role.on b { color: var(--accent); }
+.role:disabled { cursor: default; }
 .role:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .code-input { font-family: var(--display); font-size: 40px; letter-spacing: .3em; padding: 14px 10px 14px calc(10px + .3em); }
 .qimg { display: block; max-width: 100%; max-height: 28vh; margin: 0 auto; border-radius: 12px; background: #fff; }
@@ -135,6 +140,15 @@ input {
 .text-form { display: flex; flex-direction: column; gap: 10px; }
 .text-form input { font: 700 22px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: center; width: 100%; }
 .stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.ava.emo { background: var(--panel); box-shadow: none; font-size: 20px; }
+.ava.emo.xl { font-size: 46px; }
+.avatars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; }
+.av { font-size: 24px; aspect-ratio: 1; border-radius: 12px; border: 2px solid transparent; background: var(--panel); cursor: pointer; padding: 0; }
+.av.on { border-color: var(--accent); background: rgba(255, 210, 63, .18); }
+.ava-change { width: 100%; }
+.ava-change summary { color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.small-note { font-size: 13px; }
+.flash { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--good); color: #062b16; padding: 10px 18px; border-radius: 12px; font-weight: 800; z-index: 9; }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
@@ -197,9 +211,15 @@ function startScreen() {
       </div>
       <div class="error" id="err"></div>
     </div>`;
-  document.getElementById("as-player").onclick = codeForm;
+  const choose = (btn) => document.querySelectorAll(".role").forEach((r) => r.classList.toggle("on", r === btn));
+  document.getElementById("as-player").onclick = (e) => {
+    choose(e.currentTarget);
+    setTimeout(codeForm, 180); // успеть показать выбор
+  };
   document.getElementById("as-host").onclick = async (e) => {
+    choose(e.currentTarget);
     e.currentTarget.disabled = true;
+    e.currentTarget.querySelector("small").textContent = "Создаю комнату…";
     const res = await api("/api/rooms", {}).catch(() => ({ error: "Нет связи с сервером" }));
     if (res.error) { document.getElementById("err").textContent = res.error; e.currentTarget.disabled = false; return; }
     try { localStorage.setItem("quiz-host-" + res.room, res.token); } catch {}
@@ -231,6 +251,16 @@ function codeForm() {
   document.getElementById("room").focus();
 }
 
+const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
+const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+let pickAva = recall("quiz-avatar") || null;
+const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${esc(p.avatar)}</span>` : ava(p.name, cls));
+
+function avatarPicker(list, selected) {
+  return `<div class="avatars" role="group" aria-label="Аватарка">${list.map((a) =>
+    `<button type="button" class="av ${a === selected ? "on" : ""}" data-ava="${esc(a)}" aria-label="${esc(a)}">${esc(a)}</button>`).join("")}</div>`;
+}
+
 function joinForm() {
   const s = lastState;
   document.getElementById("top").innerHTML = "";
@@ -247,22 +277,35 @@ function joinForm() {
       <div class="eyebrow rise">Комната ${esc(room)}</div>
       <h1 class="rise" style="--i:1">Как тебя записать?</h1>
       <form id="join" class="rise" style="--i:2">
-        <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required>
+        <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required value="${esc(recall("quiz-name"))}">
+        ${s && s.avatars ? `<p class="muted">Выбери аватарку:</p>${avatarPicker(s.avatars, pickAva)}` : ""}
         ${teams ? `<p class="muted">Выбери команду:</p>${teamPicker(s, pickTeam)}` : ""}
         <div class="error" id="err"></div>
         <button class="btn" type="submit">Войти в игру</button>
       </form>
+      <p class="muted small-note">Вылетел из игры? Введи то же имя — очки вернутся.</p>
       <button class="leave" id="other">Другая комната</button>
     </div>`;
   document.getElementById("other").onclick = startScreen;
   document.getElementById("join").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button"); btn.disabled = true;
-    const res = await api("/api/join", { name: document.getElementById("name").value, team: joinTeams ? pickTeam : null }).catch(() => ({ error: "Нет связи с сервером" }));
+    const name = document.getElementById("name").value;
+    const res = await api("/api/join", { name, avatar: pickAva, team: joinTeams ? pickTeam : null }).catch(() => ({ error: "Нет связи с сервером" }));
     if (res.error) { document.getElementById("err").textContent = res.error; btn.disabled = false; return; }
-    pid = res.pid; save(pid); lastSig = ""; buzz(20); poll();
+    remember("quiz-name", name.trim());
+    pid = res.pid; save(pid); lastSig = ""; buzz(20);
+    if (res.restored) flash(`С возвращением! Очки сохранены: ${res.score}`);
+    poll();
   });
-  document.getElementById("name").focus();
+  const nameInput = document.getElementById("name");
+  if (!nameInput.value) nameInput.focus();
+}
+
+function flash(text) {
+  const t = document.createElement("div");
+  t.className = "flash"; t.textContent = text; t.setAttribute("role", "status");
+  document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
 
 let draftQ = -1, picks = [], typed = "", lastQuestion = null;
@@ -332,7 +375,7 @@ function moveText(me) {
 function render(s) {
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `${ava(me.name)}<span class="nm">${esc(me.name)}</span><span class="sc">${me.score}</span>`;
+  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span><span class="sc">${me.score}</span>`;
   mood("");
   confetti(false);
 
@@ -340,20 +383,22 @@ function render(s) {
   if (s.phase === "setup") {
     $main.innerHTML = `
       <div class="scene">
-        <span class="pop">${ava(me.name, "xl")}</span>
+        <span class="pop">${avaP(me, "xl")}</span>
         <h1 class="rise">Ты в игре!</h1>
         <div class="spinner"></div>
         <p class="muted rise" style="--i:1">Ведущий выбирает правила. Игра скоро начнётся.</p>
       </div>`;
   } else if (s.phase === "lobby") {
+    pickAva = me.avatar;
     $main.innerHTML = `
       <div class="scene">
-        <span class="pop">${ava(me.name, "xl")}</span>
+        <span class="pop">${avaP(me, "xl")}</span>
         <h1 class="rise">Ты в игре!</h1>
         ${myTeam ? `<span class="teambadge rise" style="--c:${TEAM_COLORS[me.team]}">Команда: ${esc(myTeam)}</span>
           <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
         <p class="muted rise" style="--i:1">Смотри на экран ведущего. Игра скоро начнётся.</p>
         <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
+        <details class="ava-change"><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
@@ -364,6 +409,7 @@ function render(s) {
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       <h2>${esc(s.question)}</h2>
       ${s.image ? `<img class="qimg" src="${esc(mediaSrc(s.image))}" alt="Картинка к вопросу">` : ""}
+      ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
       ${answerControls(s)}`;
     if (s.qtype === "text") {
       const input = document.getElementById("answer-text");
@@ -418,7 +464,7 @@ function render(s) {
         ${moveText(me)}
         <ol class="mini">${top.map((p, i) => `
           <li class="rise ${p.name === me.name ? "me" : ""}" style="--i:${i + 2}">
-            <span class="pos">${s.players.indexOf(p) + 1}</span>${ava(p.name)}<span class="n">${esc(p.name)}</span><span>${p.score}</span></li>`).join("")}
+            <span class="pos">${s.players.indexOf(p) + 1}</span>${avaP(p)}<span class="n">${esc(p.name)}</span><span>${p.score}</span></li>`).join("")}
         </ol>
       </div>`;
   } else if (s.phase === "final") {
@@ -490,6 +536,14 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  const av = e.target.closest("[data-ava]");
+  if (av) {
+    pickAva = av.dataset.ava; remember("quiz-avatar", pickAva);
+    document.querySelectorAll("[data-ava]").forEach((x) => x.classList.toggle("on", x === av));
+    if (pid) { await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll(); }
+    buzz(10);
+    return;
+  }
   const t = e.target.closest("[data-team]");
   if (t) {
     const team = Number(t.dataset.team);

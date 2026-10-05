@@ -125,6 +125,8 @@ input {
 .role:active { transform: scale(.98); }
 .role.on { border-color: var(--accent); background: rgba(255, 210, 63, .14); }
 .role.on b { color: var(--accent); }
+a.role { color: inherit; text-decoration: none; text-align: left; }
+#resume:empty { display: none; }
 .role:disabled { cursor: default; }
 .role:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .code-input { font-family: var(--display); font-size: 40px; letter-spacing: .3em; padding: 14px 10px 14px calc(10px + .3em); }
@@ -199,7 +201,12 @@ function teamPicker(s, selected) {
 }
 
 function load() { try { return localStorage.getItem("quiz-pid-" + room); } catch { return null; } }
-function save(v) { try { v ? localStorage.setItem("quiz-pid-" + room, v) : localStorage.removeItem("quiz-pid-" + room); } catch {} }
+function save(v) {
+  try {
+    v ? localStorage.setItem("quiz-pid-" + room, v) : localStorage.removeItem("quiz-pid-" + room);
+    if (v) localStorage.setItem("quiz-last-room", room); // чтобы с главной можно было вернуться в игру
+  } catch {}
+}
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
 const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
@@ -225,6 +232,7 @@ function startScreen() {
     <div class="scene">
       <div class="eyebrow rise">Квиз</div>
       <h1 class="rise" style="--i:1">Кто ты сегодня?</h1>
+      <div class="roles" id="resume"></div>
       <div class="roles">
         <button class="role rise" style="--i:2" id="as-player"><span class="ico">📱</span><b>Я игрок</b><small>Есть код комнаты от ведущего</small></button>
         <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
@@ -236,7 +244,10 @@ function startScreen() {
     choose(e.currentTarget);
     setTimeout(codeForm, 180); // успеть показать выбор
   };
+  let mine = null; // своя игра ведущего на этом устройстве
   document.getElementById("as-host").onclick = async (e) => {
+    if (mine && mine.players && !["setup", "final"].includes(mine.phase)
+      && !confirm(`Игра в комнате ${mine.room} ещё идёт. Закончить её и создать новую?`)) return;
     choose(e.currentTarget);
     e.currentTarget.disabled = true;
     e.currentTarget.querySelector("small").textContent = "Создаю комнату…";
@@ -245,6 +256,33 @@ function startScreen() {
     try { localStorage.setItem("quiz-host-" + res.room, res.token); } catch {}
     location.href = "/host?room=" + res.room;
   };
+  resumeOffers().then((m) => { mine = m; });
+}
+
+// Кнопки «Вернуться в игру»: ведущему — к своей комнате, игроку — к последней игре
+async function resumeOffers() {
+  const box = document.getElementById("resume");
+  const offers = [];
+  const host = await api("/api/my_room", {}).catch(() => ({}));
+  if (host.room) {
+    try { localStorage.setItem("quiz-host-" + host.room, host.token); } catch {}
+    offers.push(`<a class="role on rise" href="/host?room=${host.room}"><span class="ico">↩️</span><b>Вернуться к своей игре</b>
+      <small>Комната ${host.room} · ${esc(host.title)} · игроков: ${host.players}</small></a>`);
+  }
+  const last = recall("quiz-last-room"), lastPid = last ? recall("quiz-pid-" + last) : "";
+  if (last && lastPid && last !== host.room) {
+    const s = await fetch(`/api/state?room=${last}&pid=${encodeURIComponent(lastPid)}`, { cache: "no-store" })
+      .then((r) => r.json()).catch(() => ({}));
+    if (s.me && s.phase !== "final") {
+      offers.push(`<button class="role on rise" data-resume="${last}"><span class="ico">↩️</span><b>Вернуться в игру</b>
+        <small>Комната ${last} · ${esc(s.title)} · ты — ${esc(s.me.name)}, ${s.me.score} очков</small></button>`);
+    }
+  }
+  if (box && document.body.contains(box)) {
+    box.innerHTML = offers.join("");
+    box.querySelectorAll("[data-resume]").forEach((b) => (b.onclick = () => { setRoom(b.dataset.resume); poll(); }));
+  }
+  return host.room ? host : null;
 }
 
 function codeForm() {

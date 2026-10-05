@@ -150,6 +150,17 @@ input {
 .small-note { font-size: 13px; }
 .flash { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--good); color: #062b16; padding: 10px 18px; border-radius: 12px; font-weight: 800; z-index: 9; }
 .emoji-pic { font-size: 56px; text-align: center; letter-spacing: .06em; line-height: 1.15; }
+.si-pick { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.si-pick-theme { font-weight: 800; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.si-pick-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.si-pick-cell { font: 800 15px var(--display); color: var(--accent); background: #1d2a8a; border: 0; border-radius: 10px; padding: 12px 0; cursor: pointer; }
+.si-pick-cell.played { background: transparent; border: 1px dashed var(--line); }
+.buzz { width: 100%; aspect-ratio: 1; max-height: 52vh; border-radius: 50%; border: 0; font: 800 30px var(--display); cursor: pointer;
+  background: #3a2230; color: var(--muted); box-shadow: inset 0 -10px 0 rgba(0, 0, 0, .3); transition: background .15s, transform .08s; align-self: center; max-width: 340px; }
+.buzz.open { background: var(--bad); color: #fff; box-shadow: 0 0 0 8px rgba(255, 107, 107, .25), inset 0 -10px 0 rgba(0, 0, 0, .25); }
+.buzz:active:not(:disabled) { transform: scale(.96); }
+.buzz:disabled { opacity: .55; }
+.btn.wide { width: 100%; }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
@@ -359,6 +370,108 @@ function correctAnswer(s) {
   return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
 }
 
+// ---------- «Своя игра» ----------
+const siPost = (action, body = {}) => api("/api/si/" + action, { pid, ...body }).catch(() => ({}));
+let buzzTimer = null;
+
+function siTextForm(id, placeholder, button) {
+  return `<form id="${id}" class="text-form">
+    <input id="${id}-input" maxlength="80" autocomplete="off" autocapitalize="sentences" placeholder="${placeholder}" aria-label="${placeholder}">
+    <button class="btn" type="submit">${button}</button></form>`;
+}
+
+function bindForm(id, action, field) {
+  const form = document.getElementById(id);
+  if (!form) return;
+  const input = document.getElementById(id + "-input");
+  input.focus();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    form.querySelector("button").disabled = true;
+    await siPost(action, { [field]: field === "amount" ? Number(value) : value });
+    buzz(25); lastSig = ""; poll();
+  });
+}
+
+function renderSi(s, me) {
+  const si = s.si, m = si.me || {}, c = si.cur || {}, f = si.final || {};
+  clearTimeout(buzzTimer);
+  mood("");
+  const scene = (html) => `<div class="scene">${html}</div>`;
+  const chooser = si.chooser ? esc(si.chooser.name) : "…";
+  const head = c.theme ? `<div class="eyebrow">${esc(c.theme)} · ${c.stake}</div>` : "";
+  if (s.phase === "si_round") {
+    $main.innerHTML = scene(`<div class="eyebrow">Своя игра</div><h1>${esc(si.round_name || "")}</h1><p class="muted">Смотри на большой экран</p>`);
+  } else if (s.phase === "si_board" && m.is_chooser) {
+    $main.innerHTML = `<div class="eyebrow">Твой выбор</div><h2>Выбери вопрос</h2>
+      <div class="si-pick">${si.board.map((t, ti) => `
+        <div class="si-pick-theme">${esc(t.name)}</div>
+        <div class="si-pick-row">${t.cells.map((cell, qi) => cell.played ? `<span class="si-pick-cell played"></span>`
+          : `<button class="si-pick-cell" data-si-cell="${ti},${qi}">${cell.price}</button>`).join("")}</div>`).join("")}</div>`;
+  } else if (s.phase === "si_board") {
+    $main.innerHTML = scene(`<div class="spinner"></div><h2>Выбирает ${chooser}</h2><p class="muted">Твой счёт: <b>${me.score}</b></p>`);
+  } else if (s.phase === "si_cat_give" && m.is_chooser) {
+    $main.innerHTML = scene(`<h1>🐱 Кот в мешке!</h1><p class="muted">Тема «${esc(c.theme)}», ${c.stake} очков. Кому отдать вопрос?</p>
+      <div class="stack" style="width:100%">${s.players.filter((p) => p.id !== si.chooser.id).map((p) =>
+        `<button class="btn ghost wide" data-give="${esc(p.id)}">${esc(p.avatar || "")} ${esc(p.name)}</button>`).join("")}</div>`);
+  } else if (s.phase === "si_cat_give") {
+    $main.innerHTML = scene(`<h1>🐱 Кот в мешке!</h1><p class="muted">${chooser} выбирает, кому отдать вопрос</p>`);
+  } else if (s.phase === "si_stake" && m.is_chooser) {
+    $main.innerHTML = scene(`<h1>🔨 Аукцион</h1><p class="muted">Тема «${esc(c.theme)}». Ставка от ${c.price} до ${c.max_stake}</p>
+      <div class="row2"><button class="btn ghost" data-stake="${c.price}">${c.price}</button><button class="btn" data-stake="${c.max_stake}">Ва-банк: ${c.max_stake}</button></div>
+      ${siTextForm("stake-form", "Своя ставка", "Поставить")}`);
+    const inp = document.getElementById("stake-form-input"); inp.inputMode = "numeric";
+    bindForm("stake-form", "stake", "amount");
+  } else if (s.phase === "si_stake") {
+    $main.innerHTML = scene(`<h1>🔨 Аукцион</h1><p class="muted">${chooser} делает ставку</p>`);
+  } else if ((s.phase === "si_question" || s.phase === "si_answer") && m.is_answerer) {
+    $main.innerHTML = `${head}<h2>${c.special !== "simple" ? "Отвечаешь ты!" : "Твой ответ!"}</h2>
+      ${c.image ? `<img class="qimg" src="${esc(mediaSrc(c.image))}" alt="">` : ""}
+      ${siTextForm("si-answer", "Напиши ответ", "Ответить")}<p class="hint">Регистр и небольшие опечатки не важны</p>`;
+    bindForm("si-answer", "answer", "text");
+  } else if (s.phase === "si_question" && !c.exclusive) {
+    const can = !m.tried;
+    $main.innerHTML = `${head}<p class="muted">${esc(c.text || "")}</p>
+      <button class="buzz ${c.buzz_open ? "open" : ""}" id="buzz" ${can ? "" : "disabled"}>${!can ? "Ты уже отвечал" : c.buzz_open ? "ОТВЕТИТЬ!" : "Подожди…"}</button>
+      <p class="hint" id="buzz-hint">${can ? "Кто первым нажмёт, тот и отвечает" : "Ждём остальных"}</p>`;
+    if (can && !c.buzz_open) buzzTimer = setTimeout(() => { const b = document.getElementById("buzz"); if (b) { b.classList.add("open"); b.textContent = "ОТВЕТИТЬ!"; } }, c.buzz_in * 1000);
+  } else if (s.phase === "si_question" || s.phase === "si_answer") {
+    $main.innerHTML = scene(`${head}<h2>✋ Отвечает ${c.answerer ? esc(c.answerer.name) : "…"}</h2>${m.tried ? `<p class="muted">Ты уже отвечал на этот вопрос</p>` : ""}`);
+  } else if (s.phase === "si_reveal") {
+    const mine = (si.verdicts || []).filter((v) => v.pid === pid).pop();
+    if (mine) mood(mine.ok ? "good" : "bad");
+    $main.innerHTML = scene(`${mine ? `<span class="big pop ${mine.ok ? "good" : "bad"}">${mine.ok ? "Верно!" : "Мимо!"}</span>
+      <span class="pill ${mine.delta >= 0 ? "plus" : "minus"}">${mine.delta > 0 ? "+" : ""}${mine.delta}</span>` : ""}
+      <p class="muted">Правильный ответ:<br><b style="color:var(--ink)">${esc(c.answer || "")}</b></p><p>Твой счёт: <b>${me.score}</b></p>`);
+  } else if (s.phase === "si_final_bet") {
+    if (!m.eligible) $main.innerHTML = scene(`<h1>Финал</h1><p class="muted">В финале играют те, у кого очков больше нуля. Болей за остальных!</p>`);
+    else if (m.bet) $main.innerHTML = scene(`<h1>Ставка принята</h1><span class="pill">${m.bet}</span><p class="muted">Тема: ${esc(f.theme)}</p>`);
+    else {
+      $main.innerHTML = scene(`<div class="eyebrow">Финал · ${esc(f.theme)}</div><h1>Твоя ставка</h1><p class="muted">От 1 до ${me.score}</p>
+        <div class="row2"><button class="btn ghost" data-bet="${Math.max(1, Math.round(me.score / 2))}">Половина</button><button class="btn" data-bet="${me.score}">Ва-банк: ${me.score}</button></div>
+        ${siTextForm("bet-form", "Своя ставка", "Поставить")}`);
+      document.getElementById("bet-form-input").inputMode = "numeric";
+      bindForm("bet-form", "bet", "amount");
+    }
+  } else if (s.phase === "si_final_q") {
+    if (!m.eligible) $main.innerHTML = scene(`<h1>Финал</h1><p class="muted">Смотри на большой экран</p>`);
+    else if (m.answered) $main.innerHTML = scene(`<h1>Ответ принят</h1><div class="spinner"></div>`);
+    else {
+      $main.innerHTML = `<div class="eyebrow">Финал · ${esc(f.theme)}</div><h2>${esc(f.text || "")}</h2>
+        ${f.image ? `<img class="qimg" src="${esc(mediaSrc(f.image))}" alt="">` : ""}${siTextForm("final-form", "Твой ответ", "Ответить")}`;
+      bindForm("final-form", "final", "text");
+    }
+  } else if (s.phase === "si_final_reveal") {
+    const mine = (si.verdicts || []).find((v) => v.pid === pid);
+    if (mine) mood(mine.ok ? "good" : "bad");
+    $main.innerHTML = scene(`${mine ? `<span class="big pop ${mine.ok ? "good" : "bad"}">${mine.ok ? "Верно!" : "Мимо!"}</span>
+      <span class="pill ${mine.delta >= 0 ? "plus" : "minus"}">${mine.delta > 0 ? "+" : ""}${mine.delta}</span>` : ""}
+      <p class="muted">Правильный ответ:<br><b style="color:var(--ink)">${esc(f.answer || "")}</b></p><p>Твой счёт: <b>${me.score}</b></p>`);
+  }
+}
+
 async function send(answer) {
   if (sending) return;
   sending = true; buzz(25);
@@ -380,6 +493,7 @@ function render(s) {
   mood("");
   confetti(false);
 
+  if (s.phase.startsWith("si_")) return renderSi(s, me);
   const myTeam = me.team != null ? s.team_names[me.team] : null;
   if (s.phase === "setup") {
     $main.innerHTML = `
@@ -503,7 +617,8 @@ async function poll() {
     }
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
-    const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]);
+    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" ? undefined : v)) : "";
+    const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
   } catch {
     if (!document.getElementById("join")) {
@@ -538,6 +653,26 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  const sp = e.target.closest("[data-si-cell]");
+  if (sp) { const [ti, qi] = sp.dataset.siCell.split(",").map(Number); buzz(20); await siPost("pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
+  const gv = e.target.closest("[data-give]");
+  if (gv) { await siPost("give", { to: gv.dataset.give }); lastSig = ""; return poll(); }
+  const sk = e.target.closest("[data-stake]");
+  if (sk) { await siPost("stake", { amount: Number(sk.dataset.stake) }); lastSig = ""; return poll(); }
+  const bt = e.target.closest("[data-bet]");
+  if (bt) { await siPost("bet", { amount: Number(bt.dataset.bet) }); lastSig = ""; return poll(); }
+  if (e.target.closest("#buzz")) {
+    const b = e.target.closest("#buzz");
+    b.disabled = true; buzz(40);
+    const res = await siPost("buzz");
+    if (res.result === "early") {
+      document.getElementById("buzz-hint").textContent = "Рано! Кнопка заблокирована на секунду";
+      setTimeout(() => { const x = document.getElementById("buzz"); if (x) x.disabled = false; }, 1000);
+    } else if (res.result !== "ok") {
+      b.disabled = false; lastSig = ""; poll();
+    } else { lastSig = ""; poll(); }
+    return;
+  }
   const av = e.target.closest("[data-ava]");
   if (av) {
     pickAva = av.dataset.ava; remember("quiz-avatar", pickAva);

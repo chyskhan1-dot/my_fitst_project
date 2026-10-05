@@ -15,26 +15,21 @@
       "instrument": "pluck"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Розовое вино — Элджей и Feduk",
-        "Кукла колдуна — Король и Шут",
-        "Группа крови — Кино",
-        "Миллион алых роз — Алла Пугачёва"
-      ],
-      "answer": 0,
-      "emoji": "🌸🍷"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Элджей и Feduk)",
+      "emoji": "🌸🍷",
+      "answer": [
+        "Розовое вино"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Despacito — Luis Fonsi",
-        "Hello — Adele",
-        "Wind of Change — Scorpions",
-        "Umbrella — Rihanna"
-      ],
-      "answer": 3,
-      "emoji": "☂️☔"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Rihanna)",
+      "emoji": "☂️☔",
+      "answer": [
+        "Umbrella",
+        "Зонтик"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -102,26 +97,21 @@
       "instrument": "synth"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Миллион алых роз — Алла Пугачёва",
-        "Батарейка — Жуки",
-        "Группа крови — Кино",
-        "Розовое вино — Элджей и Feduk"
-      ],
-      "answer": 2,
-      "emoji": "🩸🅰️🅱️"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Кино)",
+      "emoji": "🩸🅰️🅱️",
+      "answer": [
+        "Группа крови"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Gangnam Style — PSY",
-        "Lemon Tree — Fool's Garden",
-        "Ice Ice Baby — Vanilla Ice",
-        "Purple Rain — Prince"
-      ],
-      "answer": 3,
-      "emoji": "💜🌧️"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Prince)",
+      "emoji": "💜🌧️",
+      "answer": [
+        "Purple Rain",
+        "Пурпурный дождь"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -150,15 +140,12 @@
       "instrument": "marimba"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Группа крови — Кино",
-        "Розовое вино — Элджей и Feduk",
-        "Миллион алых роз — Алла Пугачёва",
-        "Батарейка — Жуки"
-      ],
-      "answer": 2,
-      "emoji": "1️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣🌹"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Алла Пугачёва)",
+      "emoji": "1️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣🌹",
+      "answer": [
+        "Миллион алых роз"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -187,15 +174,12 @@
       "instrument": "epiano"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Кукла колдуна — Король и Шут",
-        "Группа крови — Кино",
-        "Батарейка — Жуки",
-        "Розовое вино — Элджей и Feduk"
-      ],
-      "answer": 2,
-      "emoji": "🔋"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Жуки)",
+      "emoji": "🔋",
+      "answer": [
+        "Батарейка"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -211,37 +195,29 @@
       "instrument": "marimba"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Ice Ice Baby — Vanilla Ice",
-        "Despacito — Luis Fonsi",
-        "Highway to Hell — AC/DC",
-        "Yellow Submarine — The Beatles"
-      ],
-      "answer": 1,
-      "emoji": "🐢🎶"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Luis Fonsi)",
+      "emoji": "🐢🎶",
+      "answer": [
+        "Despacito"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Hello — Adele",
-        "Hotel California — Eagles",
-        "Gangnam Style — PSY",
-        "Lemon Tree — Fool's Garden"
-      ],
-      "answer": 2,
-      "emoji": "🐴🕺🇰🇷"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: PSY)",
+      "emoji": "🐴🕺🇰🇷",
+      "answer": [
+        "Gangnam Style",
+        "Гангнам стайл"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Hello — Adele",
-        "Ice Ice Baby — Vanilla Ice",
-        "Lemon Tree — Fool's Garden",
-        "Despacito — Luis Fonsi"
-      ],
-      "answer": 1,
-      "emoji": "🧊🧊👶"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Vanilla Ice)",
+      "emoji": "🧊🧊👶",
+      "answer": [
+        "Ice Ice Baby"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -257,15 +233,12 @@
       "instrument": "piano"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Белые розы — Ласковый май",
-        "Кукла колдуна — Король и Шут",
-        "Группа крови — Кино",
-        "Розовое вино — Элджей и Feduk"
-      ],
-      "answer": 0,
-      "emoji": "🤍🌹"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Ласковый май)",
+      "emoji": "🤍🌹",
+      "answer": [
+        "Белые розы"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -281,26 +254,21 @@
       "instrument": "strings"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Lemon Tree — Fool's Garden",
-        "Ice Ice Baby — Vanilla Ice",
-        "Gangnam Style — PSY",
-        "Thriller — Michael Jackson"
-      ],
-      "answer": 3,
-      "emoji": "🧟🌕😱"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Michael Jackson)",
+      "emoji": "🧟🌕😱",
+      "answer": [
+        "Thriller",
+        "Триллер"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Группа крови — Кино",
-        "Белые розы — Ласковый май",
-        "Миллион алых роз — Алла Пугачёва",
-        "Кукла колдуна — Король и Шут"
-      ],
-      "answer": 3,
-      "emoji": "🪆🧙"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Король и Шут)",
+      "emoji": "🪆🧙",
+      "answer": [
+        "Кукла колдуна"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -316,48 +284,41 @@
       "instrument": "epiano"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Wind of Change — Scorpions",
-        "Hello — Adele",
-        "Highway to Hell — AC/DC",
-        "Umbrella — Rihanna"
-      ],
-      "answer": 1,
-      "emoji": "👋📞"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Adele)",
+      "emoji": "👋📞",
+      "answer": [
+        "Hello",
+        "Привет"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Lemon Tree — Fool's Garden",
-        "Purple Rain — Prince",
-        "Hello — Adele",
-        "Thriller — Michael Jackson"
-      ],
-      "answer": 0,
-      "emoji": "🍋🌳"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Fool's Garden)",
+      "emoji": "🍋🌳",
+      "answer": [
+        "Lemon Tree",
+        "Лимонное дерево"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Hotel California — Eagles",
-        "Ice Ice Baby — Vanilla Ice",
-        "Highway to Hell — AC/DC",
-        "Umbrella — Rihanna"
-      ],
-      "answer": 0,
-      "emoji": "🏨🌴☀️"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Eagles)",
+      "emoji": "🏨🌴☀️",
+      "answer": [
+        "Hotel California",
+        "Отель Калифорния"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Hello — Adele",
-        "Lemon Tree — Fool's Garden",
-        "Umbrella — Rihanna",
-        "Highway to Hell — AC/DC"
-      ],
-      "answer": 3,
-      "emoji": "🛣️➡️🔥😈"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: AC/DC)",
+      "emoji": "🛣️➡️🔥😈",
+      "answer": [
+        "Highway to Hell",
+        "Дорога в ад",
+        "Шоссе в ад"
+      ]
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -399,26 +360,22 @@
       "instrument": "marimba"
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Highway to Hell — AC/DC",
-        "Yellow Submarine — The Beatles",
-        "Wind of Change — Scorpions",
-        "Gangnam Style — PSY"
-      ],
-      "answer": 2,
-      "emoji": "🌬️🔄"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: Scorpions)",
+      "emoji": "🌬️🔄",
+      "answer": [
+        "Wind of Change",
+        "Ветер перемен"
+      ]
     },
     {
-      "q": "🖼 Угадай песню по картинке",
-      "options": [
-        "Yellow Submarine — The Beatles",
-        "Despacito — Luis Fonsi",
-        "Purple Rain — Prince",
-        "Hello — Adele"
-      ],
-      "answer": 0,
-      "emoji": "💛🚢🌊"
+      "type": "text",
+      "q": "🖼 Напиши название песни по картинке (исполнитель: The Beatles)",
+      "emoji": "💛🚢🌊",
+      "answer": [
+        "Yellow Submarine",
+        "Жёлтая подводная лодка"
+      ]
     }
   ]
 }

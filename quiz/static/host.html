@@ -216,6 +216,44 @@ a.btn { text-decoration: none; display: inline-block; }
 .si-verdict .d { font-family: var(--display); margin-left: auto; }
 .si-verdict.ok .d { color: var(--good); } .si-verdict.no .d { color: var(--bad); }
 @media (max-width: 900px) { .si-layout { grid-template-columns: 1fr; } }
+/* «100 к 1» */
+.fd-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.fd-teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.fd-team { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: var(--panel); border: 2px solid transparent; }
+.fd-team.r { flex-direction: row-reverse; text-align: right; }
+.fd-team.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.fd-team .nm { flex: 1; font-weight: 800; }
+.fd-team b { font: 800 1.6em var(--display); color: var(--c); font-variant-numeric: tabular-nums; }
+.fd-bank { text-align: center; font: 800 1.8em var(--display); color: var(--accent); }
+.fd-bank small { display: block; font: 700 .45em var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.fd-board { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(var(--rows), auto); gap: 10px; }
+.fd-slot { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; font: inherit; color: var(--ink); text-align: left;
+  background: #1d2a8a; border: 0; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .25); min-height: 64px; }
+button.fd-slot { cursor: pointer; }
+button.fd-slot:hover { background: #2a3bb0; }
+.fd-slot .n { font: 800 1.2em var(--display); width: 1.6em; height: 1.6em; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .12); flex: none; }
+.fd-slot .t { flex: 1; font-weight: 800; font-size: 1.15em; text-transform: uppercase; overflow-wrap: anywhere; }
+.fd-slot .p { font: 800 1.3em var(--display); color: var(--accent); }
+.fd-slot.open { background: linear-gradient(180deg, #ffd23f, #f2a516); color: var(--accent-ink); animation: flip .5s ease both; }
+.fd-slot.open .p { color: var(--accent-ink); }
+.fd-slot.missed { background: rgba(255, 255, 255, .08); color: var(--muted); }
+.fd-slot.missed .p { color: var(--muted); }
+#fd-timer.low { color: var(--bad); }
+.fd-status .tdot, .si-splash .tdot, .eyebrow .tdot { width: .8em; height: .8em; border-radius: 50%; display: inline-block; vertical-align: baseline; box-shadow: none; }
+.fd-team .tdot { width: 1.2em; height: 1.2em; }
+@keyframes flip { from { transform: rotateX(90deg); } to { transform: none; } }
+.fd-strikes { display: flex; gap: 10px; align-items: center; min-height: 56px; }
+.fd-x { font: 800 44px var(--display); color: var(--line); line-height: 1; }
+.fd-x.on { color: var(--bad); animation: pop .3s ease both; }
+.fd-status { font-size: 1.3em; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fd-log { display: flex; gap: 8px; flex-wrap: wrap; }
+.fd-big { display: grid; gap: 10px; }
+.fd-big-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 12px; background: var(--panel); }
+.fd-big-row .p { font: 800 1.2em var(--display); color: var(--accent); }
+.fd-big-row small { color: var(--muted); }
+.fd-target { height: 16px; border-radius: 99px; background: var(--panel); overflow: hidden; }
+.fd-target i { display: block; height: 100%; width: var(--w); background: linear-gradient(90deg, var(--accent), var(--good)); transition: width .8s; }
+@media (max-width: 900px) { .fd-board { grid-template-columns: 1fr; grid-auto-flow: row; } .fd-teams { grid-template-columns: 1fr 1fr; } .fd-bank { grid-column: 1 / -1; order: -1; } .fd-big-row { grid-template-columns: 1fr auto; } }
 
 /* главное меню v2 */
 .mode-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -306,6 +344,7 @@ a.btn { text-decoration: none; display: inline-block; }
 <!-- поля выбора файлов вне меню: меню перерисовывается, а выбранный файл не должен теряться -->
 <input type="file" id="pack-file" accept=".json,.csv,.txt,.xlsx" hidden>
 <input type="file" id="siq-file" accept=".siq" hidden>
+<input type="file" id="fd-file" accept=".json,.csv,.txt" hidden>
 <div class="stage">
   <div class="top">
     <span class="brand" id="brand">Квиз</span>
@@ -331,7 +370,7 @@ const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
 const MODES = [
   { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто быстрее", ready: true },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
-  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Скоро" },
+  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true },
 ];
 const RULES = [
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
@@ -469,6 +508,7 @@ function render(s) {
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
   if (s.phase.startsWith("si_")) return renderSi(s);
+  if (s.phase.startsWith("fd_")) return renderFd(s);
   soundtrack(s);
 
   if (s.phase === "setup") {
@@ -478,7 +518,8 @@ function render(s) {
     draft = null;
     const url = (s.join || location.origin) + "/?room=" + s.room;
     const st = s.settings;
-    const tags = [
+    const fdMode = st.mode === "100to1";
+    const tags = fdMode ? [`💯 100 к 1`, `Пакет: ${s.title}`, "2 команды", `${st.seconds} с на ответ`, st.auto ? "Автопереход" : "Ведущий листает сам"] : [
       ...(st.mode === "jeopardy" ? ["🎯 Своя игра"] : []),
       `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
@@ -663,9 +704,127 @@ function renderSi(s) {
   live(s);
 }
 
+// ---------- «100 к 1» ----------
+let fdSeen = null;
+function fdSound(s) {
+  const fd = s.fd, c = fd.cur || {}, M = window.QuizMusic;
+  const now = { phase: s.phase, r: fd.round_index, strikes: c.strikes || 0, opened: (c.slots || []).filter((x) => x.opened).length,
+    big: fd.big ? fd.big.i : -1 };
+  const was = fdSeen || {};
+  fdSeen = now;
+  if (!M) return;
+  const newPhase = now.phase !== was.phase || now.r !== was.r || now.big !== was.big;
+  if (s.phase === "fd_round" && newPhase) { M.stop(0.3); M.sting("start"); }
+  else if (s.phase === "fd_play" || s.phase === "fd_steal") {
+    if (newPhase && was.phase !== "fd_play") M.play("question");
+    if (now.strikes > (was.strikes || 0) && was.r === now.r) M.sting("wrong");
+    else if (now.opened > (was.opened || 0) && was.r === now.r) M.sting("reveal");
+  } else if (s.phase === "fd_reveal" && newPhase) {
+    M.stop(0.3);
+    const last = (c.log || []).slice(-1)[0];
+    M.sting(last && last.result === "wrong" ? "wrong" : "reveal");
+    setTimeout(() => { if (fdSeen.phase === "fd_reveal") M.play("leaders"); }, 1200);
+  } else if (s.phase === "fd_reveal" && now.opened > was.opened) M.sting("reveal");
+  else if (s.phase === "fd_big_intro" && newPhase) { M.stop(0.3); M.sting("fanfare"); }
+  else if (s.phase === "fd_big_q" && newPhase) { if (was.phase !== "fd_big_q") M.play("question"); else M.sting(fd.big.answers.slice(-1)[0]?.points ? "reveal" : "wrong"); }
+  else if (s.phase === "fd_big_result" && newPhase) { M.stop(0.3); M.sting(fd.big.total >= fd.big.target ? "fanfare" : "reveal"); }
+}
+
+function fdTeams(s, active, bank) {
+  const fd = s.fd, names = s.team_names;
+  const members = (t) => s.players.filter((p) => p.team === t);
+  const team = (t, side) => `<div class="fd-team ${side} ${active === t ? "on" : ""}" style="--c:${TEAM_COLORS[t]}">
+    ${teamDot(t)}<span class="nm">${esc(names[t])}<small class="muted" style="display:block;font-weight:600;font-size:.75em">${members(t).map((p) => esc(p.name)).join(", ") || "нет игроков"}</small></span>
+    <b>${fd.team_scores[t]}</b></div>`;
+  return `<div class="fd-teams">${team(0, "")}<div class="fd-bank">${bank == null ? "" : `<small>Банк</small>${bank}`}</div>${team(1, "r")}</div>`;
+}
+
+function renderFd(s) {
+  const fd = s.fd, c = fd.cur || {}, b = fd.big, names = s.team_names;
+  fdSound(s);
+  const prog = document.getElementById("progress");
+  prog.innerHTML = c.name ? `${esc(c.name)} · ${fd.round_index + 1} из ${fd.rounds_total}` : "Большая игра";
+  let body = "", actions = "";
+  if (s.phase === "fd_round") {
+    body = `<div class="si-splash"><div class="eyebrow">Раунд ${fd.round_index + 1} из ${fd.rounds_total}</div><h1>${esc(c.name)}</h1>
+      <p class="lead">${c.reverse ? "Нужно назвать <b>самый редкий</b> ответ: чем ниже в списке, тем дороже"
+        : c.mult > 1 ? `Все очки × ${c.mult}` : "Угадайте самые популярные ответы"}</p>
+      <p class="muted">Начинают: ${teamDot(c.team)} <b style="color:var(--ink)">${esc(names[c.team])}</b></p></div>
+      ${fdTeams(s, c.team, null)}`;
+    actions = `<button class="btn" data-act="next">Начать</button>`;
+  } else if (["fd_play", "fd_steal", "fd_reveal"].includes(s.phase)) {
+    const reveal = s.phase === "fd_reveal", steal = s.phase === "fd_steal";
+    const rows = Math.ceil(c.slots.length / 2);
+    const slots = c.slots.map((x, i) => x.opened
+      ? `<div class="fd-slot open" style="--i:${i}"><span class="n">${x.n}</span><span class="t">${esc(x.text)}</span><span class="p">${x.points}</span></div>`
+      : reveal
+        ? `<button class="fd-slot missed" data-fd-open="${i}" title="Засчитать этот ответ команде-победителю"><span class="n">${x.n}</span><span class="t">${esc(x.text)}</span><span class="p">${x.points}</span></button>`
+        : `<button class="fd-slot" data-fd-open="${i}" title="Открыть вручную, если ответ назвали, а проверка не узнала"><span class="n">${x.n}</span><span class="t"></span></button>`).join("");
+    const strikes = `<div class="fd-strikes" aria-label="Промахов: ${c.strikes} из 3">${[0, 1, 2].map((k) => `<span class="fd-x ${k < c.strikes ? "on" : ""}">✗</span>`).join("")}</div>`;
+    const other = 1 - c.team;
+    const status = reveal
+      ? `<p class="fd-status">🏆 ${c.bank} очков забирают ${teamDot(c.winner)} <b>${esc(names[c.winner])}</b>${c.steal ? (c.winner === other ? " — банк украден!" : " — кража не удалась") : ""}</p>`
+      : steal
+        ? `<p class="fd-status">⚡ ${teamDot(other)} <b>${esc(names[other])}</b> могут забрать банк: одна попытка, отвечает любой · <span id="fd-timer"></span></p>`
+        : `<p class="fd-status">🎤 Отвечает ${c.guesser ? `${avaP(c.guesser)} <b>${esc(c.guesser.name)}</b>` : "…"} · ${teamDot(c.team)} ${esc(names[c.team])} · <span id="fd-timer"></span></p>`;
+    const log = c.log.length ? `<div class="fd-log">${c.log.map((x) => `<span class="chip said ${x.result === "right" ? "ok" : "no"}">${x.result === "right" ? "✓" : x.result === "already" ? "↺" : "✗"} ${esc(x.name)}: «${esc(x.text || "время вышло")}»${x.result === "already" ? " — уже открыт" : ""}</span>`).join("")}</div>` : "";
+    body = `<div class="fd-head"><div><div class="eyebrow">${esc(c.name)}${c.mult > 1 ? " · очки × " + c.mult : ""}</div>
+        <h2 class="rise">${esc(c.q)}</h2></div>${strikes}</div>
+      ${fdTeams(s, steal ? other : reveal ? c.winner : c.team, c.bank)}
+      <div class="fd-board" style="--rows:${rows}">${slots}</div>
+      ${status}${log}
+      ${reveal && fd.note && fd.round_index === 0 ? `<p class="muted" style="margin:0;font-size:.8em">${esc(fd.note)}</p>` : ""}`;
+    const last = fd.round_index + 1 >= fd.rounds_total;
+    actions = reveal ? `<button class="btn" data-act="next">${last ? (fd.has_big ? "Большая игра" : "Итоги игры") : "Следующий раунд"}</button>`
+      : (s.phase === "fd_play" && c.strikes ? `<button class="btn ghost" data-act="fd_unstrike">Отменить промах</button>` : "")
+        + `<button class="btn ghost" data-act="next">${steal ? "Не угадали" : "Время вышло"}</button>`;
+  } else if (s.phase === "fd_big_intro") {
+    body = `<div class="si-splash"><div class="eyebrow">Финал</div><h1>Большая игра</h1>
+      <p class="lead">Играют ${teamDot(b.team)} <b>${esc(names[b.team])}</b></p>
+      <p class="muted">${b.count} вопросов, по 25 секунд. Отвечает любой из команды — один ответ на вопрос.<br>
+        Цель — набрать ${b.target} очков: по очкам самых популярных ответов</p></div>
+      ${fdTeams(s, b.team, null)}`;
+    actions = `<button class="btn" data-act="next">Начать</button>`;
+  } else if (s.phase === "fd_big_q") {
+    body = `<div class="fd-head"><div><div class="eyebrow">Большая игра · вопрос ${b.i + 1} из ${b.count} · ${teamDot(b.team)} ${esc(names[b.team])}</div>
+        <h2 class="rise">${esc(b.q)}</h2></div><div class="fd-bank"><small>Осталось</small><span id="fd-timer"></span></div></div>
+      ${fdBig(b)}
+      <p class="muted" style="margin:0">Отвечайте на телефоне — подойдёт первый ответ любого игрока команды</p>`;
+    actions = `<button class="btn ghost" data-act="next">Пропустить вопрос</button>`;
+  } else if (s.phase === "fd_big_result") {
+    const won = b.total >= b.target;
+    body = `<div class="si-splash"><div class="eyebrow">Большая игра</div><h1>${won ? "Победа! 🎉" : "Почти получилось"}</h1>
+      <p class="lead">${teamDot(b.team)} ${esc(names[b.team])}: <b>${b.total}</b> из ${b.target}</p></div>
+      ${fdBig(b, true)}`;
+    actions = `<button class="btn" data-act="next">Итоги игры</button>`;
+    if (won) setTimeout(() => confetti(true), 600);
+  }
+  $main.innerHTML = body;
+  $actions.innerHTML = actions;
+  live(s);
+}
+
+function fdBig(b, result) {
+  const rows = b.answers.map((a, i) => `<div class="fd-big-row rise" style="--i:${i}">
+      <span>${esc(a.q)}${result && b.tops ? `<br><small>Топ: ${b.tops[i].answers.map((x) => `${esc(x.text)} ${x.points}`).join(" · ")}</small>` : ""}</span>
+      <span>${a.text ? `«${esc(a.text)}»` : `<span class="muted">нет ответа</span>`}${a.match && a.match.toLowerCase() !== a.text.toLowerCase() ? ` <small>= ${esc(a.match)}</small>` : ""}</span>
+      <span class="p">${a.points}</span></div>`).join("");
+  return `<div class="fd-big">${rows}
+    <div class="fd-big-row"><b>Итого</b><div class="fd-target"><i style="--w:${Math.min(100, (b.total / b.target) * 100)}%"></i></div><span class="p">${b.total} / ${b.target}</span></div></div>`;
+}
+
 let rulesOpen = false;
 
 function packCards(s, d) {
+  if (d.mode === "100to1") {
+    const list = s.fd_packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.count} вопросов` }));
+    if (s.fd_custom) list.push({ id: "custom", title: s.fd_custom.title, sub: `Свой пакет · ${s.fd_custom.count} вопросов` });
+    return `<div class="pack-grid">${list.map((p) => `
+      <button class="mode pack ${d.fd_pack === p.id ? "on" : ""}" data-fdpack="${esc(p.id)}"><span><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></span></button>`).join("")}</div>
+      <div class="pack-tools"><label class="btn ghost small" for="fd-file">Загрузить свой (.json, .csv)</label>
+        <span class="muted" style="font-size:.8em">Таблица: Вопрос; Ответ 1; Очки 1; Ответ 2; Очки 2… Другие написания — через «/»</span></div>
+      <p class="error" id="pack-err" role="alert"></p>`;
+  }
   const si = d.mode === "jeopardy";
   const list = si
     ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.rounds} раунд. · ${p.count} вопр.${p.final ? " · финал" : ""}` }))
@@ -684,6 +843,7 @@ function packCards(s, d) {
 }
 
 function rulesSummary(d) {
+  if (d.mode === "100to1") return ["2 команды", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   if (d.mode === "jeopardy") return [`${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
     ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
@@ -693,7 +853,10 @@ function rulesModal(d) {
   const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
   const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
     <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
-  const body = d.mode === "jeopardy"
+  const body = d.mode === "100to1"
+    ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
+    : d.mode === "jeopardy"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у игрока после нажатия «Ответить»</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 6 секунд после ответа — снова табло" })}`
     : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
@@ -742,6 +905,22 @@ document.addEventListener("change", async (e) => {
     }
     return;
   }
+  if (e.target.id === "fd-file" && e.target.files[0]) {
+    const file = e.target.files[0], err = document.getElementById("pack-err");
+    e.target.value = "";
+    if (err) err.textContent = "Загружаю…";
+    try {
+      const pack = await QuizPack.readFeudFile(file);
+      const res = await post("upload_fd", { pack });
+      if (res.error) throw new Error(res.error);
+      draft.mode = "100to1"; draft.fd_pack = "custom";
+      lastSig = ""; await poll();
+    } catch (x) {
+      const el = document.getElementById("pack-err");
+      if (el) el.textContent = x.message || "Не получилось загрузить файл";
+    }
+    return;
+  }
   if (e.target.id === "pack-file" && e.target.files[0]) {
     const file = e.target.files[0], err = document.getElementById("pack-err");
     e.target.value = "";
@@ -765,10 +944,11 @@ document.addEventListener("click", (e) => {
   if (!draft) return;
   if (e.target.closest("[data-open-rules]")) { rulesOpen = true; return renderSetup(lastState); }
   if (e.target.closest("[data-close-rules]")) { rulesOpen = false; return renderSetup(lastState); }
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-count]");
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
+  if (t.dataset.fdpack) draft.fd_pack = t.dataset.fdpack;
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
   if (t.dataset.mode) draft.mode = t.dataset.mode;
@@ -790,7 +970,9 @@ function live(s) {
     else if (s.phase === "si_answer") st.textContent = `Осталось ${Math.ceil(c.left)} с`;
     else if (s.phase === "si_final_q") st.textContent = `Осталось ${Math.ceil(f.left)} с`;
   }
-  if (window.QuizMusic) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
+  const ft = document.getElementById("fd-timer"), fl = s.fd && (s.fd.cur || s.fd.big || {}).left;
+  if (ft && fl != null) { ft.textContent = `${Math.ceil(fl)} с`; ft.classList.toggle("low", fl <= 5); }
+  if (window.QuizMusic) QuizMusic.setTension((s.phase === "question" && s.left <= 5) || (s.phase === "fd_big_q" && fl <= 5));
   soundButton();
   const nx = document.getElementById("auto-next");
   if (s.auto_left != null) {
@@ -816,7 +998,8 @@ async function poll() {
     version = s.version;
     lastState = s;
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.players, s.join]) + siKey;
+    const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
+    const sig = JSON.stringify([s.phase, s.index, s.players, s.join]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {
@@ -857,6 +1040,8 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
   const pick = e.target.closest("[data-si-pick]");
   if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
+  const fdo = e.target.closest("[data-fd-open]");
+  if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");
   if (ovr) { await post("si_override", { index: Number(ovr.dataset.siOvr) }); lastSig = ""; return poll(); }
   if (e.target.closest("[data-si-replay]") && lastState && lastState.si) {

@@ -382,6 +382,13 @@
     for (const [n, dt] of seq) { I.marimba(sfxBus, f(n), t + dt, 0.3, 0.8); I.piano(sfxBus, f(n), t + dt, 0.4, 0.5); }
     if (name === "fanfare") { ["C4", "E4", "G4", "C5"].forEach((n) => I.strings(sfxBus, f(n), t + 1.08, 2, 0.9)); D.kick(t + 1.08); }
     if (name === "start") D.open(t + 0.2, 1);
+    if (name === "wrong") { // промах: низкий гудок
+      [0, 0.28].forEach((dt) => {
+        const g = ctx.createGain(), lp = lowpass(900); g.connect(lp); out(sfxBus, lp, 0.1);
+        adsr(g, t + dt, 0.01, 0.35, 0.18, 0.08);
+        ["sawtooth", "square"].forEach((type, k) => osc(type, f("D2") * (k ? 1.01 : 1), t + dt, t + dt + 0.3).connect(g));
+      });
+    }
     shift = keep;
   }
 

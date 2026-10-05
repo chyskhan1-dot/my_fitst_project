@@ -66,8 +66,9 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
-MODES = ["quiz", "jeopardy"]  # «100 к 1» пока в разработке
+MODES = ["quiz", "jeopardy", "100to1"]
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
+FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 
 
@@ -281,6 +282,42 @@ for f in sorted(SI_DIR.glob("*")) if SI_DIR.exists() else []:
         print(f"Пакет «Своей игры» {f.name} пропущен: {e}", flush=True)
 
 
+def clean_fd_pack(data):
+    """Пакет «100 к 1»: вопросы и до 8 ответов с очками (самые популярные — первыми)."""
+    if not isinstance(data, dict) or not isinstance(data.get("questions"), list):
+        raise PackError("файл не похож на пакет «100 к 1»")
+    questions = []
+    for n, q in enumerate(data["questions"][:200], 1):
+        text = str((q or {}).get("q") or "").strip()[:200]
+        answers = []
+        for a in (q or {}).get("answers") or []:
+            name = str((a or {}).get("text") or "").strip()[:60]
+            try:
+                points = int((a or {}).get("points") or 0)
+            except (TypeError, ValueError):
+                points = 0
+            alt = [str(x).strip()[:60] for x in (a or {}).get("alt") or [] if str(x).strip()][:8]
+            if name and points > 0:
+                answers.append({"text": name, "points": points, "alt": alt})
+        if not text:
+            raise PackError(f"вопрос {n}: нет текста")
+        if not 2 <= len(answers) <= 8:
+            raise PackError(f"вопрос {n}: нужно от 2 до 8 ответов с очками")
+        answers.sort(key=lambda a: -a["points"])
+        questions.append({"q": text, "answers": answers})
+    if len(questions) < 1:
+        raise PackError("в пакете нет вопросов")
+    return {"title": str(data.get("title") or "100 к 1").strip()[:60], "note": str(data.get("note") or "")[:200], "questions": questions}
+
+
+FD_PACKS = {}
+for f in sorted(FD_DIR.glob("*.json")) if FD_DIR.exists() else []:
+    try:
+        FD_PACKS[f.stem] = clean_fd_pack(json.loads(f.read_text(encoding="utf-8")))
+    except (PackError, json.JSONDecodeError) as e:
+        print(f"Пакет «100 к 1» {f.name} пропущен: {e}", flush=True)
+
+
 def si_info(pack):
     rounds = [r for r in pack["rounds"] if not r["final"]]
     count = sum(len(t["questions"]) for r in rounds for t in r["themes"])
@@ -313,6 +350,7 @@ DEFAULTS = {
     "seconds": 20,
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
     "si_pack": next(iter(SI_PACKS), None),  # пакет «Своей игры»
+    "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
 }
 
 
@@ -664,6 +702,302 @@ class SiEngine:
         return s
 
 
+class FeudEngine:
+    """«100 к 1»: две команды угадывают самые популярные ответы.
+
+    Этапы: fd_round → fd_play (команда отвечает по очереди, 3 промаха) → [fd_steal] → fd_reveal → …
+    → fd_big_intro → fd_big_q × 5 → fd_big_result → final.
+    """
+
+    ROUNDS = [("Простая игра", 1, False), ("Двойная игра", 2, False), ("Тройная игра", 3, False), ("Игра наоборот", 1, True)]
+    REVERSE_POINTS = [15, 30, 60, 120, 180, 240, 300, 360]  # в «игре наоборот» дороже редкие ответы
+    ROUND_SECONDS = 4
+    REVEAL_SECONDS = 7
+    STRIKES = 3
+    BIG_COUNT = 5
+    BIG_SHARE = 0.6  # цель большой игры — 60% от суммы лучших ответов
+    BIG_SECONDS = 25
+
+    def __init__(self, game, pack):
+        self.g = game
+        qs = list(pack["questions"])
+        random.shuffle(qs)
+        rounds = min(len(self.ROUNDS), len(qs))
+        self.round_qs = qs[:rounds]
+        big = qs[rounds:rounds + self.BIG_COUNT]
+        self.big_qs = big if len(big) >= 3 else []
+        self.note = pack.get("note", "")
+        self.r = -1
+        self.scores = [0, 0]
+        self.turn = [0, 0]
+        self.cur = None
+        self.big = None
+
+    # ---------- служебное ----------
+    def phase(self, name):
+        self.g.set_phase(name)
+
+    @property
+    def seconds(self):
+        return self.g.settings["seconds"]
+
+    def members(self, team):
+        online = set(self.g.online())
+        ids = [pid for pid, p in self.g.players.items() if p.get("team") == team]
+        return [pid for pid in ids if pid in online] or ids
+
+    def next_guesser(self, team):
+        m = self.members(team)
+        if not m:
+            return None
+        pid = m[self.turn[team] % len(m)]
+        self.turn[team] += 1
+        return pid
+
+    def add(self, team, points):
+        self.scores[team] += points
+        for p in self.g.players.values():  # у всех в команде — общий счёт команды
+            if p.get("team") == team:
+                p["last_points"] = points
+                p["score"] = self.scores[team]
+
+    def points(self, i):
+        c = self.cur
+        return self.REVERSE_POINTS[i] if c["reverse"] else c["q"]["answers"][i]["points"] * c["mult"]
+
+    def match(self, q, text):
+        for i, a in enumerate(q["answers"]):
+            if text and si_match(text, [a["text"], *a["alt"]]):
+                return i
+        return None
+
+    # ---------- раунды ----------
+    def start(self):
+        for p in self.g.players.values():
+            p.update(score=0, last_points=0)
+        self.next_round()
+
+    def next_round(self):
+        self.r += 1
+        if self.r >= len(self.round_qs):
+            return self.start_big()
+        name, mult, reverse = self.ROUNDS[self.r]
+        self.cur = {"q": self.round_qs[self.r], "name": name, "mult": mult, "reverse": reverse,
+                    "team": self.r % 2, "opened": set(), "strikes": 0, "bank": 0,
+                    "guesser": None, "deadline": 0.0, "steal": False, "winner": None, "log": []}
+        self.phase("fd_round")
+
+    def begin_play(self):
+        c = self.cur
+        c["guesser"] = self.next_guesser(c["team"])
+        c["deadline"] = time.time() + self.seconds
+        self.phase("fd_play")
+
+    def say(self, pid, text, result):
+        name = self.g.players.get(pid, {}).get("name", "—")
+        self.cur["log"] = (self.cur["log"] + [{"name": name, "text": text, "result": result}])[-6:]
+
+    def open(self, i):
+        self.cur["opened"].add(i)
+        self.cur["bank"] += self.points(i)
+
+    def guess(self, pid, text):
+        c, ph = self.cur, self.g.phase
+        text = str(text or "").strip()[:60]
+        if ph == "fd_play" and pid == c["guesser"]:
+            return self.judge(pid, text)
+        if ph == "fd_steal" and self.g.players.get(pid, {}).get("team") == 1 - c["team"]:
+            return self.judge_steal(pid, text)
+        return False
+
+    def judge(self, pid, text):
+        c = self.cur
+        i = self.match(c["q"], text)
+        if i is not None and i in c["opened"]:
+            self.say(pid, text, "already")  # уже открыт — промахом не считаем, пусть назовёт другой
+            c["deadline"] = time.time() + self.seconds
+            return True
+        if i is not None:
+            self.open(i)
+            self.say(pid, text, "right")
+            if len(c["opened"]) == len(c["q"]["answers"]):
+                return self.win(c["team"])
+        else:
+            c["strikes"] += 1
+            self.say(pid, text, "wrong")
+            if c["strikes"] >= self.STRIKES:
+                c["steal"] = True
+                c["guesser"] = None
+                c["deadline"] = time.time() + self.seconds * 1.5
+                self.phase("fd_steal")
+                return True
+        c["guesser"] = self.next_guesser(c["team"])
+        c["deadline"] = time.time() + self.seconds
+        return True
+
+    def judge_steal(self, pid, text):
+        c = self.cur
+        i = self.match(c["q"], text)
+        if i is not None and i not in c["opened"]:
+            self.open(i)
+            self.say(pid, text, "right")
+            return self.win(1 - c["team"])
+        self.say(pid, text, "wrong")
+        return self.win(c["team"])
+
+    def win(self, team):
+        c = self.cur
+        c["winner"] = team
+        self.add(team, c["bank"])
+        self.phase("fd_reveal")
+        return True
+
+    def host_open(self, i):
+        """Ведущий открывает ответ вручную — если проверка не узнала правильный ответ."""
+        c, ph = self.cur, self.g.phase
+        if not c or not isinstance(i, int) or not 0 <= i < len(c["q"]["answers"]) or i in c["opened"]:
+            return False
+        if ph == "fd_play":
+            self.open(i)
+            if c["log"] and c["log"][-1]["result"] == "wrong":  # последний «промах» на самом деле верный
+                c["log"][-1]["result"] = "right"
+                c["strikes"] = max(0, c["strikes"] - 1)
+            if len(c["opened"]) == len(c["q"]["answers"]):
+                self.win(c["team"])
+            return True
+        if ph == "fd_steal":
+            self.open(i)
+            return self.win(1 - c["team"])
+        if ph == "fd_reveal":
+            # банк уже отдан победителю — дополнительный ответ тоже засчитываем ему
+            c["opened"].add(i)
+            self.add(c["winner"], self.points(i))
+            c["bank"] += self.points(i)
+            return True
+        return False
+
+    def unstrike(self):
+        if self.g.phase == "fd_play" and self.cur["strikes"] > 0:
+            self.cur["strikes"] -= 1
+            return True
+        return False
+
+    # ---------- большая игра ----------
+    def start_big(self):
+        self.cur = None
+        if not self.big_qs or max(self.scores) <= 0:
+            return self.g.set_phase("final")
+        team = 0 if self.scores[0] >= self.scores[1] else 1
+        best = sum(q["answers"][0]["points"] for q in self.big_qs)
+        self.big = {"team": team, "i": -1, "answers": [], "deadline": 0.0,
+                    "target": max(10, round(best * self.BIG_SHARE / 10) * 10)}
+        self.phase("fd_big_intro")
+
+    def big_next(self):
+        b = self.big
+        b["i"] += 1
+        if b["i"] >= len(self.big_qs):
+            total = sum(a["points"] for a in b["answers"])
+            self.add(b["team"], total)
+            return self.phase("fd_big_result")
+        b["deadline"] = time.time() + self.BIG_SECONDS
+        self.phase("fd_big_q")
+
+    def big_answer(self, pid, text):
+        b = self.big
+        if self.g.phase != "fd_big_q" or self.g.players.get(pid, {}).get("team") != b["team"]:
+            return False
+        q = self.big_qs[b["i"]]
+        text = str(text or "").strip()[:60]
+        i = self.match(q, text)
+        b["answers"].append({"q": q["q"], "text": text, "points": q["answers"][i]["points"] if i is not None else 0,
+                             "match": q["answers"][i]["text"] if i is not None else None, "top": q["answers"][0]["text"]})
+        self.big_next()
+        return True
+
+    # ---------- время и ведущий ----------
+    def tick(self):
+        ph, now = self.g.phase, time.time()
+        waited = now - self.g.phase_at
+        if ph == "fd_round" and waited >= self.ROUND_SECONDS:
+            self.begin_play()
+        elif ph == "fd_play" and now >= self.cur["deadline"]:
+            if self.cur["guesser"] is None:  # в команде никого — ход соперникам
+                self.cur["strikes"] = self.STRIKES - 1
+            self.judge(self.cur["guesser"], "")
+        elif ph == "fd_steal" and now >= self.cur["deadline"]:
+            self.say(None, "", "wrong")
+            self.win(self.cur["team"])
+        elif ph == "fd_reveal" and self.g.settings["auto"] and waited >= self.REVEAL_SECONDS:
+            self.next_round()
+        elif ph == "fd_big_intro" and waited >= self.ROUND_SECONDS:
+            self.big_next()
+        elif ph == "fd_big_q" and now >= self.big["deadline"]:
+            q = self.big_qs[self.big["i"]]
+            self.big["answers"].append({"q": q["q"], "text": "", "points": 0, "match": None, "top": q["answers"][0]["text"]})
+            self.big_next()
+
+    def host_next(self):
+        ph = self.g.phase
+        if ph == "fd_round":
+            self.begin_play()
+        elif ph in ("fd_play", "fd_steal", "fd_big_q"):
+            if ph == "fd_play":
+                self.cur["deadline"] = 0
+            elif ph == "fd_steal":
+                self.cur["deadline"] = 0
+            else:
+                self.big["deadline"] = 0
+            self.tick()
+        elif ph == "fd_reveal":
+            self.next_round()
+        elif ph == "fd_big_intro":
+            self.big_next()
+        elif ph == "fd_big_result":
+            self.g.set_phase("final")
+
+    # ---------- что показать ----------
+    def name(self, pid):
+        p = self.g.players.get(pid)
+        return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
+
+    def state(self, pid):
+        ph, now = self.g.phase, time.time()
+        s = {"team_scores": self.scores, "rounds_total": len(self.round_qs), "round_index": self.r,
+             "has_big": bool(self.big_qs), "note": self.note}
+        c = self.cur
+        if c and ph in ("fd_round", "fd_play", "fd_steal", "fd_reveal"):
+            show_all = ph == "fd_reveal"
+            s["cur"] = {
+                "name": c["name"], "mult": c["mult"], "reverse": c["reverse"], "q": c["q"]["q"],
+                "slots": [{"n": i + 1, "opened": i in c["opened"],
+                           **({"text": a["text"], "points": self.points(i)} if show_all or i in c["opened"] else {})}
+                          for i, a in enumerate(c["q"]["answers"])],
+                "strikes": c["strikes"], "bank": c["bank"], "team": c["team"], "steal": c["steal"],
+                "guesser": self.name(c["guesser"]), "winner": c["winner"], "log": c["log"],
+                "left": max(0, round(c["deadline"] - now, 1)) if ph in ("fd_play", "fd_steal") else None,
+            }
+        b = self.big
+        if b and ph.startswith("fd_big"):
+            s["big"] = {"team": b["team"], "i": b["i"], "count": len(self.big_qs), "target": b["target"],
+                        "total": sum(a["points"] for a in b["answers"]), "answers": b["answers"],
+                        "q": self.big_qs[b["i"]]["q"] if ph == "fd_big_q" else None,
+                        "left": max(0, round(b["deadline"] - now, 1)) if ph == "fd_big_q" else None}
+            if ph == "fd_big_result":
+                s["big"]["tops"] = [{"q": q["q"], "answers": [{"text": a["text"], "points": a["points"]} for a in q["answers"][:3]]}
+                                    for q in self.big_qs]
+        if pid in self.g.players:
+            team = self.g.players[pid].get("team")
+            me = {"team": team}
+            if c:
+                me["is_guesser"] = ph == "fd_play" and pid == c["guesser"]
+                me["can_steal"] = ph == "fd_steal" and team == 1 - c["team"]
+            if b:
+                me["in_big"] = team == b["team"]
+            s["me"] = me
+        return s
+
+
 class Game:
     def __init__(self, code, host_device):
         self.code = code
@@ -678,6 +1012,8 @@ class Game:
         self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
         self.selected = []
         self.si = None  # «Своя игра», если выбран этот режим
+        self.fd = None  # «100 к 1»
+        self.fd_custom = None
         self.si_custom = None  # загруженный пакет .siq
         self.si_media = {}
         self.reset()
@@ -700,7 +1036,16 @@ class Game:
             s["count"] = data["count"]
         if data.get("si_pack") in SI_PACKS or (data.get("si_pack") == "custom" and self.si_custom):
             s["si_pack"] = data["si_pack"]
+        if data.get("fd_pack") in FD_PACKS or (data.get("fd_pack") == "custom" and self.fd_custom):
+            s["fd_pack"] = data["fd_pack"]
+        if s["mode"] == "100to1":
+            s["teams"] = 2  # «100 к 1» — всегда две команды
         return s
+
+    @property
+    def fd_pack(self):
+        key = self.settings.get("fd_pack")
+        return self.fd_custom if key == "custom" else FD_PACKS.get(key)
 
     @property
     def si_pack(self):
@@ -733,8 +1078,11 @@ class Game:
         self.all_answered_at = None
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
         self.si = None
+        self.fd = None
         if phase == "lobby":
-            if self.settings["mode"] == "jeopardy" and self.si_pack:
+            if self.settings["mode"] == "100to1" and self.fd_pack:
+                self.fd = FeudEngine(self, self.fd_pack)
+            elif self.settings["mode"] == "jeopardy" and self.si_pack:
                 self.si = SiEngine(self, self.si_pack)
             else:
                 self.pick_questions()
@@ -828,6 +1176,8 @@ class Game:
         """Двигает игру по времени: конец вопроса и автопереход."""
         if self.si and self.phase.startswith("si_"):
             return self.si.tick()
+        if self.fd and self.phase.startswith("fd_"):
+            return self.fd.tick()
         now = time.time()
         if self.phase == "question":
             online = self.online()
@@ -837,7 +1187,7 @@ class Game:
             time_up = now - self.started_at >= self.seconds
             if time_up or (self.all_answered_at and now - self.all_answered_at >= REVEAL_PAUSE):
                 self.finish_question()
-        elif self.settings["auto"] and self.auto_left() == 0 and not self.phase.startswith("si_"):
+        elif self.settings["auto"] and self.auto_left() == 0 and not self.phase.startswith(("si_", "fd_")):
             self.next()
 
     def auto_left(self):
@@ -967,17 +1317,23 @@ class Game:
             "version": VERSION,
             "auto_left": self.auto_left(),
         }
+        if self.fd:
+            s["title"] = self.fd_pack["title"]
+            s["fd"] = self.fd.state(pid if self.owns(pid, device) else None)
         if self.si:
             s["title"] = self.si_pack["title"]
             s["si"] = self.si.state(pid if self.owns(pid, device) else None)
         if self.phase == "setup":
             s["si_packs"] = [{"id": k, **si_info(p)} for k, p in SI_PACKS.items()]
+            s["fd_packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in FD_PACKS.items()]
+            if self.fd_custom:
+                s["fd_custom"] = {"title": self.fd_custom["title"], "count": len(self.fd_custom["questions"])}
             if self.si_custom:
                 s["si_custom"] = si_info(self.si_custom)
             s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()]
             if self.custom:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"])}
-        if self.phase in ("question", "reveal") and not self.si:
+        if self.phase in ("question", "reveal") and not self.si and not self.fd:
             q = self.question()
             s["qtype"] = q["type"]
             s["question"] = q["q"]
@@ -1228,6 +1584,16 @@ class Handler(BaseHTTPRequestHandler):
                 game.balance_teams()
                 return self.send_json({"pid": pid})
 
+            if path.startswith("/api/fd/"):
+                pid, fd = data.get("pid"), game.fd
+                if not fd or not game.owns(pid, device):
+                    return self.send_json({"ok": False})
+                game.tick()
+                action = path.rsplit("/", 1)[1]
+                ok = fd.guess(pid, data.get("text")) if action == "guess" else fd.big_answer(pid, data.get("text")) if action == "big" else False
+                game.tick()
+                return self.send_json({"ok": bool(ok)})
+
             if path.startswith("/api/si/"):
                 pid, si = data.get("pid"), game.si
                 if not si or not game.owns(pid, device):
@@ -1300,6 +1666,24 @@ class Handler(BaseHTTPRequestHandler):
                     game.configure(data.get("settings") or {})
                 elif action == "setup":
                     game.reset("setup")  # назад в меню, игроки остаются
+                elif action == "upload_fd":
+                    if game.phase != "setup":
+                        return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
+                    try:
+                        game.fd_custom = clean_fd_pack(data.get("pack"))
+                    except PackError as e:
+                        return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
+                    game.settings.update(fd_pack="custom", mode="100to1")
+                    return self.send_json({"ok": True, "title": game.fd_custom["title"], "count": len(game.fd_custom["questions"])})
+                elif action == "fd_open" and game.fd:
+                    game.fd.host_open(data.get("index"))
+                elif action == "fd_unstrike" and game.fd:
+                    game.fd.unstrike()
+                elif action == "next" and game.fd and game.phase == "lobby":
+                    game.fd.start()
+                elif action == "next" and game.fd and game.phase.startswith("fd_"):
+                    game.tick()
+                    game.fd.host_next()
                 elif action == "si_pick" and game.si:
                     game.si.pick(data.get("theme"), data.get("question"))
                 elif action == "si_override" and game.si:

@@ -120,6 +120,42 @@
     return data;
   }
 
+  // «100 к 1» в таблице: Вопрос; Ответ 1; Очки 1; Ответ 2; Очки 2; …
+  // Другие написания ответа — через «/»: «Пицца/pizza»
+  function csvToFeud(text, title) {
+    const rows = parseCSV(text);
+    if (rows.length && !/^\s*\d+\s*$/.test(rows[0][2] || "")) rows.shift(); // строка заголовков
+    const questions = rows.map((r, n) => {
+      const answers = [];
+      for (let i = 1; i + 1 < r.length; i += 2) {
+        const [name, ...alt] = r[i].split("/").map((x) => x.trim()).filter(Boolean);
+        const points = parseInt(r[i + 1], 10);
+        if (name && points > 0) answers.push({ text: name, points, alt });
+      }
+      if (!r[0].trim()) throw new Error(`Строка ${n + 2}: нет вопроса`);
+      return { q: r[0].trim(), answers };
+    });
+    return { title, questions };
+  }
+
+  function feudToCSV(pack) {
+    const max = Math.max(...pack.questions.map((q) => q.answers.length));
+    const head = ["Вопрос", ...Array.from({ length: max }, (_, i) => [`Ответ ${i + 1}`, `Очки ${i + 1}`]).flat()];
+    const rows = pack.questions.map((q) => [q.q, ...q.answers.flatMap((a) => [[a.text, ...(a.alt || [])].join("/"), a.points])]);
+    return [head, ...rows].map((r) => r.map(csvCell).join(";")).join("\r\n") + "\r\n";
+  }
+
+  async function readFeudFile(file) {
+    const name = file.name.toLowerCase(), title = file.name.replace(/\.[^.]+$/, "");
+    if (name.endsWith(".xlsx") || name.endsWith(".xls")) throw new Error("Сохрани таблицу как CSV");
+    const text = await file.text();
+    if (name.endsWith(".csv") || name.endsWith(".txt")) return csvToFeud(text, title);
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error("Файл повреждён или это не пакет «100 к 1»"); }
+    if (Array.isArray(data)) data = { title, questions: data };
+    return data;
+  }
+
   const readAsDataURL = (blob) => new Promise((ok, fail) => {
     const r = new FileReader();
     r.onload = () => ok(r.result);
@@ -168,5 +204,5 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
-  window.QuizPack = { TEMPLATE_CSV, parseCSV, csvToPack, packToCSV, readPackFile, fileToDataURL, mediaSrc, download };
+  window.QuizPack = { TEMPLATE_CSV, parseCSV, csvToPack, packToCSV, readPackFile, csvToFeud, feudToCSV, readFeudFile, fileToDataURL, mediaSrc, download };
 })();

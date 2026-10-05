@@ -34,7 +34,7 @@
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
   `static/music.js` — синтезированная музыка (Web Audio, без файлов).
-- `packs/*.json` — пакеты викторины (`football.csv` — копия «Футбола» для таблиц),
+- `packs/*.json` — пакеты викторины (`football.csv`, `school.csv` — копии для таблиц),
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 

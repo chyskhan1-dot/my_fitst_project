@@ -1534,6 +1534,15 @@ class Handler(BaseHTTPRequestHandler):
             if not device:
                 return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
 
+            if path == "/api/my_room":
+                # своя игра этого устройства: чтобы ведущий мог вернуться, а не создавать новую
+                cleanup()
+                game = next((g for g in rooms.values() if g.host_device == device), None)
+                if not game:
+                    return self.send_json({})
+                return self.send_json({"room": game.code, "token": game.host_token, "phase": game.phase,
+                                       "players": len(game.players), "title": game.state()["title"]})
+
             if path == "/api/rooms":
                 game = create_room(device)
                 if not game:

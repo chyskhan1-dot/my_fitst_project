@@ -350,6 +350,7 @@ DEFAULTS = {
     "seconds": 20,
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
     "si_pack": next(iter(SI_PACKS), None),  # пакет «Своей игры»
+    "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
 }
 
@@ -366,8 +367,8 @@ class SiEngine:
     """
 
     ROUND_SECONDS = 4  # заставка раунда
-    BUZZ_WINDOW = 12  # сколько секунд ждём нажатия «Ответить»
-    REBUZZ_WINDOW = 8  # после неверного ответа — для остальных
+    BUZZ_WINDOW = 12  # сколько секунд всего ждём нажатия «Ответить» (на весь вопрос, а не на каждую попытку)
+    REBUZZ_MIN = 3  # после неверного ответа остальным — остаток этого времени, но не меньше 3 с
     REVEAL_SECONDS = 6  # показ правильного ответа, потом табло
 
     def __init__(self, game, pack):
@@ -378,6 +379,8 @@ class SiEngine:
         self.final = random.choice(finals) if finals else None
         self.r = -1
         self.played = set()
+        self.round_end = None  # когда закончится время раунда
+        self.burned = 0
         self.chooser = None
         self.cur = None
         self.verdicts = []
@@ -408,8 +411,11 @@ class SiEngine:
     def round(self):
         return self.rounds[self.r]
 
+    def time_up(self):
+        return self.round_end is not None and time.time() >= self.round_end
+
     def round_done(self):
-        return all((ti, qi) in self.played for ti, t in enumerate(self.round()["themes"]) for qi in range(len(t["questions"])))
+        return self.time_up() or all((ti, qi) in self.played for ti, t in enumerate(self.round()["themes"]) for qi in range(len(t["questions"])))
 
     # ---------- ход игры ----------
     def start(self):
@@ -418,8 +424,11 @@ class SiEngine:
         self.next_round()
 
     def next_round(self):
+        if 0 <= self.r < len(self.rounds):  # сколько вопросов прошлого раунда сгорело
+            self.burned = sum(len(t["questions"]) for t in self.round()["themes"]) - len(self.played)
         self.r += 1
         self.played = set()
+        self.round_end = None
         if self.r < len(self.rounds):
             self.phase("si_round")
         else:
@@ -427,6 +436,9 @@ class SiEngine:
 
     def to_board(self):
         self.cur, self.verdicts = None, []
+        minutes = self.g.settings.get("si_round_min", 0)
+        if self.round_end is None and minutes:  # время раунда пошло, когда открылось табло
+            self.round_end = time.time() + minutes * 60
         self.pick_chooser()
         self.phase("si_board")
 
@@ -505,6 +517,7 @@ class SiEngine:
         if self.cur["false_start"].get(pid, 0) > now:
             return "early"
         self.cur["answerer"] = pid
+        self.cur["buzz_left"] = max(0, self.cur["deadline"] - now)  # пока игрок отвечает, время на кнопку стоит
         self.cur["deadline"] = now + self.answer_time
         self.phase("si_answer")
         return "ok"
@@ -535,8 +548,9 @@ class SiEngine:
         left = [x for x in self.g.online() if x not in self.cur["tried"]]
         if self.cur["exclusive"] or not left:
             return self.phase("si_reveal")
-        now = time.time()  # остальные могут попробовать
-        self.cur.update(answerer=None, buzz_at=now, deadline=now + self.REBUZZ_WINDOW)
+        now = time.time()  # остальные могут попробовать — сколько осталось от общего времени
+        rest = max(self.REBUZZ_MIN, self.cur.get("buzz_left", self.BUZZ_WINDOW))
+        self.cur.update(answerer=None, buzz_at=now, deadline=now + rest)
         self.phase("si_question")
 
     def override(self, i):
@@ -614,6 +628,8 @@ class SiEngine:
         waited = now - self.g.phase_at
         if ph == "si_round" and waited >= self.ROUND_SECONDS:
             self.to_board()
+        elif ph == "si_board" and self.time_up():
+            self.next_round()  # время раунда вышло — несыгранные вопросы сгорают
         elif ph == "si_question":
             if self.cur["exclusive"] and now >= self.cur["buzz_at"]:
                 self.cur["deadline"] = now + self.answer_time
@@ -633,6 +649,8 @@ class SiEngine:
         ph = self.g.phase
         if ph == "si_round":
             self.to_board()
+        elif ph == "si_board":
+            self.next_round()  # ведущий завершает раунд досрочно
         elif ph == "si_cat_give":  # игрок не выбрал — вопрос уходит случайному сопернику
             self.give(self.chooser, random.choice([p for p in self.players() if p != self.chooser]), force=True)
         elif ph == "si_stake":
@@ -660,6 +678,10 @@ class SiEngine:
         s = {"round_index": self.r, "rounds_total": len(self.rounds), "chooser": self.name(self.chooser)}
         if 0 <= self.r < len(self.rounds):
             s["round_name"] = self.round()["name"]
+            if self.round_end is not None:
+                s["round_left"] = max(0, round(self.round_end - now))
+        if ph == "si_round":
+            s["burned"] = self.burned
         if ph in ("si_round", "si_board") and 0 <= self.r < len(self.rounds):
             s["board"] = [{"name": t["name"], "cells": [{"price": q["price"], "played": (ti, qi) in self.played}
                                                         for qi, q in enumerate(t["questions"])]}
@@ -1032,6 +1054,8 @@ class Game:
             s["teams"] = data["teams"]
         if data.get("seconds") in (10, 20, 30):
             s["seconds"] = data["seconds"]
+        if data.get("si_round_min") in (0, 5, 10, 15):
+            s["si_round_min"] = data["si_round_min"]
         if data.get("count") in (0, 10, 20, 30):
             s["count"] = data["count"]
         if data.get("si_pack") in SI_PACKS or (data.get("si_pack") == "custom" and self.si_custom):

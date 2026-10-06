@@ -183,7 +183,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "" };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "" };
     }),
   };
 }
@@ -204,6 +204,7 @@ function toPack() {
       if (q.audio) q2.audio = q.audio;
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
+      if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();
       return q2;
     }),
   };
@@ -281,6 +282,7 @@ function card(q, i) {
     </div>
     <div class="row">
       <select data-type="${i}" aria-label="Тип вопроса ${i + 1}" style="width:auto">${TYPES.map(([v, n]) => `<option value="${v}" ${q.type === v ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <input type="text" data-theme="${i}" list="theme-list" maxlength="40" value="${esc(q.theme || "")}" placeholder="Тема" aria-label="Тема вопроса ${i + 1}" style="width:auto;flex:0 1 180px">
       <span class="help" style="flex:1 1 260px">${TYPE_HINTS[q.type]}</span>
     </div>
     <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
@@ -305,6 +307,9 @@ function render() {
   $list.innerHTML = pack.questions.length
     ? pack.questions.map(card).join("")
     : `<div class="empty">Вопросов пока нет. Нажми «Добавить вопрос» или открой файл.</div>`;
+  // подсказки для поля «Тема»: темы, которые уже есть в пакете
+  const themes = [...new Set(pack.questions.map((q) => (q.theme || "").trim()).filter(Boolean))];
+  $list.insertAdjacentHTML("beforeend", `<datalist id="theme-list">${themes.map((t) => `<option value="${esc(t)}">`).join("")}</datalist>`);
   $list.style.cssText = "display:flex;flex-direction:column;gap:16px";
   summary();
 }
@@ -332,6 +337,7 @@ document.getElementById("title").addEventListener("input", (e) => { pack.title =
 $list.addEventListener("input", (e) => {
   const t = e.target, i = Number(t.dataset.i ?? t.dataset.q);
   if (t.dataset.emoji != null) { pack.questions[Number(t.dataset.emoji)].emoji = t.value; return summary(); }
+  if (t.dataset.theme != null) { pack.questions[Number(t.dataset.theme)].theme = t.value; return; }
   if (t.dataset.melody != null) { pack.questions[Number(t.dataset.melody)].melody = t.value; return refreshCard(Number(t.dataset.melody)); }
   if (t.dataset.tempo != null) { pack.questions[Number(t.dataset.tempo)].tempo = Number(t.value) || 110; return summary(); }
   if (t.dataset.q != null) pack.questions[i].q = t.value;

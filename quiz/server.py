@@ -227,6 +227,7 @@ def clean_pack(data, store=None, scope="_"):
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
+                "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "instrument": q.get("instrument") if q.get("instrument") in INSTRUMENTS else None,
             })
         except PackError as e:
@@ -1361,6 +1362,7 @@ class Game:
             q = self.question()
             s["qtype"] = q["type"]
             s["question"] = q["q"]
+            s["theme"] = q.get("theme")
             s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]

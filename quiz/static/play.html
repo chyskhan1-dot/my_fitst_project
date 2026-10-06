@@ -169,12 +169,23 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
   *, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }
   .timebar i { animation: none; }
 }
+/* панель ведущего, который играет сам */
+#hostbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; align-items: center; justify-content: center;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(14, 19, 48, .92); backdrop-filter: blur(8px); border-top: 1px solid var(--line); z-index: 5; }
+#hostbar:empty { display: none; }
+#hostbar .btn { flex: 1; max-width: 320px; padding: 12px 16px; }
+#hostbar .tv { flex: none; color: var(--muted); text-decoration: none; font-size: 22px; padding: 6px; }
+body.has-hostbar { padding-bottom: 84px; }
 /* «100 к 1» */
+.fd-list { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 6px; }
+.fd-list li { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 10px; background: var(--panel); font-weight: 800; text-align: left; }
+.fd-list li .n { color: var(--muted); width: 1.2em; }
+.fd-list li .t { flex: 1; text-transform: uppercase; }
+.fd-list li.on { background: var(--accent); color: #1a1400; }
+.fd-list li.on .n { color: inherit; }
+.fd-list li.miss { color: var(--muted); }
 .fd-x { font: 800 30px var(--display); color: var(--line); }
 .fd-x.on { color: var(--bad); }
-.fd-slots { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.fd-slots i { width: 34px; height: 34px; border-radius: 10px; background: var(--panel); display: grid; place-items: center; font-style: normal; font-weight: 800; color: var(--muted); }
-.fd-slots i.on { background: var(--accent); color: #1a1400; }
 .fd-said { font-weight: 700; margin: 0; }
 .fd-said.bad { color: var(--bad); } .fd-said.good { color: var(--good); }
 </style>
@@ -530,7 +541,9 @@ function renderFd(s, me) {
   const scores = `<p class="muted">${esc(names[0])} <b style="color:var(--ink)">${fd.team_scores[0]}</b> · ${esc(names[1])} <b style="color:var(--ink)">${fd.team_scores[1]}</b></p>`;
   const timebar = (left) => left != null ? `<div class="timebar" style="width:100%"><i style="animation-duration:${left}s"></i></div>` : "";
   const strikes = () => `<div>${[0, 1, 2].map((k) => `<span class="fd-x ${k < c.strikes ? "on" : ""}">✗</span>`).join(" ")}</div>`;
-  const slots = () => `<div class="fd-slots">${c.slots.map((x) => `<i class="${x.opened ? "on" : ""}">${x.n}</i>`).join("")}</div>`;
+  // табло на телефоне: открытые ответы видны — можно играть и без большого экрана
+  const slots = () => `<ol class="fd-list">${c.slots.map((x) => `<li class="${x.opened ? "on" : x.text ? "miss" : ""}"><span class="n">${x.n}</span>
+    <span class="t">${x.text ? esc(x.text) : "• • •"}</span>${x.points != null ? `<b>${x.points}</b>` : ""}</li>`).join("")}</ol>`;
   const last = (c.log || []).slice(-1)[0];
   const form = (button) => `${siTextForm("fd-form", "Твой ответ", button)}<p class="hint">Пиши как говоришь — опечатки не страшны</p>`;
   let bind = null;
@@ -563,7 +576,7 @@ function renderFd(s, me) {
     mood(won ? "good" : "bad");
     buzz(won ? [30, 60, 30] : 200);
     $main.innerHTML = scene(`<span class="big pop ${won ? "good" : "bad"}">${won ? "Ваш банк!" : "Банк у соперников"}</span>
-      <span class="pill ${won ? "plus" : ""}">${won ? "+" : ""}${c.bank}</span>
+      <span class="pill ${won ? "plus" : ""}">${won ? "+" : ""}${c.bank}</span>${slots()}
       ${last && m.team !== c.team && c.steal ? `<p class="muted">Ответ на кражу: «${esc(last.text || "—")}»</p>` : ""}${scores}`);
   } else if (s.phase === "fd_big_intro") {
     $main.innerHTML = scene(`<div class="eyebrow">Финал</div><h1>Большая игра</h1>
@@ -606,6 +619,45 @@ function bindFd(action) {
   });
 }
 
+// ---------- поделиться ссылкой ----------
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const t = document.createElement("textarea"); // запасной способ для http (дома по Wi-Fi)
+  t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+  document.body.appendChild(t); t.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  t.remove();
+  return ok;
+}
+
+async function invite(btn, s) {
+  const url = (s.join || location.origin) + "/?room=" + room;
+  if (navigator.share) return navigator.share({ title: "Квиз", text: `Заходи в игру! Код комнаты ${room}`, url }).catch(() => {});
+  btn.textContent = (await copyText(url)) ? "✓ Ссылка скопирована" : url;
+}
+
+// ---------- ведущий играет сам: управление с телефона ----------
+const hostToken = () => recall("quiz-host-" + room);
+const HOST_NEXT = {
+  lobby: "▶ Начать игру", question: "Показать ответ", reveal: "Дальше", leaders: "Следующий вопрос", final: "Сыграть ещё раз",
+  si_round: "Дальше", si_cat_give: "Решить за игрока", si_stake: "Ставка по номиналу", si_question: "Открыть кнопки", si_answer: "Время вышло",
+  si_reveal: "Дальше", si_final_bet: "Хватит ждать", si_final_q: "Открыть ответы", si_final_reveal: "Итоги",
+  fd_round: "Начать раунд", fd_play: "Время вышло", fd_steal: "Не угадали", fd_reveal: "Дальше",
+  fd_big_intro: "Начать", fd_big_q: "Пропустить вопрос", fd_big_result: "Итоги",
+};
+function hostBar(s) {
+  let bar = document.getElementById("hostbar");
+  const token = s.me ? hostToken() : "";
+  if (!bar) { bar = document.createElement("div"); bar.id = "hostbar"; document.body.appendChild(bar); }
+  const label = token && HOST_NEXT[s.phase];
+  document.body.classList.toggle("has-hostbar", !!label);
+  if (!label) { bar.innerHTML = ""; return; }
+  const disabled = s.phase === "lobby" && !s.players.length;
+  bar.innerHTML = `<a class="tv" href="/host?room=${room}" title="Экран ведущего">🖥</a>
+    <button class="btn" type="button" data-host="${s.phase === "final" ? "reset" : "next"}" ${disabled ? "disabled" : ""}>${label}</button>`;
+}
+
 async function send(answer) {
   if (sending) return;
   sending = true; buzz(25);
@@ -636,7 +688,8 @@ function render(s) {
         <span class="pop">${avaP(me, "xl")}</span>
         <h1 class="rise">Ты в игре!</h1>
         <div class="spinner"></div>
-        <p class="muted rise" style="--i:1">Ведущий выбирает правила. Игра скоро начнётся.</p>
+        <p class="muted rise" style="--i:1">${hostToken() ? "Выбери игру и правила на экране ведущего." : "Ведущий выбирает правила. Игра скоро начнётся."}</p>
+        ${hostToken() ? `<a class="btn" href="/host?room=${room}">🖥 Экран ведущего</a>` : ""}
       </div>`;
   } else if (s.phase === "lobby") {
     pickAva = me.avatar;
@@ -646,12 +699,14 @@ function render(s) {
         <h1 class="rise">Ты в игре!</h1>
         ${myTeam ? `<span class="teambadge rise" style="--c:${TEAM_COLORS[me.team]}">Команда: ${esc(myTeam)}</span>
           <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
-        <p class="muted rise" style="--i:1">Смотри на экран ведущего. Игра скоро начнётся.</p>
+        <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
         <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
+        <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
         <details class="ava-change"><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
+    document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
   } else if (s.phase === "question" && me.answer == null) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; }
     $main.innerHTML = `
@@ -746,6 +801,8 @@ async function poll() {
     }
     lastState = s;
     if (!pid) {
+      const hb = document.getElementById("hostbar");
+      if (hb) { hb.innerHTML = ""; document.body.classList.remove("has-hostbar"); }
       const teams = s.phase === "lobby" ? s.settings.teams : 0;
       if (!document.getElementById("join") || joinTeams !== teams) joinForm();
       return;
@@ -755,7 +812,7 @@ async function poll() {
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey;
-    if (sig !== lastSig) { lastSig = sig; render(s); }
+    if (sig !== lastSig) { lastSig = sig; render(s); hostBar(s); }
   } catch {
     if (!document.getElementById("join")) {
       $main.innerHTML = `<div class="scene"><div class="spinner"></div><p class="error">Нет связи с сервером…</p></div>`; lastSig = "";
@@ -789,6 +846,12 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  const hb = e.target.closest("[data-host]");
+  if (hb) {
+    hb.disabled = true;
+    await api("/api/host/" + hb.dataset.host, { token: hostToken() }).catch(() => {});
+    lastSig = ""; return poll();
+  }
   const sp = e.target.closest("[data-si-cell]");
   if (sp) { const [ti, qi] = sp.dataset.siCell.split(",").map(Number); buzz(20); await siPost("pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
   const gv = e.target.closest("[data-give]");

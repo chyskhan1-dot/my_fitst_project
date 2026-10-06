@@ -1008,9 +1008,24 @@ function live(s) {
   if (a) a.textContent = `Ответили ${s.answered} из ${s.players.filter((p) => p.online).length}`;
 }
 
+// Опрос сервера: следующий запрос — только когда пришёл ответ на прошлый (на медленной сети
+// запросы иначе копятся и ответы приходят вперемешку), зависший запрос обрывается через 5 с.
+let polling = false, pollAgain = false, fails = 0;
 async function poll() {
+  if (polling) { pollAgain = true; return; }
+  polling = true;
+  try { await pollOnce(); } finally {
+    polling = false;
+    if (pollAgain) { pollAgain = false; poll(); }
+  }
+}
+const pollTick = () => { if (!polling) poll(); };
+const timeout = (ms) => (window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+
+async function pollOnce() {
   try {
-    const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store" })).json();
+    const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store", signal: timeout(5000) })).json();
+    fails = 0;
     if (s.phase === "gone") return stop("Эта комната закрылась", "Комнаты без активности удаляются через 3 часа, а при обновлении сервера — сразу.");
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
@@ -1021,6 +1036,7 @@ async function poll() {
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {
+    if (++fails < 3) return; // одна-две неудачи подряд — не пугаем, ждём следующего ответа
     $main.innerHTML = `<h2 class="error">Нет связи с сервером. Проверь, что он запущен.</h2>`;
     $actions.innerHTML = ""; lastSig = "";
   }
@@ -1095,7 +1111,7 @@ function stop(title, text) {
   const check = await post("check").catch(() => ({ error: "Нет связи с сервером." }));
   if (check.error) return stop(check.error, "Создай свою игру на главной странице: нажми «Я ведущий».");
   poll();
-  timer = setInterval(poll, 500);
+  timer = setInterval(pollTick, 500);
 })();
 </script>
 </body>

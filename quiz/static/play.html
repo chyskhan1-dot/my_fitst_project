@@ -454,6 +454,7 @@ function bindForm(id, action, field) {
 
 function renderSi(s, me) {
   const si = s.si, m = si.me || {}, c = si.cur || {}, f = si.final || {};
+  const timebar = (left) => `<div class="timebar" style="width:100%"><i style="animation-duration:${left}s"></i></div>`;
   clearTimeout(buzzTimer);
   mood("");
   const scene = (html) => `<div class="scene">${html}</div>`;
@@ -484,16 +485,20 @@ function renderSi(s, me) {
   } else if (s.phase === "si_stake") {
     $main.innerHTML = scene(`<h1>🔨 Аукцион</h1><p class="muted">${chooser} делает ставку</p>`);
   } else if ((s.phase === "si_question" || s.phase === "si_answer") && m.is_answerer) {
-    $main.innerHTML = `${head}<h2>${c.special !== "simple" ? "Отвечаешь ты!" : "Твой ответ!"}</h2>
+    $main.innerHTML = `${head}${s.phase === "si_answer" ? timebar(c.left) : ""}<h2>${c.special !== "simple" ? "Отвечаешь ты!" : "Твой ответ!"}</h2>
       ${c.image ? `<img class="qimg" src="${esc(mediaSrc(c.image))}" alt="">` : ""}
       ${siTextForm("si-answer", "Напиши ответ", "Ответить")}<p class="hint">Регистр и небольшие опечатки не важны</p>`;
     bindForm("si-answer", "answer", "text");
   } else if (s.phase === "si_question" && !c.exclusive) {
     const can = !m.tried;
-    $main.innerHTML = `${head}<p class="muted">${esc(c.text || "")}</p>
+    $main.innerHTML = `${head}<div id="si-tb">${can && c.buzz_open ? timebar(c.left) : ""}</div><p class="muted">${esc(c.text || "")}</p>
       <button class="buzz ${c.buzz_open ? "open" : ""}" id="buzz" ${can ? "" : "disabled"}>${!can ? "Ты уже отвечал" : c.buzz_open ? "ОТВЕТИТЬ!" : "Подожди…"}</button>
       <p class="hint" id="buzz-hint">${can ? "Кто первым нажмёт, тот и отвечает" : "Ждём остальных"}</p>`;
-    if (can && !c.buzz_open) buzzTimer = setTimeout(() => { const b = document.getElementById("buzz"); if (b) { b.classList.add("open"); b.textContent = "ОТВЕТИТЬ!"; } }, c.buzz_in * 1000);
+    if (can && !c.buzz_open) buzzTimer = setTimeout(() => {
+      const b = document.getElementById("buzz"), tb = document.getElementById("si-tb");
+      if (b) { b.classList.add("open"); b.textContent = "ОТВЕТИТЬ!"; }
+      if (tb) tb.innerHTML = timebar(Math.max(0, c.left - c.buzz_in)); // сколько осталось после открытия кнопок
+    }, c.buzz_in * 1000);
   } else if (s.phase === "si_question" || s.phase === "si_answer") {
     $main.innerHTML = scene(`${head}<h2>✋ Отвечает ${c.answerer ? esc(c.answerer.name) : "…"}</h2>${m.tried ? `<p class="muted">Ты уже отвечал на этот вопрос</p>` : ""}`);
   } else if (s.phase === "si_reveal") {
@@ -516,7 +521,7 @@ function renderSi(s, me) {
     if (!m.eligible) $main.innerHTML = scene(`<h1>Финал</h1><p class="muted">Смотри на большой экран</p>`);
     else if (m.answered) $main.innerHTML = scene(`<h1>Ответ принят</h1><div class="spinner"></div>`);
     else {
-      $main.innerHTML = `<div class="eyebrow">Финал · ${esc(f.theme)}</div><h2>${esc(f.text || "")}</h2>
+      $main.innerHTML = `<div class="eyebrow">Финал · ${esc(f.theme)}</div>${timebar(f.left)}<h2>${esc(f.text || "")}</h2>
         ${f.image ? `<img class="qimg" src="${esc(mediaSrc(f.image))}" alt="">` : ""}${siTextForm("final-form", "Твой ответ", "Ответить")}`;
       bindForm("final-form", "final", "text");
     }
@@ -786,10 +791,25 @@ function render(s) {
   }
 }
 
+// Опрос сервера: следующий запрос — только когда пришёл ответ на прошлый (на медленной сети
+// запросы иначе копятся и ответы приходят вперемешку), зависший запрос обрывается через 5 с.
+let polling = false, pollAgain = false, fails = 0;
 async function poll() {
+  if (polling) { pollAgain = true; return; }
+  polling = true;
+  try { await pollOnce(); } finally {
+    polling = false;
+    if (pollAgain) { pollAgain = false; poll(); }
+  }
+}
+const pollTick = () => { if (!polling) poll(); };
+const timeout = (ms) => (window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+
+async function pollOnce() {
   try {
     if (!room) return;
-    const s = await (await fetch(`/api/state?room=${encodeURIComponent(room)}&pid=${encodeURIComponent(pid || "")}`, { cache: "no-store" })).json();
+    const s = await (await fetch(`/api/state?room=${encodeURIComponent(room)}&pid=${encodeURIComponent(pid || "")}`, { cache: "no-store", signal: timeout(5000) })).json();
+    fails = 0;
     if (s.phase === "gone") {
       if (!document.getElementById("gone")) {
         document.getElementById("top").innerHTML = ""; mood("");
@@ -814,7 +834,7 @@ async function poll() {
     const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); hostBar(s); }
   } catch {
-    if (!document.getElementById("join")) {
+    if (++fails >= 3 && !document.getElementById("join")) {
       $main.innerHTML = `<div class="scene"><div class="spinner"></div><p class="error">Нет связи с сервером…</p></div>`; lastSig = "";
     }
   }
@@ -909,7 +929,7 @@ document.addEventListener("click", async (e) => {
 });
 
 if (room) poll(); else startScreen();
-setInterval(poll, 700);
+setInterval(pollTick, 700);
 </script>
 </body>
 </html>

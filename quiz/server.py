@@ -366,8 +366,8 @@ class SiEngine:
     """
 
     ROUND_SECONDS = 4  # заставка раунда
-    BUZZ_WINDOW = 12  # сколько секунд ждём нажатия «Ответить»
-    REBUZZ_WINDOW = 8  # после неверного ответа — для остальных
+    BUZZ_WINDOW = 12  # сколько секунд всего ждём нажатия «Ответить» (на весь вопрос, а не на каждую попытку)
+    REBUZZ_MIN = 3  # после неверного ответа остальным — остаток этого времени, но не меньше 3 с
     REVEAL_SECONDS = 6  # показ правильного ответа, потом табло
 
     def __init__(self, game, pack):
@@ -505,6 +505,7 @@ class SiEngine:
         if self.cur["false_start"].get(pid, 0) > now:
             return "early"
         self.cur["answerer"] = pid
+        self.cur["buzz_left"] = max(0, self.cur["deadline"] - now)  # пока игрок отвечает, время на кнопку стоит
         self.cur["deadline"] = now + self.answer_time
         self.phase("si_answer")
         return "ok"
@@ -535,8 +536,9 @@ class SiEngine:
         left = [x for x in self.g.online() if x not in self.cur["tried"]]
         if self.cur["exclusive"] or not left:
             return self.phase("si_reveal")
-        now = time.time()  # остальные могут попробовать
-        self.cur.update(answerer=None, buzz_at=now, deadline=now + self.REBUZZ_WINDOW)
+        now = time.time()  # остальные могут попробовать — сколько осталось от общего времени
+        rest = max(self.REBUZZ_MIN, self.cur.get("buzz_left", self.BUZZ_WINDOW))
+        self.cur.update(answerer=None, buzz_at=now, deadline=now + rest)
         self.phase("si_question")
 
     def override(self, i):

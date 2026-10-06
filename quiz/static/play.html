@@ -463,7 +463,7 @@ function renderSi(s, me) {
   if (s.phase === "si_round") {
     $main.innerHTML = scene(`<div class="eyebrow">Своя игра</div><h1>${esc(si.round_name || "")}</h1><p class="muted">Смотри на большой экран</p>`);
   } else if (s.phase === "si_board" && m.is_chooser) {
-    $main.innerHTML = `<div class="eyebrow">Твой выбор</div><h2>Выбери вопрос</h2>
+    $main.innerHTML = `<div class="eyebrow">Твой выбор${si.round_left != null ? ` · ⏱ до конца раунда ${Math.ceil(si.round_left / 60)} мин` : ""}</div><h2>Выбери вопрос</h2>
       <div class="si-pick">${si.board.map((t, ti) => `
         <div class="si-pick-theme">${esc(t.name)}</div>
         <div class="si-pick-row">${t.cells.map((cell, qi) => cell.played ? `<span class="si-pick-cell played"></span>`
@@ -829,7 +829,7 @@ async function pollOnce() {
     }
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
-    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" ? undefined : v)) : "";
+    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); hostBar(s); }

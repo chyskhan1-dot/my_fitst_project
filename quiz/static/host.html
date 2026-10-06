@@ -239,7 +239,7 @@ button.fd-slot:hover { background: #2a3bb0; }
 .fd-slot.open .p { color: var(--accent-ink); }
 .fd-slot.missed { background: rgba(255, 255, 255, .08); color: var(--muted); }
 .fd-slot.missed .p { color: var(--muted); }
-#fd-timer.low { color: var(--bad); }
+#fd-timer.low, #si-round-time.low { color: var(--bad); }
 .fd-status .tdot, .si-splash .tdot, .eyebrow .tdot { width: .8em; height: .8em; border-radius: 50%; display: inline-block; vertical-align: baseline; box-shadow: none; }
 .fd-team .tdot { width: 1.2em; height: 1.2em; }
 @keyframes flip { from { transform: rotateX(90deg); } to { transform: none; } }
@@ -532,11 +532,11 @@ function render(s) {
     const url = (s.join || location.origin) + "/?room=" + s.room;
     const st = s.settings;
     const fdMode = st.mode === "100to1";
-    const tags = fdMode ? [`💯 100 к 1`, `Пакет: ${s.title}`, "2 команды", `${st.seconds} с на ответ`, st.auto ? "Автопереход" : "Ведущий листает сам"] : [
-      ...(st.mode === "jeopardy" ? ["🎯 Своя игра"] : []),
+    const tags = fdMode ? [`💯 100 к 1`, `Пакет: ${s.title}`, "2 команды", `${st.seconds} с на ответ`, st.auto ? "Автопереход" : "Ведущий листает сам"]
+      : st.mode === "jeopardy" ? [`🎯 Своя игра`, `Пакет: ${s.title}`, ...rulesSummary(st)] : [
       `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
-      ...(st.mode === "jeopardy" ? [] : [st.count ? `${s.total} случайных вопросов` : "Все вопросы"]),
+      st.count ? `${s.total} случайных вопросов` : "Все вопросы",
       `${st.seconds} сек на ответ`,
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
@@ -619,6 +619,7 @@ function render(s) {
 }
 
 // ---------- «Своя игра» ----------
+const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
 const SPECIAL_NAMES = { cat: "🐱 Кот в мешке", auction: "🔨 Аукцион", norisk: "🤝 Вопрос без риска" };
 let siMusicKey = "";
 
@@ -658,11 +659,12 @@ function renderSi(s) {
   const si = s.si, c = si.cur || {}, f = si.final || {};
   siSound(s);
   document.getElementById("progress").innerHTML = si.round_name && !s.phase.startsWith("si_final")
-    ? `${esc(si.round_name)} · ${si.round_index + 1} из ${si.rounds_total}` : "Финал";
+    ? `${esc(si.round_name)} · ${si.round_index + 1} из ${si.rounds_total} <span id="si-round-time"></span>` : "Финал";
   const head = c.theme ? `<div class="eyebrow">${esc(c.theme)} · ${c.stake}${c.special !== "simple" ? " · " + SPECIAL_NAMES[c.special] : ""}</div>` : "";
   let body = "", actions = "";
   if (s.phase === "si_round") {
-    body = `<div class="si-splash"><div class="eyebrow">Своя игра</div><h1>${esc(si.round_name)}</h1>
+    body = `<div class="si-splash">${si.burned ? `<p class="lead">⏱ Раунд окончен: ${si.burned} ${plural(si.burned, "вопрос сгорел", "вопроса сгорели", "вопросов сгорели")}</p>` : ""}
+      <div class="eyebrow">Своя игра</div><h1>${esc(si.round_name)}</h1>
       <p class="muted">${(si.board || []).map((t) => esc(t.name)).join(" · ")}</p></div>`;
     actions = `<button class="btn" data-act="next">Дальше</button>`;
   } else if (s.phase === "si_board") {
@@ -671,7 +673,8 @@ function renderSi(s) {
           ? `<div class="si-cell played"></div>`
           : `<button class="si-cell" data-si-pick="${ti},${qi}">${cell.price}</button>`).join("")}`).join("")}</div>
       ${siScores(s, si.chooser)}</div>`;
-    actions = `<span class="auto-next">Выбирает ${si.chooser ? avaP(si.chooser) + " " + esc(si.chooser.name) : "…"} — на телефоне или кликни клетку</span>`;
+    actions = `<span class="auto-next">Выбирает ${si.chooser ? avaP(si.chooser) + " " + esc(si.chooser.name) : "…"} — на телефоне или кликни клетку</span>
+      <button class="btn ghost" data-act="next">Завершить раунд</button>`;
   } else if (s.phase === "si_cat_give") {
     body = `<div class="si-splash"><h1>🐱 Кот в мешке!</h1><p class="lead">${esc(si.chooser.name)} отдаёт вопрос сопернику</p>
       <p class="muted">Тема: <b>${esc(c.theme)}</b> · стоимость ${c.stake}</p></div>${siScores(s, si.chooser)}`;
@@ -862,7 +865,7 @@ function packCards(s, d) {
 
 function rulesSummary(d) {
   if (d.mode === "100to1") return ["2 команды", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
-  if (d.mode === "jeopardy") return [`${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
+  if (d.mode === "jeopardy") return [d.si_round_min ? `Раунд — ${d.si_round_min} мин` : "Раунд без ограничения", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
     ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
 }
@@ -875,7 +878,8 @@ function rulesModal(d) {
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
     : d.mode === "jeopardy"
-    ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у игрока после нажатия «Ответить»</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+    ? `<div class="rule wrap"><span class="txt"><b>Время на раунд</b><small>Вышло — раунд заканчивается, несыгранные вопросы сгорают</small></span>${seg("siround", [5, 10, 15, 0], d.si_round_min, (v) => (v ? v + " мин" : "Без ограничения"))}</div>
+       <div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у игрока после нажатия «Ответить»</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 6 секунд после ответа — снова табло" })}`
     : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
@@ -962,7 +966,7 @@ document.addEventListener("click", (e) => {
   if (!draft) return;
   if (e.target.closest("[data-open-rules]")) { rulesOpen = true; return renderSetup(lastState); }
   if (e.target.closest("[data-close-rules]")) { rulesOpen = false; return renderSetup(lastState); }
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count]");
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
@@ -972,6 +976,7 @@ document.addEventListener("click", (e) => {
   if (t.dataset.mode) draft.mode = t.dataset.mode;
   if (t.dataset.pack) draft.pack = t.dataset.pack;
   if (t.dataset.count) draft.count = Number(t.dataset.count);
+  if (t.dataset.siround) draft.si_round_min = Number(t.dataset.siround);
   renderSetup(lastState);
 });
 
@@ -980,6 +985,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 function live(s) {
+  const rt = document.getElementById("si-round-time"), rl = s.si && s.si.round_left;
+  if (rt) {
+    rt.textContent = rl != null ? `· ⏱ ${Math.floor(rl / 60)}:${String(rl % 60).padStart(2, "0")}` : "";
+    rt.classList.toggle("low", rl != null && rl < 60);
+  }
   const st = document.getElementById("si-timer");
   if (st && s.si) {
     const c = s.si.cur || {}, f = s.si.final || {};
@@ -1030,7 +1040,7 @@ async function pollOnce() {
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
-    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" ? undefined : v)) : "";
+    const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.players, s.join]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }

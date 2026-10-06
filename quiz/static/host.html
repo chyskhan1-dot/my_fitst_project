@@ -70,6 +70,7 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 
 /* лобби */
 .join { display: flex; gap: 36px; align-items: center; flex-wrap: wrap; padding: 28px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line); }
+.share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .join-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .room-code { font-family: var(--display); font-weight: 800; font-size: clamp(48px, 8vw, 110px); letter-spacing: .12em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 a.btn { text-decoration: none; display: inline-block; }
@@ -387,6 +388,18 @@ const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(nam
 // аватарка игрока: выбранный значок или первая буква имени
 const avaP = (p) => (p.avatar ? `<span class="ava emo">${esc(p.avatar)}</span>` : ava(p.name));
 
+// копирование: navigator.clipboard работает только по https, дома по Wi-Fi (http) — запасной способ
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const t = document.createElement("textarea");
+  t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+  document.body.appendChild(t); t.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {}
+  t.remove();
+  return ok;
+}
+
 async function post(action, extra = {}) {
   const r = await fetch("/api/host/" + action, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -542,6 +555,11 @@ function render(s) {
           <span class="join-url">${esc((s.join || location.origin).replace(/^https?:\/\//, ""))}</span>
           <span class="muted">и введи код комнаты</span>
           <span class="room-code">${s.room}</span>
+          <div class="share-row">
+            <button class="btn ghost small" data-copy="${esc(url)}" type="button">📋 Копировать ссылку</button>
+            ${navigator.share ? `<button class="btn ghost small" data-share="${esc(url)}" type="button">📤 Поделиться</button>` : ""}
+            <a class="btn ghost small" href="/?room=${s.room}" target="_blank" rel="noopener">📱 Играть с этого устройства</a>
+          </div>
         </div>
       </div>
       <div>
@@ -1040,6 +1058,10 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
   const pick = e.target.closest("[data-si-pick]");
   if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
+  const cp = e.target.closest("[data-copy]");
+  if (cp) { const ok = await copyText(cp.dataset.copy); cp.textContent = ok ? "✓ Ссылка скопирована" : "Не получилось — скопируй адрес вручную"; return; }
+  const sh = e.target.closest("[data-share]");
+  if (sh) { navigator.share({ title: "Квиз", text: "Заходи в игру!", url: sh.dataset.share }).catch(() => {}); return; }
   const fdo = e.target.closest("[data-fd-open]");
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");

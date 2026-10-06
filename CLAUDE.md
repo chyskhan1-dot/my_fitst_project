@@ -19,7 +19,8 @@
 - `server.py` — весь сервер на стандартной библиотеке Python (без зависимостей, так и оставить).
   - Комнаты с 4-значным кодом (`rooms`), ведущий — устройство, создавшее комнату
     (cookie `quiz_device` + `host_token`). Один игрок на устройство; вернуться после вылета
-    можно по тому же имени, если прежний игрок не на связи (`OFFLINE_AFTER`).
+    можно по тому же имени, если прежний игрок не на связи (`OFFLINE_AFTER`). Устройство ведущего
+    может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`; правила в `DEFAULTS`.
   - `FeudEngine` — «100 к 1» (две команды): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
@@ -34,7 +35,7 @@
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
   `static/music.js` — синтезированная музыка (Web Audio, без файлов).
-- `packs/*.json` — пакеты викторины (`football.csv`, `school.csv` — копии для таблиц),
+- `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц),
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 

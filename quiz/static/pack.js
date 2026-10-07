@@ -4,7 +4,7 @@
   const MAX_IMAGE_SIDE = 1280; // картинки больше уменьшаем, чтобы пакет грузился быстро
   const MAX_AUDIO_MB = 8;
 
-  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность"];
+  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)"];
   // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
   // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа;
   // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший.
@@ -89,6 +89,7 @@
       const q = { type, q: (r[0] || "").trim(), image: (r[6] || "").trim() || null, audio: (r[7] || "").trim() || null };
       if ((r[9] || "").trim()) q.theme = r[9].trim();
       if (levelOf(r[10])) q.level = levelOf(r[10]);
+      if (Number(r[11]) > 0) q.seconds = Math.round(Number(r[11]));
       if (type === "number") {
         q.answer = toNumber(options[0]);
         if (options[1]) q.unit = options[1];
@@ -119,7 +120,7 @@
       const opts = [0, 1, 2, 3].map((i) => (src || [])[i] ?? "");
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
       const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";
-      rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || ""]);
+      rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || "", q.seconds || ""]);
     }
     return rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
   }

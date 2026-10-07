@@ -194,6 +194,14 @@ a.btn { text-decoration: none; display: inline-block; }
 .qmedia { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .qimg { max-width: 100%; max-height: 36vh; border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); background: #fff; }
 .qimg.small { max-height: 18vh; }
+/* эффект картинки: размыта и проясняется / виден кусочек и отдаляется */
+.fx { display: inline-block; overflow: hidden; border-radius: 16px; line-height: 0; }
+.fx .qimg { box-shadow: none; }
+.fx-blur .qimg { animation: unblur var(--t) linear var(--d) both; }
+.fx-zoom .qimg { transform-origin: var(--fx); animation: unzoom var(--t) linear var(--d) both; }
+@keyframes unblur { from { filter: blur(32px); } to { filter: blur(4px); } }
+@keyframes unzoom { from { transform: scale(5); } to { transform: scale(1.5); } }
+
 .qaudio { display: flex; align-items: center; gap: 10px; font-size: 1.4em; }
 .qaudio audio { max-width: min(480px, 80vw); }
 .auto-next { align-self: center; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
@@ -361,6 +369,8 @@ button.fd-slot:hover { background: #2a3bb0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .fx-blur .qimg { filter: blur(14px); } /* без анимации картинка всё равно скрыта */
+  .fx-zoom .qimg { transform: scale(3); }
 }
 </style>
 </head>
@@ -382,6 +392,7 @@ button.fd-slot:hover { background: #2a3bb0; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="/static/pack.js"></script>
 <script src="/static/music.js"></script>
+<script src="/static/comments.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
@@ -443,12 +454,20 @@ function media(s) {
     <button class="btn ghost small" data-replay type="button">▶ Ещё раз</button></div>`;
   if (!s.image && !s.audio) return emoji;
   return emoji + `<div class="qmedia rise">
-    ${s.image ? `<img class="qimg" src="${esc(QuizPack.mediaSrc(s.image))}" alt="Картинка к вопросу">` : ""}
+    ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
     ${s.audio ? `<div class="qaudio">🎵 <audio controls preload="auto" src="${esc(QuizPack.mediaSrc(s.audio))}"></audio></div>` : ""}
   </div>`;
 }
 
 const fmtNum = (n) => Number(n).toLocaleString("ru-RU");
+// картинка с эффектом: анимация длится всё время вопроса (с учётом уже прошедшего)
+function fxImg(s, alt) {
+  const img = `<img class="qimg" src="${esc(QuizPack.mediaSrc(s.image))}" alt="${alt}">`;
+  if (!s.image_fx) return img;
+  const [x, y] = s.focus || [50, 50];
+  return `<div class="fx fx-${s.image_fx}" style="--t:${s.seconds}s;--d:-${Math.max(0, s.seconds - s.left).toFixed(1)}s;--fx:${x}% ${y}%">${img}</div>`;
+}
+
 const HINTS = {
   number: "🔢 Напиши число на телефоне — побеждает тот, кто ближе",
   multi: "☑️ Выбери на телефоне все верные варианты",
@@ -507,34 +526,6 @@ function board(players) {
       ${p.last > 0 ? `<span class="plus">+${p.last}</span>` : p.last < 0 ? `<span class="minus">−${-p.last}</span>` : ""}
       ${move}<span class="sc" data-count="${p.score}">${p.score - p.last}</span></li>`;
   }).join("")}</ol>`;
-}
-
-// Комментарии к таблице лидеров: кто взлетел, кто упал, серии, самый быстрый
-const places = (n) => plural(n, "место", "места", "мест");
-function comments(s) {
-  const pick = (list, salt) => list[(s.index + salt.length) % list.length]; // фраза не меняется при перерисовке
-  const b = (t) => `<b>${esc(t)}</b>`;
-  const rows = s.players.map((p, i) => ({ ...p, place: i + 1, d: p.prev ? p.prev - (i + 1) : 0 }));
-  const out = [], first = s.index === 0; // после первого вопроса места ещё не с чем сравнивать
-  const leader = rows[0];
-  if (!first && leader && leader.prev > 1 && leader.score > 0) out.push(pick([`👑 ${b(leader.name)} захватывает лидерство!`, `👑 Новый лидер — ${b(leader.name)}!`, `👑 ${b(leader.name)} выходит на первое место!`], leader.name));
-  const lost = rows.find((r) => r.prev === 1 && r.place > 1);
-  if (!first && lost) out.push(pick([`😱 ${b(lost.name)} теряет лидерство`, `😱 ${b(lost.name)} уступает первое место`], lost.name));
-  const up = first ? null : rows.filter((r) => r.d >= 2 && r !== (leader && leader.prev > 1 ? leader : null)).sort((a, c) => c.d - a.d)[0];
-  if (up) out.push(pick([`🚀 ${b(up.name)} взлетает на ${up.d} ${places(up.d)} — теперь ${up.place}-е`, `🚀 Рывок! ${b(up.name)} +${up.d} ${places(up.d)}`, `🚀 ${b(up.name)} обходит сразу ${up.d} соперников`], up.name));
-  const small = !first && !up && rows.find((r) => r.d === 1 && r.place > 1);
-  if (small) out.push(pick([`⬆️ ${b(small.name)} поднимается на ${small.place}-е место`, `⬆️ ${b(small.name)} обходит соперника — теперь ${small.place}-е`], small.name));
-  const down = first ? null : rows.filter((r) => r.d <= -2 && r !== lost).sort((a, c) => a.d - c.d)[0];
-  if (down) out.push(pick([`📉 ${b(down.name)} теряет ${-down.d} ${places(-down.d)} и опускается на ${down.place}-е`, `📉 Ой! ${b(down.name)} падает на ${-down.d} ${places(-down.d)}`, `📉 ${b(down.name)} сдаёт позиции: −${-down.d} ${places(-down.d)}`], down.name));
-  const hot = rows.filter((r) => r.streak >= 3).sort((a, c) => c.streak - a.streak)[0];
-  if (hot) out.push(pick([`🔥 ${b(hot.name)}: ${hot.streak} верных подряд!`, `🔥 ${b(hot.name)} не остановить — серия из ${hot.streak}`], hot.name));
-  if (s.fastest) out.push(`⚡ Быстрее всех — ${b(s.fastest.name)}, ${String(s.fastest.time).replace(".", ",")} с`);
-  if (s.answers_total && !s.right_total) out.push(pick(["😶 Этот вопрос не взял никто", "🤯 Вопрос оказался никому не по зубам"], "x"));
-  else if (s.answers_total >= 2 && s.right_total === s.players.filter((p) => p.online).length) out.push("💯 Все ответили верно!");
-  if (rows.length >= 2 && rows[0].score > 0 && rows[0].score - rows[1].score <= 200) out.push(`🤏 Борьба за первое место: разрыв всего ${rows[0].score - rows[1].score} очков`);
-  const big = rows.filter((r) => r.last >= 900).sort((a, c) => c.last - a.last)[0];
-  if (out.length < 3 && big && big !== hot && (!s.fastest || s.fastest.name !== big.name)) out.push(`💥 ${b(big.name)} забирает +${big.last}`);
-  return out.slice(0, 4);
 }
 
 function countUp() {
@@ -664,7 +655,7 @@ function render(s) {
     $main.innerHTML = `
       <div><div class="eyebrow">После вопроса ${s.index + 1} из ${s.total}</div><h1>Таблица лидеров</h1></div>
       <div class="leaders-wrap"><div>${s.settings.teams ? board(s.teams) + `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : board(s.players)}</div>
-        <aside class="comments">${comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
+        <aside class="comments">${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
     countUp();
     $actions.innerHTML = `<button class="btn" data-act="next">Следующий вопрос</button>`;
   } else if (s.phase === "final") {
@@ -966,7 +957,7 @@ function rulesModal(d) {
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 6 секунд после ответа — снова табло" })}`
     : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
-       <div class="rule"><span class="txt"><b>Время на ответ</b></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${RULES.map(toggle).join("")}`;
   return `<div class="modal-back" data-close-rules></div>
     <div class="modal" role="dialog" aria-modal="true" aria-label="Правила">

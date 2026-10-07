@@ -58,6 +58,7 @@ INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
 QTYPES = ("choice", "multi", "order", "text", "number")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе)
 LEVELS = ("easy", "normal", "hard")  # сложность вопроса
+TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25}  # на сложные типы — больше времени
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
@@ -196,6 +197,23 @@ def parse_number(value):
     return int(n) if n == int(n) else n
 
 
+def clean_focus(value):
+    """Точка, куда приближать картинку: [x, y] в процентах."""
+    try:
+        x, y = (max(0.0, min(100.0, float(v))) for v in value)
+    except (TypeError, ValueError):
+        return None
+    return [round(x, 1), round(y, 1)]
+
+
+def clean_seconds(value):
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return max(5, min(120, n)) if n else None
+
+
 def clean_pack(data, store=None, scope="_"):
     """Проверяет пакет вопросов и приводит его к единому виду."""
     if not isinstance(data, dict):
@@ -252,6 +270,10 @@ def clean_pack(data, store=None, scope="_"):
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
+                "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
+                # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
+                "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
+                "focus": clean_focus(q.get("focus")),
                 "instrument": q.get("instrument") if q.get("instrument") in INSTRUMENTS else None,
             })
         except PackError as e:
@@ -1206,7 +1228,12 @@ class Game:
 
     @property
     def seconds(self):
-        return self.settings["seconds"]
+        """Время на текущий вопрос: своё у вопроса или общее, для сложных типов — больше."""
+        base = self.settings["seconds"]
+        if self.si or self.fd or not 0 <= self.index < len(self.selected):
+            return base
+        q = self.question()
+        return q.get("seconds") or int(base * TYPE_TIME.get(q["type"], 1) + 0.5)
 
     def question(self):
         return self.selected[self.index]
@@ -1420,6 +1447,8 @@ class Game:
             s["question"] = q["q"]
             s["theme"] = q.get("theme")
             s["unit"] = q.get("unit")
+            s["image_fx"] = q.get("image_fx") if q["image"] else None
+            s["focus"] = q.get("focus") or [50, 50]
             s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]

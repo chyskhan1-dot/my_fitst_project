@@ -668,6 +668,7 @@ function render(s) {
       <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
       ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
+      <button class="btn ghost" data-share-site type="button">📤 Поделиться сайтом</button>
       <button class="btn" data-act="reset">Сыграть ещё раз</button>`;
     setTimeout(() => confetti(true), 1500);
   } else {
@@ -1173,6 +1174,13 @@ document.addEventListener("click", async (e) => {
   if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
   const cp = e.target.closest("[data-copy]");
   if (cp) { const ok = await copyText(cp.dataset.copy); cp.textContent = ok ? "✓ Ссылка скопирована" : "Не получилось — скопируй адрес вручную"; return; }
+  const ss = e.target.closest("[data-share-site]");
+  if (ss) { // ссылка на сам сайт, а не на комнату
+    const url = location.origin + "/";
+    if (navigator.share) navigator.share({ title: "Квиз", text: "Квиз для компании: вопросы на большом экране, ответы с телефонов. Ведущим может быть любой — заходи!", url }).catch(() => {});
+    else ss.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
+    return;
+  }
   const sh = e.target.closest("[data-share]");
   if (sh) { navigator.share({ title: "Квиз", text: "Заходи в игру!", url: sh.dataset.share }).catch(() => {}); return; }
   const fdo = e.target.closest("[data-fd-open]");

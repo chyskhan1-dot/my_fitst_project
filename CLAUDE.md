@@ -35,6 +35,8 @@
   - Клиенты опрашивают `/api/state` каждые 0,5–0,7 с, но не больше одного запроса за раз
     (`poll`/`pollOnce`, обрыв через 5 с, «Нет связи» — после 3 неудач подряд); `VERSION` — хэш
     файлов: открытые страницы сами перезагружаются после деплоя.
+- Статистика для владельца: `Stats`/`STATS` в server.py (только счётчики, в памяти), страница
+  `static/stats.html` по `/stats?key=` (`STATS_KEY` из окружения, в render.yaml — `generateValue`).
 - `siq.py` — чтение пакетов SIGame (`.siq`, zip с `content.xml`, обе версии разметки).
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,

@@ -264,6 +264,7 @@ function startScreen() {
         <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
       </div>
       <div class="error" id="err"></div>
+      <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
     </div>`;
   const choose = (btn) => document.querySelectorAll(".role").forEach((r) => r.classList.toggle("on", r === btn));
   document.getElementById("as-player").onclick = (e) => {
@@ -667,6 +668,13 @@ async function copyText(text) {
   return ok;
 }
 
+// ссылка на сам сайт (не на комнату): чтобы друзья устроили свою игру
+async function shareSite(btn) {
+  const url = location.origin + "/";
+  if (navigator.share) return navigator.share({ title: "Квиз", text: "Квиз для компании: вопросы на большом экране, ответы с телефонов. Ведущим может быть любой — заходи!", url }).catch(() => {});
+  btn.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
+}
+
 async function invite(btn, s) {
   const url = (s.join || location.origin) + "/?room=" + room;
   if (navigator.share) return navigator.share({ title: "Квиз", text: `Заходи в игру! Код комнаты ${room}`, url }).catch(() => {});
@@ -837,6 +845,7 @@ function render(s) {
         <span class="big pop">${medal}</span>
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
+        <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>
       </div>`;
     if (place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
   }
@@ -917,6 +926,8 @@ function confetti(on) {
 }
 
 document.addEventListener("click", async (e) => {
+  const ss = e.target.closest("[data-share-site]");
+  if (ss) return shareSite(ss);
   const hb = e.target.closest("[data-host]");
   if (hb) {
     hb.disabled = true;

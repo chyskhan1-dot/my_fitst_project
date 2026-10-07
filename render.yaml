@@ -7,3 +7,6 @@ services:
     buildCommand: python --version
     startCommand: python server.py
     healthCheckPath: /healthz
+    envVars:
+      - key: STATS_KEY  # ключ к странице статистики /stats?key=…; Render придумает его сам
+        generateValue: true

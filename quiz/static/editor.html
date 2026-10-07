@@ -163,11 +163,15 @@ const TYPES = [
   ["multi", "Несколько верных"],
   ["order", "По порядку"],
   ["text", "Свой ответ (текст)"],
+  ["number", "Число (кто ближе)"],
 ];
+const LEVELS = [["", "Сложность: —"], ["easy", "Лёгкий"], ["normal", "Средний"], ["hard", "Сложный"]];
+const toNum = (v) => { const t = String(v || "").replace(/\s/g, "").replace(",", "."); const n = Number(t); return t && Number.isFinite(n) ? n : null; };
 const TYPE_HINTS = {
   choice: "Нажми на значок слева от правильного варианта.",
   multi: "Отметь все правильные варианты.",
   order: "Впиши варианты в правильном порядке — игрокам они покажутся перемешанными. За частично верный порядок — часть очков.",
+  number: "Игрок пишет число. Ближе всех — полные очки, остальным — часть по точности. После ответа на экране видно, кто сколько написал.",
   text: "Игрок печатает ответ сам. Регистр, «ё» и небольшие опечатки не важны; русская и латинская запись сравниваются по звучанию, фамилия засчитывается и без имени. Добавь другие написания, если они сильно отличаются.",
 };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -177,13 +181,13 @@ function fromPack(p) {
   return {
     title: String(p.title || ""),
     questions: (p.questions || []).map((q) => {
-      const type = ["multi", "order", "text"].includes(q.type) ? q.type : "choice";
-      const src = type === "text" ? [].concat(q.answer || []) : q.options || [];
+      const type = ["multi", "order", "text", "number"].includes(q.type) ? q.type : "choice";
+      const src = type === "text" ? [].concat(q.answer || []) : type === "number" ? [q.answer ?? "", q.unit || ""] : q.options || [];
       const options = [0, 1, 2, 3].map((i) => String(src[i] ?? ""));
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
-      if (type === "order" || type === "text") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "" };
+      if (type === "order" || type === "text" || type === "number") answer = -1;
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "" };
     }),
   };
 }
@@ -196,7 +200,8 @@ function toPack() {
       const kept = q.options.map((text, i) => ({ text: text.trim(), i })).filter((o) => o.text);
       const q2 = { q: q.q.trim() };
       if (q.type !== "choice") q2.type = q.type;
-      if (q.type === "text") q2.answer = kept.map((o) => o.text);
+      if (q.type === "number") { q2.answer = toNum(q.options[0]); if (q.options[1].trim()) q2.unit = q.options[1].trim(); }
+      else if (q.type === "text") q2.answer = kept.map((o) => o.text);
       else q2.options = kept.map((o) => o.text);
       if (q.type === "choice") q2.answer = kept.findIndex((o) => o.i === q.answer);
       if (q.type === "multi") q2.answer = kept.map((o, k) => (q.answer.includes(o.i) ? k : -1)).filter((k) => k >= 0);
@@ -205,6 +210,7 @@ function toPack() {
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
       if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();
+      if (q.level) q2.level = q.level;
       return q2;
     }),
   };
@@ -221,6 +227,7 @@ function problems(q) {
   if (!q.q.trim()) errs.push("нет текста вопроса");
   const filled = q.options.filter((o) => o.trim()).length;
   if (q.type === "text") { if (!filled) errs.push("впиши правильный ответ"); return errs; }
+  if (q.type === "number") { if (toNum(q.options[0]) == null) errs.push("впиши правильный ответ числом"); return errs; }
   if (filled < 2) errs.push("нужно минимум 2 варианта");
   if (q.type === "choice" && (!q.options[q.answer] || !q.options[q.answer].trim())) errs.push("отметь правильный ответ (нажми на значок слева от варианта)");
   if (q.type === "multi" && !q.answer.some((k) => q.options[k] && q.options[k].trim())) errs.push("отметь хотя бы один правильный вариант");
@@ -260,11 +267,12 @@ function slot(q, i, kind) {
 
 function optionRow(q, i, o, k) {
   const right = q.type === "choice" ? q.answer === k : q.type === "multi" ? q.answer.includes(k) : false;
-  const placeholder = q.type === "text" ? (k ? "Другое написание (необязательно)" : "Правильный ответ")
+  const placeholder = q.type === "number" ? (k ? "Единицы: м, км, год (необязательно)" : "Правильное число, например 8849")
+    : q.type === "text" ? (k ? "Другое написание (необязательно)" : "Правильный ответ")
     : q.type === "order" ? `${k + 1}-й по порядку${k > 1 ? " (необязательно)" : ""}`
     : `Вариант ${k + 1}${k > 1 ? " (необязательно)" : ""}`;
   const mark = q.type === "order" ? `<span class="mark num" style="--c:var(--a${k})">${k + 1}</span>`
-    : q.type === "text" ? `<span class="mark num" style="--c:var(--good)">✓</span>`
+    : q.type === "text" || q.type === "number" ? `<span class="mark num" style="--c:var(--good)">${q.type === "number" && k ? "ед" : "✓"}</span>`
     : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>`;
   return `<div class="opt ${right ? "right" : ""}">${mark}
     <input type="text" data-opt="${k}" data-i="${i}" maxlength="${q.type === "text" ? 60 : 100}" value="${esc(o)}" placeholder="${placeholder}" aria-label="${placeholder}"></div>`;
@@ -282,12 +290,13 @@ function card(q, i) {
     </div>
     <div class="row">
       <select data-type="${i}" aria-label="Тип вопроса ${i + 1}" style="width:auto">${TYPES.map(([v, n]) => `<option value="${v}" ${q.type === v ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <select data-level="${i}" aria-label="Сложность вопроса ${i + 1}" style="width:auto">${LEVELS.map(([v, n]) => `<option value="${v}" ${q.level === v ? "selected" : ""}>${n}</option>`).join("")}</select>
       <input type="text" data-theme="${i}" list="theme-list" maxlength="40" value="${esc(q.theme || "")}" placeholder="Тема" aria-label="Тема вопроса ${i + 1}" style="width:auto;flex:0 1 180px">
       <span class="help" style="flex:1 1 260px">${TYPE_HINTS[q.type]}</span>
     </div>
     <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
     <input type="text" data-emoji="${i}" maxlength="40" value="${esc(q.emoji || "")}" placeholder="Картинка из эмодзи (необязательно), например 💛🚢🌊" aria-label="Картинка из эмодзи">
-    <div class="opts">${q.options.map((o, k) => optionRow(q, i, o, k)).join("")}</div>
+    <div class="opts">${q.options.slice(0, q.type === "number" ? 2 : 4).map((o, k) => optionRow(q, i, o, k)).join("")}</div>
     <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}</div>
     <details class="slot" ${q.melody ? "open" : ""}><summary class="slot-head" style="cursor:pointer">🎼 Мелодия нотами (для «Угадай мелодию»)</summary>
       <div class="row">
@@ -349,6 +358,7 @@ $list.addEventListener("input", (e) => {
 $list.addEventListener("change", async (e) => {
   const t = e.target, i = Number(t.dataset.i);
   if (t.dataset.inst != null) { pack.questions[Number(t.dataset.inst)].instrument = t.value; return summary(); }
+  if (t.dataset.level != null) { pack.questions[Number(t.dataset.level)].level = t.value; return summary(); }
   if (t.dataset.type != null) {
     const q = pack.questions[Number(t.dataset.type)], was = q.type;
     q.type = t.value;

@@ -11,7 +11,8 @@
       ],
       "answer": 1,
       "image": "media/flags/japan.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "easy"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -23,7 +24,8 @@
       ],
       "answer": 0,
       "image": "media/flags/france.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "easy"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -35,7 +37,8 @@
       ],
       "answer": 2,
       "image": "media/flags/germany.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "easy"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -47,7 +50,8 @@
       ],
       "answer": 3,
       "image": "media/flags/italy.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "easy"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -59,7 +63,8 @@
       ],
       "answer": 1,
       "image": "media/flags/sweden.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "normal"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -71,7 +76,8 @@
       ],
       "answer": 2,
       "image": "media/flags/netherlands.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "normal"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -83,7 +89,8 @@
       ],
       "answer": 1,
       "image": "media/flags/belgium.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "hard"
     },
     {
       "q": "Флаг какой страны на картинке?",
@@ -95,7 +102,8 @@
       ],
       "answer": 0,
       "image": "media/flags/ireland.svg",
-      "theme": "Флаги"
+      "theme": "Флаги",
+      "level": "hard"
     }
   ]
 }

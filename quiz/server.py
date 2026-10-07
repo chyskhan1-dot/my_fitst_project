@@ -56,7 +56,8 @@ AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
 INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth")
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
-QTYPES = ("choice", "multi", "order", "text")  # один ответ, несколько верных, по порядку, свой ответ
+QTYPES = ("choice", "multi", "order", "text", "number")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе)
+LEVELS = ("easy", "normal", "hard")  # сложность вопроса
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
@@ -179,6 +180,22 @@ def clean_melody(value, tempo):
     return " ".join(notes), max(40, min(240, tempo))
 
 
+def parse_number(value):
+    """Число из ответа: 8849, «8 849», «8849,5». None — если это не число."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        n = float(value)
+    else:
+        try:
+            n = float(re.sub(r"\s", "", str(value or "")).replace(",", "."))
+        except ValueError:
+            return None
+    if n != n or abs(n) > 1e12:  # NaN или слишком большое
+        return None
+    return int(n) if n == int(n) else n
+
+
 def clean_pack(data, store=None, scope="_"):
     """Проверяет пакет вопросов и приводит его к единому виду."""
     if not isinstance(data, dict):
@@ -202,7 +219,12 @@ def clean_pack(data, store=None, scope="_"):
             answer = q.get("answer")
             if not text:
                 raise PackError("нет текста вопроса")
-            if qtype == "text":
+            if qtype == "number":
+                answer = parse_number(answer)
+                if answer is None:
+                    raise PackError("правильный ответ должен быть числом")
+                options = []
+            elif qtype == "text":
                 variants = answer if isinstance(answer, list) else [answer]
                 answer = [str(v).strip()[:60] for v in variants if str(v or "").strip()][:10]
                 if not answer:
@@ -228,6 +250,8 @@ def clean_pack(data, store=None, scope="_"):
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
+                "level": q.get("level") if q.get("level") in LEVELS else None,
+                "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
                 "instrument": q.get("instrument") if q.get("instrument") in INSTRUMENTS else None,
             })
         except PackError as e:
@@ -319,6 +343,11 @@ for f in sorted(FD_DIR.glob("*.json")) if FD_DIR.exists() else []:
         print(f"Пакет «100 к 1» {f.name} пропущен: {e}", flush=True)
 
 
+def pack_meta(pack):
+    """Для меню: тема и сложность каждого вопроса — чтобы считать, сколько вопросов подходит."""
+    return [[q.get("theme") or "", q.get("level") or ""] for q in pack["questions"]]
+
+
 def si_info(pack):
     rounds = [r for r in pack["rounds"] if not r["final"]]
     count = sum(len(t["questions"]) for r in rounds for t in r["themes"])
@@ -350,6 +379,8 @@ DEFAULTS = {
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
+    "themes": [],  # какие темы пакета играть (пусто — все)
+    "level": "any",  # сложность: any, easy, normal, hard
     "si_pack": next(iter(SI_PACKS), None),  # пакет «Своей игры»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
@@ -1055,6 +1086,10 @@ class Game:
             s["teams"] = data["teams"]
         if data.get("seconds") in (10, 20, 30):
             s["seconds"] = data["seconds"]
+        if isinstance(data.get("themes"), list):
+            s["themes"] = [str(t)[:40] for t in data["themes"] if isinstance(t, str)][:60]
+        if data.get("level") in ("any", *LEVELS):
+            s["level"] = data["level"]
         if data.get("si_round_min") in (0, 5, 10, 15):
             s["si_round_min"] = data["si_round_min"]
         if data.get("count") in (0, 10, 20, 30):
@@ -1112,18 +1147,28 @@ class Game:
             else:
                 self.pick_questions()
 
+    def pool(self):
+        """Номера вопросов пакета, подходящих под выбранные темы и сложность."""
+        allq, st = self.pack["questions"], self.settings
+        themes = set(st.get("themes") or []) & {q.get("theme") for q in allq}
+        level = st.get("level", "any")
+        ok = [i for i, q in enumerate(allq)
+              if (not themes or q.get("theme") in themes) and (level == "any" or q.get("level") == level)]
+        return ok or list(range(len(allq)))  # ничего не подошло — играем весь пакет
+
     def pick_questions(self):
         """Выбираем вопросы на игру: случайные и по возможности те, что ещё не попадались."""
         allq = self.pack["questions"]
+        pool = self.pool()
         n = self.settings["count"]
-        if not n or n >= len(allq):
-            self.selected = list(allq) if not n else random.sample(allq, len(allq))
+        if not n or n >= len(pool):
+            self.selected = [allq[i] for i in (pool if not n else random.sample(pool, len(pool)))]
             return
         used = self.used.setdefault(self.settings["pack"], set())
-        fresh = [i for i in range(len(allq)) if i not in used]
+        fresh = [i for i in pool if i not in used]
         if len(fresh) < n:  # вопросы закончились — начинаем круг заново
-            used.clear()
-            fresh = list(range(len(allq)))
+            used.difference_update(pool)
+            fresh = list(pool)
         chosen = random.sample(fresh, n)
         used.update(chosen)
         self.selected = [allq[i] for i in chosen]
@@ -1177,6 +1222,8 @@ class Game:
             return sorted(set(value)) if ok else None
         if q["type"] == "order":
             return value if isinstance(value, list) and sorted(value) == list(range(n)) else None
+        if q["type"] == "number":
+            return parse_number(value) if isinstance(value, (int, float, str)) else None
         if not isinstance(value, str):
             return None
         return value.strip()[:60] or None
@@ -1190,6 +1237,12 @@ class Game:
             return 1.0 if value == q["answer"] else 0.0
         if q["type"] == "text":
             return 1.0 if text_matches(value, q["answer"]) else 0.0
+        if q["type"] == "number":
+            # ближе всех — полные очки; остальным — до 70% по точности (ошибка в 50% — 35%)
+            err = abs(value - q["answer"])
+            if err <= self.best_err:
+                return 1.0
+            return round(0.7 * max(0.0, 1 - err / max(abs(q["answer"]), 1)), 3)
         if q["type"] == "multi":
             right = set(q["answer"])
             hits, misses = len(right & set(value)), len(set(value) - right)
@@ -1228,6 +1281,9 @@ class Game:
         for place, row in enumerate(self.leaderboard(), 1):
             self.players[row["id"]]["prev_place"] = place
         self.team_prev = {t["team"]: place for place, t in enumerate(self.team_board(), 1)}
+        if self.question()["type"] == "number":  # ближайший ответ среди всех
+            errs = [abs(a["value"] - self.question()["answer"]) for a in self.answers.values()]
+            self.best_err = min(errs) if errs else 0
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
@@ -1355,14 +1411,15 @@ class Game:
                 s["fd_custom"] = {"title": self.fd_custom["title"], "count": len(self.fd_custom["questions"])}
             if self.si_custom:
                 s["si_custom"] = si_info(self.si_custom)
-            s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()]
+            s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
             if self.custom:
-                s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"])}
+                s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("question", "reveal") and not self.si and not self.fd:
             q = self.question()
             s["qtype"] = q["type"]
             s["question"] = q["q"]
             s["theme"] = q.get("theme")
+            s["unit"] = q.get("unit")
             s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]
@@ -1371,6 +1428,14 @@ class Game:
             s["emoji"] = q.get("emoji")
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
+        if self.phase in ("reveal", "leaders") and not self.si and not self.fd:
+            # для комментариев в таблице лидеров: самый быстрый верный ответ и сколько ответили верно
+            right = [(a["time"], who) for who, a in self.answers.items() if a.get("result") == "right" and who in self.players]
+            if right:
+                t, who = min(right)
+                s["fastest"] = {"name": self.players[who]["name"], "time": round(t, 1)}
+            s["right_total"] = len(right)
+            s["answers_total"] = len(self.answers)
         if self.phase == "reveal":
             results = [a.get("result") for a in self.answers.values()]
             s["right_count"] = results.count("right")
@@ -1384,6 +1449,12 @@ class Game:
                 s["counts"] = counts
             elif q["type"] == "order":
                 s["correct_order"] = q["options"]
+            elif q["type"] == "number":
+                s["correct_number"] = q["answer"]
+                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "value": a["value"],
+                         "diff": a["value"] - q["answer"], "best": a.get("result") == "right"}
+                        for pid, a in self.answers.items() if pid in self.players]
+                s["number_answers"] = sorted(rows, key=lambda r: abs(r["diff"]))
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [

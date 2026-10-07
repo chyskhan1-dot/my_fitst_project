@@ -12,7 +12,9 @@
       "answer": 2,
       "melody": "E4:1 G#4:1 G#4:1 G#4:1 F#4:0.5 E4:0.5 B4:2.5 B4:0.5 A4:0.5 G#4:1 G#4:1 G#4:1 F#4:0.5 E4:0.5 B4:2.5",
       "tempo": 100,
-      "instrument": "pluck"
+      "instrument": "pluck",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -20,7 +22,9 @@
       "emoji": "🌸🍷",
       "answer": [
         "Розовое вино"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "hard"
     },
     {
       "type": "text",
@@ -29,7 +33,9 @@
       "answer": [
         "Umbrella",
         "Зонтик"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -42,7 +48,9 @@
       "answer": 1,
       "melody": "E4 E4 E4:2 E4 E4 E4:2 E4 G4 C4:1.5 D4:0.5 E4:4 F4 F4 F4:1.5 F4:0.5 F4 E4 E4 E4:0.5 E4:0.5 E4 D4 D4 E4 D4:2 G4:2",
       "tempo": 180,
-      "instrument": "pluck"
+      "instrument": "pluck",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -55,7 +63,9 @@
       "answer": 2,
       "melody": "E5 C5 E5 C5 F5 E5 D5:2 G4 G4 G4 A4 B4 C5 C5:2",
       "tempo": 140,
-      "instrument": "epiano"
+      "instrument": "epiano",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -68,7 +78,9 @@
       "answer": 2,
       "melody": "D4 D4 F#4 A4 A4:2 A5 A5:2 F#5 F#5:2 D4 D4 F#4 A4 A4:2 A5 A5:2 G5 G5:2",
       "tempo": 150,
-      "instrument": "piano"
+      "instrument": "piano",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -81,7 +93,9 @@
       "answer": 1,
       "melody": "B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:1 F4:0.5 C#4:0.5 F4:1 E4:0.5 C4:0.5 E4:1 B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:0.5 A4:0.5 F#4:0.5 D4:0.5 F#4:0.5 A4:2",
       "tempo": 100,
-      "instrument": "flute"
+      "instrument": "flute",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -94,7 +108,9 @@
       "answer": 0,
       "melody": "B3:0.75 F#3:0.25 B3:0.5 D4:1.5 B3:1.5 D4:0.75 B3:0.25 D4:0.5 F#4:1.5 D4:1.5 F#4:0.75 D4:0.25 F#4:0.5 A4:1.5 A3:1.5 D4:0.75 A3:0.25 D4:0.5 F#4:3",
       "tempo": 90,
-      "instrument": "synth"
+      "instrument": "synth",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -102,7 +118,9 @@
       "emoji": "🩸🅰️🅱️",
       "answer": [
         "Группа крови"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -111,7 +129,9 @@
       "answer": [
         "Purple Rain",
         "Пурпурный дождь"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -124,7 +144,9 @@
       "answer": 1,
       "melody": "G4:1 R:0.5 D4:0.5 G4:1 R:0.5 D4:0.5 G4:0.5 D4:0.5 G4:0.5 B4:0.5 D5:2 C5:1 R:0.5 A4:0.5 C5:1 R:0.5 A4:0.5 C5:0.5 A4:0.5 F#4:0.5 A4:0.5 D4:2",
       "tempo": 130,
-      "instrument": "strings"
+      "instrument": "strings",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -137,7 +159,9 @@
       "answer": 2,
       "melody": "B4:0.25 A4:0.25 G#4:0.25 A4:0.25 C5:1 D5:0.25 C5:0.25 B4:0.25 C5:0.25 E5:1 F5:0.25 E5:0.25 D#5:0.25 E5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 C6:1.5",
       "tempo": 112,
-      "instrument": "marimba"
+      "instrument": "marimba",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -145,7 +169,9 @@
       "emoji": "1️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣🌹",
       "answer": [
         "Миллион алых роз"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -158,7 +184,9 @@
       "answer": 0,
       "melody": "G4:0.75 G4:0.25 A4 G4 C5 B4:2 G4:0.75 G4:0.25 A4 G4 D5 C5:2 G4:0.75 G4:0.25 G5 E5 C5 B4 A4:2 F5:0.75 F5:0.25 E5 C5 D5 C5:2",
       "tempo": 100,
-      "instrument": "synth"
+      "instrument": "synth",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -171,7 +199,9 @@
       "answer": 3,
       "melody": "E5:0.25 D#5:0.25 E5:0.25 D#5:0.25 E5:0.25 B4:0.25 D5:0.25 C5:0.25 A4:0.5 R:0.25 C4:0.25 E4:0.25 A4:0.25 B4:0.5 R:0.25 E4:0.25 G#4:0.25 B4:0.25 C5:0.5 R:0.25 E4:0.25 E5:0.25 D#5:0.25 E5:0.25 D#5:0.25 E5:0.25 B4:0.25 D5:0.25 C5:0.25 A4:0.75",
       "tempo": 72,
-      "instrument": "epiano"
+      "instrument": "epiano",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -179,7 +209,9 @@
       "emoji": "🔋",
       "answer": [
         "Батарейка"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "hard"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -192,7 +224,9 @@
       "answer": 0,
       "melody": "C4 C4 C4 F4:1.5 A4:1.5 C4 C4 C4 F4:1.5 A4:1.5 F4 F4 E4 E4 D4 D4 C4:3",
       "tempo": 170,
-      "instrument": "marimba"
+      "instrument": "marimba",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -200,7 +234,9 @@
       "emoji": "🐢🎶",
       "answer": [
         "Despacito"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -209,7 +245,9 @@
       "answer": [
         "Gangnam Style",
         "Гангнам стайл"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -217,7 +255,9 @@
       "emoji": "🧊🧊👶",
       "answer": [
         "Ice Ice Baby"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "hard"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -230,7 +270,9 @@
       "answer": 1,
       "melody": "C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2",
       "tempo": 110,
-      "instrument": "piano"
+      "instrument": "piano",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "type": "text",
@@ -238,7 +280,9 @@
       "emoji": "🤍🌹",
       "answer": [
         "Белые розы"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -251,7 +295,9 @@
       "answer": 3,
       "melody": "D4 R D4 E4 G4 F#4 E4 A4 R A4 A4 B4 F#4 G4 E4 R E4 E4 G4 F#4 E4 D4 D5 C#5 B4 A4 G4 F#4 E4 D4:2",
       "tempo": 150,
-      "instrument": "strings"
+      "instrument": "strings",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -260,7 +306,9 @@
       "answer": [
         "Thriller",
         "Триллер"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -268,7 +316,9 @@
       "emoji": "🪆🧙",
       "answer": [
         "Кукла колдуна"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "hard"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -281,7 +331,9 @@
       "answer": 3,
       "melody": "C4 E4 F4 G4:4 C4 E4 F4 G4:4 C4 E4 F4 G4:2 E4:2 C4:2 E4:2 D4:4",
       "tempo": 150,
-      "instrument": "epiano"
+      "instrument": "epiano",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -290,7 +342,9 @@
       "answer": [
         "Hello",
         "Привет"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -299,7 +353,9 @@
       "answer": [
         "Lemon Tree",
         "Лимонное дерево"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -308,7 +364,9 @@
       "answer": [
         "Hotel California",
         "Отель Калифорния"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -318,7 +376,9 @@
         "Highway to Hell",
         "Дорога в ад",
         "Шоссе в ад"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "hard"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -331,7 +391,9 @@
       "answer": 0,
       "melody": "E5:1 B4:0.5 C5:0.5 D5:1 C5:0.5 B4:0.5 A4:1 A4:0.5 C5:0.5 E5:1 D5:0.5 C5:0.5 B4:1.5 C5:0.5 D5:1 E5:1 C5:1 A4:1 A4:2",
       "tempo": 150,
-      "instrument": "flute"
+      "instrument": "flute",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -344,7 +406,9 @@
       "answer": 1,
       "melody": "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4:1.5 D4:0.5 D4:2 E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4:1.5 C4:0.5 C4:2",
       "tempo": 132,
-      "instrument": "piano"
+      "instrument": "piano",
+      "theme": "Угадай мелодию",
+      "level": "easy"
     },
     {
       "q": "🎵 Угадай мелодию",
@@ -357,7 +421,9 @@
       "answer": 1,
       "melody": "A4 A4 A4 A4 G4 F4 F4 E4 D4:2 R A4 A4 A4 A4 G4 F4 F4 E4 D4:2",
       "tempo": 120,
-      "instrument": "marimba"
+      "instrument": "marimba",
+      "theme": "Угадай мелодию",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -366,7 +432,9 @@
       "answer": [
         "Wind of Change",
         "Ветер перемен"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "normal"
     },
     {
       "type": "text",
@@ -375,7 +443,9 @@
       "answer": [
         "Yellow Submarine",
         "Жёлтая подводная лодка"
-      ]
+      ],
+      "theme": "Песни по эмодзи",
+      "level": "easy"
     }
   ]
 }

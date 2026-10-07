@@ -392,6 +392,12 @@ function answerControls(s) {
       <div class="answers">${s.options.map((_, i) => btn(i, "data-seq")).join("")}</div>
       <div class="row2"><button class="btn ghost" id="reset">Сначала</button><button class="btn" id="submit" disabled>Ответить</button></div>`;
   }
+  if (s.qtype === "number") {
+    return `<form id="text-form" class="text-form">
+      <input id="answer-text" maxlength="20" inputmode="decimal" autocomplete="off" placeholder="Число${s.unit ? ", " + esc(s.unit) : ""}" aria-label="Твой ответ — число">
+      <button class="btn" type="submit">Ответить</button></form>
+      <p class="hint">Побеждает тот, кто ближе всех к правильному ответу</p>`;
+  }
   if (s.qtype === "text") {
     return `<form id="text-form" class="text-form">
       <input id="answer-text" maxlength="60" autocomplete="off" autocapitalize="words" placeholder="Твой ответ" aria-label="Твой ответ">
@@ -415,6 +421,7 @@ function paintOrder() {
 function answerSummary(s, answer) {
   const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : SHAPES[i] + " "}${esc(s.options[i])}</span>`;
   if (s.qtype === "text") return `<span class="pill pop">«${esc(answer)}»</span>`;
+  if (s.qtype === "number") return `<span class="pill pop">${Number(answer).toLocaleString("ru-RU")}${s.unit ? " " + esc(s.unit) : ""}</span>`;
   if (Array.isArray(answer)) return `<div class="stack">${answer.map((i, k) => chip(i, s.qtype === "order" ? k + 1 : 0)).join("")}</div>`;
   return chip(answer, 0);
 }
@@ -422,6 +429,7 @@ function answerSummary(s, answer) {
 function correctAnswer(s) {
   const b = (t) => `<br><b style="color:var(--ink)">${esc(t)}</b>`;
   if (s.qtype === "text") return b(s.correct_text);
+  if (s.qtype === "number") return b(Number(s.correct_number).toLocaleString("ru-RU") + (s.unit ? " " + s.unit : ""));
   if (s.qtype === "order") return s.correct_order.map((o, i) => b(`${i + 1}. ${o}`)).join("");
   if (Array.isArray(s.correct)) return s.correct.map((i) => b(`${SHAPES[i]} ${s.options[i]}`)).join("");
   return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
@@ -673,8 +681,10 @@ async function send(answer) {
 
 function moveText(me) {
   if (!me.prev || me.prev === me.place) return "";
-  const d = me.prev - me.place;
-  return d > 0 ? `<span class="move up">↑ поднялся на ${d}</span>` : `<span class="move down">↓ опустился на ${-d}</span>`;
+  const d = me.prev - me.place, n = Math.abs(d);
+  const w = n % 10 === 1 && n % 100 !== 11 ? "место" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "места" : "мест";
+  if (me.place === 1) return `<span class="move up">👑 Ты лидер! +${n} ${w}</span>`;
+  return d > 0 ? `<span class="move up">🚀 +${n} ${w} вверх</span>` : `<span class="move down">📉 −${n} ${w}</span>`;
 }
 
 function render(s) {
@@ -722,11 +732,17 @@ function render(s) {
       ${s.emoji ? `<div class="emoji-pic">${esc(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
       ${answerControls(s)}`;
-    if (s.qtype === "text") {
+    if (s.qtype === "text" || s.qtype === "number") {
       const input = document.getElementById("answer-text");
       input.value = typed;
       input.addEventListener("input", () => { typed = input.value; });
-      document.getElementById("text-form").addEventListener("submit", (e) => { e.preventDefault(); if (typed.trim()) send(typed.trim()); });
+      document.getElementById("text-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!typed.trim()) return;
+        if (s.qtype === "text") return send(typed.trim());
+        const n = Number(typed.replace(/\s/g, "").replace(",", "."));
+        if (Number.isFinite(n)) send(n); else input.setCustomValidity("Нужно число"), input.reportValidity();
+      });
       input.focus();
     }
     lastQuestion = s;
@@ -743,13 +759,17 @@ function render(s) {
     const res = me.result || "none";
     mood(res === "right" || res === "partial" ? "good" : "bad");
     buzz(res === "right" ? [30, 60, 30] : res === "partial" ? [30] : 200);
-    const text = { right: "Верно!", partial: "Почти!", wrong: "Мимо!", none: "Не успел!" }[res];
+    const text = s.qtype === "number"
+      ? { right: "Ближе всех! 🎯", partial: "Неплохо!", wrong: "Далеко…", none: "Не успел!" }[res]
+      : { right: "Верно!", partial: "Почти!", wrong: "Мимо!", none: "Не успел!" }[res];
+    const rank = s.qtype === "number" ? (s.number_answers || []).findIndex((a) => a.name === me.name) + 1 : 0;
     $main.innerHTML = `
       <div class="scene">
         <span class="big pop ${res === "right" || res === "partial" ? "good" : "bad"}">${text}</span>
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
-        ${res !== "right" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
+        ${res !== "right" || s.qtype === "number" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
+        ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${s.number_answers.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
       </div>`;
   } else if (s.phase === "leaders" && myTeam) {

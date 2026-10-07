@@ -4,24 +4,37 @@
   const MAX_IMAGE_SIDE = 1280; // картинки больше уменьшаем, чтобы пакет грузился быстро
   const MAX_AUDIO_MB = 8;
 
-  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип"];
+  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность"];
   // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
-  // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа
+  // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа;
+  // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший.
+  // Сложность: лёгкий, средний, сложный
   const TEMPLATE_CSV = [
     CSV_HEADER,
-    ["Какая планета самая большая?", "Сатурн", "Юпитер", "Нептун", "Земля", "2", "", "", ""],
-    ["Столица Франции?", "Париж", "Лион", "", "", "1", "", "", ""],
-    ["Какие из этих городов — столицы?", "Москва", "Милан", "Мадрид", "Сидней", "1,3", "", "", "несколько"],
-    ["Расставь планеты по удалённости от Солнца", "Меркурий", "Венера", "Земля", "Марс", "", "", "", "порядок"],
-    ["Кто написал «Евгения Онегина»? Напиши фамилию", "Пушкин", "Александр Пушкин", "", "", "", "", "", "текст"],
+    ["Какая планета самая большая?", "Сатурн", "Юпитер", "Нептун", "Земля", "2", "", "", "", "Космос"],
+    ["Столица Франции?", "Париж", "Лион", "", "", "1", "", "", "", "География"],
+    ["Какие из этих городов — столицы?", "Москва", "Милан", "Мадрид", "Сидней", "1,3", "", "", "несколько", "География"],
+    ["Расставь планеты по удалённости от Солнца", "Меркурий", "Венера", "Земля", "Марс", "", "", "", "порядок", "Космос"],
+    ["Кто написал «Евгения Онегина»? Напиши фамилию", "Пушкин", "Александр Пушкин", "", "", "", "", "", "текст", "Литература", "лёгкий"],
+    ["Какова высота Эвереста?", "8849", "м", "", "", "", "", "", "число", "География", "средний"],
   ].map((r) => r.map(csvCell).join(";")).join("\r\n");
 
-  const TYPE_NAMES = { choice: "", multi: "несколько", order: "порядок", text: "текст" };
+  const TYPE_NAMES = { choice: "", multi: "несколько", order: "порядок", text: "текст", number: "число" };
+  const LEVEL_NAMES = { easy: "лёгкий", normal: "средний", hard: "сложный" };
+  function levelOf(value) {
+    const v = String(value || "").trim().toLowerCase();
+    if (/^(л|easy)/.test(v)) return "easy";
+    if (/^(ср|норм|norm)/.test(v)) return "normal";
+    if (/^(сл|hard)/.test(v)) return "hard";
+    return null;
+  }
+  const toNumber = (v) => { const n = Number(String(v || "").replace(/\s/g, "").replace(",", ".")); return String(v || "").trim() && Number.isFinite(n) ? n : null; };
   function typeOf(value) {
     const v = String(value || "").trim().toLowerCase();
     if (/^(несколько|multi)/.test(v)) return "multi";
     if (/^(порядок|order|по порядку)/.test(v)) return "order";
     if (/^(текст|text|свой)/.test(v)) return "text";
+    if (/^(число|number|ближе)/.test(v)) return "number";
     return "choice";
   }
 
@@ -74,7 +87,12 @@
       const filled = options.filter(Boolean);
       const type = typeOf(r[8]);
       const q = { type, q: (r[0] || "").trim(), image: (r[6] || "").trim() || null, audio: (r[7] || "").trim() || null };
-      if (type === "text") {
+      if ((r[9] || "").trim()) q.theme = r[9].trim();
+      if (levelOf(r[10])) q.level = levelOf(r[10]);
+      if (type === "number") {
+        q.answer = toNumber(options[0]);
+        if (options[1]) q.unit = options[1];
+      } else if (type === "text") {
         q.answer = filled;
       } else if (type === "order") {
         q.options = filled;
@@ -97,11 +115,11 @@
     const rows = [CSV_HEADER];
     for (const q of pack.questions) {
       const type = q.type || "choice";
-      const src = type === "text" ? q.answer : q.options;
-      const opts = [0, 1, 2, 3].map((i) => (src || [])[i] || "");
+      const src = type === "text" ? q.answer : type === "number" ? [q.answer, q.unit || ""] : q.options;
+      const opts = [0, 1, 2, 3].map((i) => (src || [])[i] ?? "");
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
       const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";
-      rows.push([q.q, ...opts, right, media(q.image), media(q.audio), TYPE_NAMES[type]]);
+      rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || ""]);
     }
     return rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
   }

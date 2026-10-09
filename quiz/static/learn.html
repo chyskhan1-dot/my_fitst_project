@@ -131,7 +131,7 @@ async function choosePack(id, keepThemes) {
   cur.pack = id;
   cur.store = col ? col.source : id; // прогресс общий с пакетом-источником
   const data = await (await fetch("/api/packs/" + encodeURIComponent(cur.store))).json();
-  cur.data = col ? { ...data, title: col.title, questions: data.questions.filter((q) => col.themes.includes(q.theme)) } : data;
+  cur.data = col ? { ...data, title: col.title, questions: data.questions.filter((q) => col.themes.includes(q.theme) && q.type !== "map") } : data;
   for (const p of packs) if (p.id === id && col) p.count = cur.data.questions.length;
   if (!keepThemes) cur.themes = [];
   cur.themes = cur.themes.filter((t) => themesOf(cur.data).includes(t));

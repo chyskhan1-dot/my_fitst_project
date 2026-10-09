@@ -65,6 +65,7 @@ textarea { resize: vertical; min-height: 54px; }
 .card-head { display: flex; align-items: center; gap: 8px; }
 .card-head b { font-family: var(--display); font-size: 14px; margin-right: auto; }
 .opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.emap { height: 380px; margin-top: 8px; }
 .opt { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; border-radius: 12px; background: var(--bg); border: 2px solid transparent; min-width: 0; }
 .opt.right { border-color: var(--good); }
 .opt .mark {
@@ -144,6 +145,7 @@ textarea { resize: vertical; min-height: 54px; }
 
 <script src="/static/pack.js"></script>
 <script src="/static/music.js"></script>
+<script src="/static/map.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const DRAFT = "quiz-editor-draft";
@@ -168,6 +170,7 @@ const TYPES = [
   ["order", "По порядку"],
   ["text", "Свой ответ (текст)"],
   ["number", "Число (кто ближе)"],
+  ["map", "Где на карте (точка)"],
 ];
 const LEVELS = [["", "Сложность: —"], ["easy", "Лёгкий"], ["normal", "Средний"], ["hard", "Сложный"]];
 const toNum = (v) => { const t = String(v || "").replace(/\s/g, "").replace(",", "."); const n = Number(t); return t && Number.isFinite(n) ? n : null; };
@@ -175,6 +178,7 @@ const TYPE_HINTS = {
   choice: "Нажми на значок слева от правильного варианта.",
   multi: "Отметь все правильные варианты.",
   order: "Впиши варианты в правильном порядке — игрокам они покажутся перемешанными. За частично верный порядок — часть очков.",
+  map: "Игрок ставит точку на карте. Ближе всех — полные очки, остальным — часть по расстоянию (дальше 2500 км — ноль). Место: нажми «Выбрать на карте» или впиши широту и долготу.",
   number: "Игрок пишет число. Ближе всех — полные очки, остальным — часть по точности. После ответа на экране видно, кто сколько написал.",
   text: "Игрок печатает ответ сам. Регистр, «ё» и небольшие опечатки не важны; русская и латинская запись сравниваются по звучанию, фамилия засчитывается и без имени. Добавь другие написания, если они сильно отличаются.",
 };
@@ -185,12 +189,13 @@ function fromPack(p) {
   return {
     title: String(p.title || ""),
     questions: (p.questions || []).map((q) => {
-      const type = ["multi", "order", "text", "number"].includes(q.type) ? q.type : "choice";
-      const src = type === "text" ? [].concat(q.answer || []) : type === "number" ? [q.answer ?? "", q.unit || ""] : q.options || [];
+      const type = ["multi", "order", "text", "number", "map"].includes(q.type) ? q.type : "choice";
+      const src = type === "text" ? [].concat(q.answer || []) : type === "number" ? [q.answer ?? "", q.unit || ""]
+        : type === "map" ? [...[].concat(q.answer || ["", ""]), q.place || ""] : q.options || [];
       const options = [0, 1, 2, 3].map((i) => String(src[i] ?? ""));
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
-      if (type === "order" || type === "text" || type === "number") answer = -1;
+      if (type === "order" || type === "text" || type === "number" || type === "map") answer = -1;
       return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null };
     }),
   };
@@ -205,6 +210,7 @@ function toPack() {
       const q2 = { q: q.q.trim() };
       if (q.type !== "choice") q2.type = q.type;
       if (q.type === "number") { q2.answer = toNum(q.options[0]); if (q.options[1].trim()) q2.unit = q.options[1].trim(); }
+      else if (q.type === "map") { q2.answer = [toNum(q.options[0]), toNum(q.options[1])]; if (q.options[2].trim()) q2.place = q.options[2].trim(); }
       else if (q.type === "text") q2.answer = kept.map((o) => o.text);
       else q2.options = kept.map((o) => o.text);
       if (q.type === "choice") q2.answer = kept.findIndex((o) => o.i === q.answer);
@@ -234,6 +240,11 @@ function problems(q) {
   const filled = q.options.filter((o) => o.trim()).length;
   if (q.type === "text") { if (!filled) errs.push("впиши правильный ответ"); return errs; }
   if (q.type === "number") { if (toNum(q.options[0]) == null) errs.push("впиши правильный ответ числом"); return errs; }
+  if (q.type === "map") {
+    const [la, lo] = [toNum(q.options[0]), toNum(q.options[1])];
+    if (la == null || lo == null || Math.abs(la) > 90 || Math.abs(lo) > 180) errs.push("выбери место на карте");
+    return errs;
+  }
   if (filled < 2) errs.push("нужно минимум 2 варианта");
   if (q.type === "choice" && (!q.options[q.answer] || !q.options[q.answer].trim())) errs.push("отметь правильный ответ (нажми на значок слева от варианта)");
   if (q.type === "multi" && !q.answer.some((k) => q.options[k] && q.options[k].trim())) errs.push("отметь хотя бы один правильный вариант");
@@ -277,11 +288,13 @@ function slot(q, i, kind) {
 
 function optionRow(q, i, o, k) {
   const right = q.type === "choice" ? q.answer === k : q.type === "multi" ? q.answer.includes(k) : false;
-  const placeholder = q.type === "number" ? (k ? "Единицы: м, км, год (необязательно)" : "Правильное число, например 8849")
+  const placeholder = q.type === "map" ? ["Широта, например 48.858", "Долгота, например 2.294", "Что это за место (покажем в ответе)"][k]
+    : q.type === "number" ? (k ? "Единицы: м, км, год (необязательно)" : "Правильное число, например 8849")
     : q.type === "text" ? (k ? "Другое написание (необязательно)" : "Правильный ответ")
     : q.type === "order" ? `${k + 1}-й по порядку${k > 1 ? " (необязательно)" : ""}`
     : `Вариант ${k + 1}${k > 1 ? " (необязательно)" : ""}`;
   const mark = q.type === "order" ? `<span class="mark num" style="--c:var(--a${k})">${k + 1}</span>`
+    : q.type === "map" ? `<span class="mark num" style="--c:var(--good)">${["ш", "д", "📍"][k]}</span>`
     : q.type === "text" || q.type === "number" ? `<span class="mark num" style="--c:var(--good)">${q.type === "number" && k ? "ед" : "✓"}</span>`
     : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>`;
   return `<div class="opt ${right ? "right" : ""}">${mark}
@@ -307,7 +320,9 @@ function card(q, i) {
     </div>
     <textarea data-q="${i}" maxlength="300" rows="2" placeholder="Текст вопроса" aria-label="Текст вопроса ${i + 1}">${esc(q.q)}</textarea>
     <input type="text" data-emoji="${i}" maxlength="40" value="${esc(q.emoji || "")}" placeholder="Картинка из эмодзи (необязательно), например 💛🚢🌊" aria-label="Картинка из эмодзи">
-    <div class="opts">${q.options.slice(0, q.type === "number" ? 2 : 4).map((o, k) => optionRow(q, i, o, k)).join("")}</div>
+    <div class="opts">${q.options.slice(0, q.type === "number" ? 2 : q.type === "map" ? 3 : 4).map((o, k) => optionRow(q, i, o, k)).join("")}</div>
+    ${q.type === "map" ? `<div><button class="btn" data-emap="${i}" type="button">${mapOpen === i ? "Скрыть карту" : "🗺 Выбрать на карте"}</button>
+      ${mapOpen === i ? `<div class="emap" id="emap"></div><span class="help">Нажми на карту — там будет правильный ответ. Колесо мыши — увеличить</span>` : ""}</div>` : ""}
     <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}</div>
     <details class="slot" ${q.melody ? "open" : ""}><summary class="slot-head" style="cursor:pointer">🎼 Мелодия нотами (для «Угадай мелодию»)</summary>
       <div class="row">
@@ -322,6 +337,25 @@ function card(q, i) {
   </section>`;
 }
 
+// карта открыта только у одного вопроса за раз — так меньше памяти
+let mapOpen = null;
+function mountEditorMap() {
+  const box = document.getElementById("emap");
+  if (!box) return;
+  const i = mapOpen, q = pack.questions[i];
+  const here = () => { const la = toNum(q.options[0]), lo = toNum(q.options[1]); return la == null || lo == null ? null : [la, lo]; };
+  const m = QuizMap.create(box, {
+    onPick(p) {
+      q.options[0] = String(Math.round(p[0] * 1000) / 1000); q.options[1] = String(Math.round(p[1] * 1000) / 1000);
+      $list.querySelector(`[data-i="${i}"][data-opt="0"]`).value = q.options[0];
+      $list.querySelector(`[data-i="${i}"][data-opt="1"]`).value = q.options[1];
+      m.setPins([{ point: here(), kind: "right", icon: "✓" }]);
+      refreshCard(i);
+    },
+  });
+  if (here()) { m.setPins([{ point: here(), kind: "right", icon: "✓" }]); requestAnimationFrame(() => m.view([here()], 3)); }
+}
+
 function render() {
   document.getElementById("title").value = pack.title;
   $list.innerHTML = pack.questions.length
@@ -331,6 +365,7 @@ function render() {
   const themes = [...new Set(pack.questions.map((q) => (q.theme || "").trim()).filter(Boolean))];
   $list.insertAdjacentHTML("beforeend", `<datalist id="theme-list">${themes.map((t) => `<option value="${esc(t)}">`).join("")}</datalist>`);
   $list.style.cssText = "display:flex;flex-direction:column;gap:16px";
+  mountEditorMap();
   summary();
 }
 
@@ -407,6 +442,7 @@ $list.addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   const i = Number(b.dataset.i);
+  if (b.dataset.emap != null) { const k = Number(b.dataset.emap); mapOpen = mapOpen === k ? null : k; return render(); }
   if (b.dataset.listen != null) {
     const q = pack.questions[Number(b.dataset.listen)];
     if (q.melody && !melodyError(q.melody)) QuizMusic.melody(q.melody, Number(q.tempo) || 110, q.instrument || "piano");

@@ -148,6 +148,8 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .row2 { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 .btn.ghost { background: var(--panel); color: var(--ink); }
 .text-form { display: flex; flex-direction: column; gap: 10px; }
+.phone-map { width: 100%; height: 46vh; min-height: 240px; flex: none; }
+.phone-map.small { height: 34vh; min-height: 200px; }
 .text-form input { font: 700 22px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: center; width: 100%; }
 .stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .ava.emo { background: var(--panel); box-shadow: none; font-size: 20px; }
@@ -219,6 +221,7 @@ body.has-hostbar { padding-bottom: 84px; }
 </div>
 
 <script src="/static/comments.js"></script>
+<script src="/static/map.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
@@ -401,7 +404,7 @@ function flash(text) {
   document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
 
-let draftQ = -1, picks = [], typed = "", lastQuestion = null, doubleOn = false;
+let draftQ = -1, picks = [], typed = "", lastQuestion = null, doubleOn = false, mapPick = null;
 const LEVEL_NAMES = { easy: "лёгкий", normal: "средний", hard: "сложный" };
 
 // картинка с эффектом: анимация длится всё время вопроса (с учётом уже прошедшего)
@@ -431,6 +434,11 @@ function answerControls(s) {
       <button class="btn" type="submit">Ответить</button></form>
       <p class="hint">Побеждает тот, кто ближе всех к правильному ответу</p>`;
   }
+  if (s.qtype === "map") {
+    return `<div class="phone-map" id="phone-map"></div>
+      <p class="hint">Нажми на карту — там будет твоя точка. Увеличить — двумя пальцами или «+»</p>
+      <button class="btn" id="map-send" ${mapPick ? "" : "disabled"}>Ответить</button>`;
+  }
   if (s.qtype === "text") {
     return `<form id="text-form" class="text-form">
       <input id="answer-text" maxlength="60" autocomplete="off" autocapitalize="words" placeholder="Твой ответ" aria-label="Твой ответ">
@@ -455,6 +463,7 @@ function answerSummary(s, answer) {
   const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : SHAPES[i] + " "}${esc(s.options[i])}</span>`;
   if (s.qtype === "text") return `<span class="pill pop">«${esc(answer)}»</span>`;
   if (s.qtype === "number") return `<span class="pill pop">${Number(answer).toLocaleString("ru-RU")}${s.unit ? " " + esc(s.unit) : ""}</span>`;
+  if (s.qtype === "map") return `<span class="pill pop">📍 Точка поставлена</span>`;
   if (Array.isArray(answer)) return `<div class="stack">${answer.map((i, k) => chip(i, s.qtype === "order" ? k + 1 : 0)).join("")}</div>`;
   return chip(answer, 0);
 }
@@ -463,6 +472,7 @@ function correctAnswer(s) {
   const b = (t) => `<br><b style="color:var(--ink)">${esc(t)}</b>`;
   if (s.qtype === "text") return b(s.correct_text);
   if (s.qtype === "number") return b(Number(s.correct_number).toLocaleString("ru-RU") + (s.unit ? " " + s.unit : ""));
+  if (s.qtype === "map") return s.place ? b("📍 " + s.place) : "";
   if (s.qtype === "order") return s.correct_order.map((o, i) => b(`${i + 1}. ${o}`)).join("");
   if (Array.isArray(s.correct)) return s.correct.map((i) => b(`${SHAPES[i]} ${s.options[i]}`)).join("");
   return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
@@ -723,7 +733,7 @@ const SKIP = {}; // «Пропустить вопрос»
 async function send(answer) {
   if (sending) return;
   sending = true; buzz(25);
-  document.querySelectorAll(".ans, #submit, #text-form button, #skip, #double").forEach((x) => (x.disabled = true));
+  document.querySelectorAll(".ans, #submit, #text-form button, #skip, #double, #map-send").forEach((x) => (x.disabled = true));
   await api("/api/answer", answer === SKIP ? { pid, skip: true } : { pid, answer, double: doubleOn }).catch(() => {});
   sending = false; lastSig = ""; poll();
 }
@@ -778,7 +788,7 @@ function render(s) {
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
     document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
   } else if (s.phase === "question" && !me.answered) {
-    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; }
+    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
     $main.innerHTML = `
       <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
@@ -804,6 +814,16 @@ function render(s) {
     }
     lastQuestion = s;
     if (s.qtype === "order") paintOrder();
+    if (s.qtype === "map") {
+      const m = QuizMap.create(document.getElementById("phone-map"), {
+        onPick(p) {
+          mapPick = p; buzz(10);
+          m.setPins([{ point: p, kind: "me", icon: "📍" }]);
+          document.getElementById("map-send").disabled = false;
+        },
+      });
+      if (mapPick) m.setPins([{ point: mapPick, kind: "me", icon: "📍" }]);
+    }
   } else if (s.phase === "question") {
     $main.innerHTML = `
       <div class="scene">
@@ -817,20 +837,31 @@ function render(s) {
     const res = me.result || "none";
     mood(res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad");
     buzz(res === "right" ? [30, 60, 30] : res === "partial" ? [30] : 200);
-    const text = res === "skip" ? "Пропуск" : s.qtype === "number"
+    const text = res === "skip" ? "Пропуск" : s.qtype === "number" || s.qtype === "map"
       ? { right: "Ближе всех! 🎯", partial: "Неплохо!", wrong: "Далеко…", none: "Не успел!" }[res]
       : { right: "Верно!", partial: "Почти!", wrong: "Мимо!", none: "Не успел!" }[res];
-    const rank = s.qtype === "number" ? (s.number_answers || []).findIndex((a) => a.name === me.name) + 1 : 0;
+    const near = s.qtype === "map" ? s.map_answers || [] : s.number_answers || [];
+    const rank = s.qtype === "number" || s.qtype === "map" ? near.findIndex((a) => a.name === me.name) + 1 : 0;
+    const miss = s.qtype === "map" && Array.isArray(me.answer) ? QuizMap.distance(me.answer, s.correct_point) : null;
     $main.innerHTML = `
       <div class="scene">
         <span class="big pop ${res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad"}">${text}</span>
         ${me.doubled ? `<span class="pill x2 rise">×2 ${me.last > 0 ? "сыграла!" : "не сыграла"}</span>` : ""}
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
-        ${res !== "right" || s.qtype === "number" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
-        ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${s.number_answers.length}</p>` : ""}
+        ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
+        ${s.qtype === "map" ? `<div class="phone-map small" id="phone-map"></div>` : ""}
+        ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
+        ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
       </div>`;
+    if (s.qtype === "map") {
+      const m = QuizMap.create(document.getElementById("phone-map"));
+      const mine = Array.isArray(me.answer) ? [me.answer] : [];
+      m.setLines(mine.map((p) => [p, s.correct_point]));
+      m.setPins([...mine.map((p) => ({ point: p, kind: "me", icon: "📍", label: "Ты" })), { point: s.correct_point, kind: "right", icon: "✓", label: s.place || "Здесь" }]);
+      requestAnimationFrame(() => m.view([s.correct_point, ...mine]));
+    }
   } else if (s.phase === "leaders" && myTeam) {
     $main.innerHTML = `
       <div class="scene">
@@ -1019,6 +1050,7 @@ document.addEventListener("click", async (e) => {
     return paintOrder();
   }
   if (e.target.closest("#reset")) { picks = []; return paintOrder(); }
+  if (e.target.closest("#map-send") && mapPick) return send(mapPick);
   if (e.target.closest("#submit") && picks.length) send(lastQuestion && lastQuestion.qtype === "multi" ? picks.slice().sort() : picks.slice());
 });
 

@@ -21,11 +21,13 @@
     if (down) out.push(pick([`📉 ${b(down.name)} теряет ${-down.d} ${places(-down.d)} и опускается на ${down.place}-е`, `📉 Ой! ${b(down.name)} падает на ${-down.d} ${places(-down.d)}`, `📉 ${b(down.name)} сдаёт позиции: −${-down.d} ${places(-down.d)}`], down.name));
     const hot = rows.filter((r) => r.streak >= 3).sort((a, c) => c.streak - a.streak)[0];
     if (hot) out.push(pick([`🔥 ${b(hot.name)}: ${hot.streak} верных подряд!`, `🔥 ${b(hot.name)} не остановить — серия из ${hot.streak}`], hot.name));
+    const bet = rows.filter((r) => r.doubled).sort((a, c) => Math.abs(c.last) - Math.abs(a.last))[0];
+    if (bet) out.push(bet.last > 0 ? `🎲 Ставка ×2 сыграла: ${b(bet.name)} +${bet.last}` : `💸 Ставка ×2 не сыграла: ${b(bet.name)} ${bet.last ? "−" + -bet.last : "остаётся при своих"}`);
     if (s.fastest) out.push(`⚡ Быстрее всех — ${b(s.fastest.name)}, ${String(s.fastest.time).replace(".", ",")} с`);
     if (s.answers_total && !s.right_total) out.push(pick(["😶 Этот вопрос не взял никто", "🤯 Вопрос оказался никому не по зубам"], "x"));
     else if (s.answers_total >= 2 && s.right_total === s.players.filter((p) => p.online).length) out.push("💯 Все ответили верно!");
     if (rows.length >= 2 && rows[0].score > 0 && rows[0].score - rows[1].score <= 200) out.push(`🤏 Борьба за первое место: разрыв всего ${rows[0].score - rows[1].score} очков`);
-    const big = rows.filter((r) => r.last >= 900).sort((a, c) => c.last - a.last)[0];
+    const big = rows.filter((r) => r.last >= 900 && !r.doubled).sort((a, c) => c.last - a.last)[0];
     if (out.length < 3 && big && big !== hot && (!s.fastest || s.fastest.name !== big.name)) out.push(`💥 ${b(big.name)} забирает +${big.last}`);
     return out.slice(0, 4);
   }

@@ -23,7 +23,8 @@
     может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`, `number` (кто ближе, `best_err`); правила в `DEFAULTS`,
-    фильтр вопросов по `themes` и `level` — `Game.pool()`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
+    фильтр вопросов по `themes` и `level` — `Game.pool()`. Ответ можно пропустить (`skip`, value `None` —
+    в списках ответов не считать); правило «Ставка ×2» (`doubles`): `DOUBLES` раза за игру, ошибка — `-DOUBLE_LOSS`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
     поле вопроса `seconds`). Картинка с эффектом: `image_fx` (`blur`/`zoom`) + `focus`, `fxImg()` в host/play.
     Комментарии к таблице лидеров — `static/comments.js` (общие для ведущего и телефонов).
   - `FeudEngine` — «100 к 1» (две команды): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда

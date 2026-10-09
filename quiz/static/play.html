@@ -186,6 +186,13 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 #hostbar .btn { flex: 1; max-width: 320px; padding: 12px 16px; }
 #hostbar .tv { flex: none; color: var(--muted); text-decoration: none; font-size: 22px; padding: 6px; }
 body.has-hostbar { padding-bottom: 84px; }
+/* пропуск и ставка ×2 */
+.extra { display: flex; gap: 10px; }
+.extra .btn { flex: 1; padding: 12px; font-size: 15px; }
+.extra .btn small { display: block; font-weight: 700; color: var(--muted); font-size: 12px; }
+#double.on { background: var(--accent); color: var(--accent-ink); }
+#double.on small { color: var(--accent-ink); }
+.pill.x2 { background: var(--accent); color: var(--accent-ink); font-family: var(--display); }
 /* новости после вопроса */
 .news { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .news div { padding: 10px 14px; border-radius: 12px; background: var(--panel); font-weight: 700; font-size: 15px; line-height: 1.35; animation: rise .4s ease both; animation-delay: calc(.6s + var(--i) * .5s); }
@@ -394,7 +401,8 @@ function flash(text) {
   document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
 
-let draftQ = -1, picks = [], typed = "", lastQuestion = null;
+let draftQ = -1, picks = [], typed = "", lastQuestion = null, doubleOn = false;
+const LEVEL_NAMES = { easy: "лёгкий", normal: "средний", hard: "сложный" };
 
 // картинка с эффектом: анимация длится всё время вопроса (с учётом уже прошедшего)
 function fxImg(s, alt) {
@@ -703,11 +711,12 @@ function hostBar(s) {
     <button class="btn" type="button" data-host="${s.phase === "final" ? "reset" : "next"}" ${disabled ? "disabled" : ""}>${label}</button>`;
 }
 
+const SKIP = {}; // «Пропустить вопрос»
 async function send(answer) {
   if (sending) return;
   sending = true; buzz(25);
-  document.querySelectorAll(".ans, #submit, #text-form button").forEach((x) => (x.disabled = true));
-  await api("/api/answer", { pid, answer }).catch(() => {});
+  document.querySelectorAll(".ans, #submit, #text-form button, #skip, #double").forEach((x) => (x.disabled = true));
+  await api("/api/answer", answer === SKIP ? { pid, skip: true } : { pid, answer, double: doubleOn }).catch(() => {});
   sending = false; lastSig = ""; poll();
 }
 
@@ -760,16 +769,18 @@ function render(s) {
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
     document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
-  } else if (s.phase === "question" && me.answer == null) {
-    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; }
+  } else if (s.phase === "question" && !me.answered) {
+    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; }
     $main.innerHTML = `
-      <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}</div>
+      <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${esc(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
-      ${answerControls(s)}`;
+      ${answerControls(s)}
+      <div class="extra">${me.doubles > 0 ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
+        <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`;
     if (s.qtype === "text" || s.qtype === "number") {
       const input = document.getElementById("answer-text");
       input.value = typed;
@@ -778,7 +789,7 @@ function render(s) {
         e.preventDefault();
         if (!typed.trim()) return;
         if (s.qtype === "text") return send(typed.trim());
-        const n = Number(typed.replace(/\s/g, "").replace(",", "."));
+        const n = Number(typed.replace(/\s/g, "").replace(",", ".").replace(/[−–]/g, "-"));
         if (Number.isFinite(n)) send(n); else input.setCustomValidity("Нужно число"), input.reportValidity();
       });
       input.focus();
@@ -789,21 +800,23 @@ function render(s) {
     $main.innerHTML = `
       <div class="scene">
         <div class="spinner"></div>
-        <h1>Ответ принят</h1>
-        ${answerSummary(s, me.answer)}
+        <h1>${me.answer == null ? "Пропускаешь" : "Ответ принят"}</h1>
+        ${me.answer == null ? "" : answerSummary(s, me.answer)}
+        ${me.doubled ? `<span class="pill x2">×2 ставка</span>` : ""}
         <p class="muted">Ждём остальных…</p>
       </div>`;
   } else if (s.phase === "reveal") {
     const res = me.result || "none";
-    mood(res === "right" || res === "partial" ? "good" : "bad");
+    mood(res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad");
     buzz(res === "right" ? [30, 60, 30] : res === "partial" ? [30] : 200);
-    const text = s.qtype === "number"
+    const text = res === "skip" ? "Пропуск" : s.qtype === "number"
       ? { right: "Ближе всех! 🎯", partial: "Неплохо!", wrong: "Далеко…", none: "Не успел!" }[res]
       : { right: "Верно!", partial: "Почти!", wrong: "Мимо!", none: "Не успел!" }[res];
     const rank = s.qtype === "number" ? (s.number_answers || []).findIndex((a) => a.name === me.name) + 1 : 0;
     $main.innerHTML = `
       <div class="scene">
-        <span class="big pop ${res === "right" || res === "partial" ? "good" : "bad"}">${text}</span>
+        <span class="big pop ${res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad"}">${text}</span>
+        ${me.doubled ? `<span class="pill x2 rise">×2 ${me.last > 0 ? "сыграла!" : "не сыграла"}</span>` : ""}
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
@@ -968,6 +981,14 @@ document.addEventListener("click", async (e) => {
     const team = Number(t.dataset.team);
     if (pid) { await api("/api/team", { pid, team }).catch(() => {}); lastSig = ""; poll(); }
     else { pickTeam = team; document.querySelectorAll("[data-team]").forEach((x) => x.classList.toggle("on", x === t)); }
+    return;
+  }
+  if (e.target.closest("#skip")) return send(SKIP);
+  const db = e.target.closest("#double");
+  if (db) {
+    doubleOn = !doubleOn; buzz(15);
+    db.classList.toggle("on", doubleOn);
+    db.firstChild.textContent = `×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} `;
     return;
   }
   const choice = e.target.closest("[data-choice]");

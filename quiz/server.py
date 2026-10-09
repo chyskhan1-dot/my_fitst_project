@@ -17,6 +17,7 @@ import collections
 import binascii
 import hashlib
 import json
+import math
 import mimetypes
 import os
 import random
@@ -57,9 +58,10 @@ AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
 INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth")
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
-QTYPES = ("choice", "multi", "order", "text", "number")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе)
+QTYPES = ("choice", "multi", "order", "text", "number", "map")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе), точка на карте
 LEVELS = ("easy", "normal", "hard")  # сложность вопроса
-TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25}  # на сложные типы — больше времени
+TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25, "map": 1.5}
+MAP_RADIUS = 2500  # «Где на карте?»: промах дальше, чем на столько км, — без очков (кроме ближайшего)  # на сложные типы — больше времени
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
@@ -200,6 +202,23 @@ def parse_number(value):
     return int(n) if n == int(n) else n
 
 
+def parse_point(value):
+    """Точка на карте [широта, долгота] или None."""
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return None
+    lat, lon = (parse_number(v) for v in value)
+    if lat is None or lon is None or not -90 <= lat <= 90 or not -180 <= lon <= 180:
+        return None
+    return [round(lat, 4), round(lon, 4)]
+
+
+def distance_km(a, b):
+    """Расстояние по поверхности Земли между точками [широта, долгота]."""
+    la1, lo1, la2, lo2 = map(math.radians, (a[0], a[1], b[0], b[1]))
+    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    return 2 * 6371 * math.asin(min(1.0, math.sqrt(h)))
+
+
 def clean_focus(value):
     """Точка, куда приближать картинку: [x, y] в процентах."""
     try:
@@ -245,6 +264,11 @@ def clean_pack(data, store=None, scope="_"):
                 if answer is None:
                     raise PackError("правильный ответ должен быть числом")
                 options = []
+            elif qtype == "map":
+                answer = parse_point(answer)
+                if answer is None:
+                    raise PackError("укажи точку на карте: широта от -90 до 90, долгота от -180 до 180")
+                options = []
             elif qtype == "text":
                 variants = answer if isinstance(answer, list) else [answer]
                 answer = [str(v).strip()[:60] for v in variants if str(v or "").strip()][:10]
@@ -273,6 +297,7 @@ def clean_pack(data, store=None, scope="_"):
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
+                "place": str(q.get("place") or "").strip()[:80] or None,  # для карты: что это за место
                 "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
                 # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
                 "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
@@ -1273,6 +1298,8 @@ class Game:
             return value if isinstance(value, list) and sorted(value) == list(range(n)) else None
         if q["type"] == "number":
             return parse_number(value) if isinstance(value, (int, float, str)) else None
+        if q["type"] == "map":
+            return parse_point(value)
         if not isinstance(value, str):
             return None
         return value.strip()[:60] or None
@@ -1292,6 +1319,11 @@ class Game:
             if err <= self.best_err:
                 return 1.0
             return round(0.7 * max(0.0, 1 - err / max(abs(q["answer"]), 1)), 3)
+        if q["type"] == "map":  # так же, как число: ближе всех — полные очки, остальным — по расстоянию
+            km = distance_km(value, q["answer"])
+            if km <= self.best_err + 0.01:
+                return 1.0
+            return round(0.7 * max(0.0, 1 - km / MAP_RADIUS), 3)
         if q["type"] == "multi":
             right = set(q["answer"])
             hits, misses = len(right & set(value)), len(set(value) - right)
@@ -1332,6 +1364,9 @@ class Game:
         self.team_prev = {t["team"]: place for place, t in enumerate(self.team_board(), 1)}
         if self.question()["type"] == "number":  # ближайший ответ среди всех
             errs = [abs(a["value"] - self.question()["answer"]) for a in self.answers.values() if a["value"] is not None]
+            self.best_err = min(errs) if errs else 0
+        if self.question()["type"] == "map":
+            errs = [distance_km(a["value"], self.question()["answer"]) for a in self.answers.values() if a["value"] is not None]
             self.best_err = min(errs) if errs else 0
         for pid, p in self.players.items():
             a = self.answers.get(pid)
@@ -1512,6 +1547,13 @@ class Game:
                          "diff": a["value"] - q["answer"], "best": a.get("result") == "right"}
                         for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["number_answers"] = sorted(rows, key=lambda r: abs(r["diff"]))
+            elif q["type"] == "map":
+                s["correct_point"] = q["answer"]
+                s["place"] = q.get("place")
+                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "point": a["value"],
+                         "km": round(distance_km(a["value"], q["answer"])), "best": a.get("result") == "right"}
+                        for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
+                s["map_answers"] = sorted(rows, key=lambda r: r["km"])
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [

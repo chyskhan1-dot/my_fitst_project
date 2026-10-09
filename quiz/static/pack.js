@@ -7,7 +7,8 @@
   const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)"];
   // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
   // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа;
-  // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший.
+  // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший;
+  // «карта» — точка на карте: в «Варианте 1» широта, во «2» долгота, в «3» название места (показывается в ответе).
   // Сложность: лёгкий, средний, сложный
   const TEMPLATE_CSV = [
     CSV_HEADER,
@@ -17,9 +18,10 @@
     ["Расставь планеты по удалённости от Солнца", "Меркурий", "Венера", "Земля", "Марс", "", "", "", "порядок", "Космос"],
     ["Кто написал «Евгения Онегина»? Напиши фамилию", "Пушкин", "Александр Пушкин", "", "", "", "", "", "текст", "Литература", "лёгкий"],
     ["Какова высота Эвереста?", "8849", "м", "", "", "", "", "", "число", "География", "средний"],
+    ["Где находится Эйфелева башня?", "48.858", "2.294", "Париж, Франция", "", "", "", "", "карта", "Где на карте", "лёгкий"],
   ].map((r) => r.map(csvCell).join(";")).join("\r\n");
 
-  const TYPE_NAMES = { choice: "", multi: "несколько", order: "порядок", text: "текст", number: "число" };
+  const TYPE_NAMES = { choice: "", multi: "несколько", order: "порядок", text: "текст", number: "число", map: "карта" };
   const LEVEL_NAMES = { easy: "лёгкий", normal: "средний", hard: "сложный" };
   function levelOf(value) {
     const v = String(value || "").trim().toLowerCase();
@@ -35,6 +37,7 @@
     if (/^(порядок|order|по порядку)/.test(v)) return "order";
     if (/^(текст|text|свой)/.test(v)) return "text";
     if (/^(число|number|ближе)/.test(v)) return "number";
+    if (/^(карта|map|где)/.test(v)) return "map";
     return "choice";
   }
 
@@ -93,6 +96,9 @@
       if (type === "number") {
         q.answer = toNumber(options[0]);
         if (options[1]) q.unit = options[1];
+      } else if (type === "map") {
+        q.answer = [toNumber(options[0]), toNumber(options[1])];
+        if (options[2]) q.place = options[2];
       } else if (type === "text") {
         q.answer = filled;
       } else if (type === "order") {
@@ -116,7 +122,8 @@
     const rows = [CSV_HEADER];
     for (const q of pack.questions) {
       const type = q.type || "choice";
-      const src = type === "text" ? q.answer : type === "number" ? [q.answer, q.unit || ""] : q.options;
+      const src = type === "text" ? q.answer : type === "number" ? [q.answer, q.unit || ""]
+        : type === "map" ? [...(q.answer || []), q.place || ""] : q.options;
       const opts = [0, 1, 2, 3].map((i) => (src || [])[i] ?? "");
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
       const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";

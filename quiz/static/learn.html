@@ -107,18 +107,30 @@ const setBox = (packId, q, v) => { (progress[packId] = progress[packId] || {})[q
 let packs = [], cur = { pack: null, data: null, themes: [], level: "any", count: 10 };
 let session = null;
 
+// Тренировочные подборки: темы из пакета, отдельной карточкой (в викторине они — внутри «Общих знаний»)
+const COLLECTIONS = [
+  { id: "countries", title: "🌍 Страны мира", sub: "Флаги, столицы, страны", source: "general", themes: ["Флаги", "Столицы", "Страны и города"] },
+];
+
 async function start() {
-  try { packs = await (await fetch("/api/packs")).json(); }
-  catch { $main.innerHTML = `<p class="bad">Нет связи с сервером</p>`; return; }
+  try {
+    const all = await (await fetch("/api/packs")).json();
+    packs = [...COLLECTIONS.filter((c) => all.some((p) => p.id === c.source)), ...all];
+  } catch { $main.innerHTML = `<p class="bad">Нет связи с сервером</p>`; return; }
   try { Object.assign(cur, JSON.parse(localStorage.getItem("quiz-learn-choice")) || {}); } catch {}
-  if (!packs.some((p) => p.id === cur.pack)) cur.pack = (packs.find((p) => p.id === "general") || packs[0]).id;
+  if (!packs.some((p) => p.id === cur.pack)) cur.pack = packs[0].id;
   await choosePack(cur.pack, true);
 }
 
 async function choosePack(id, keepThemes) {
+  const col = COLLECTIONS.find((c) => c.id === id);
   cur.pack = id;
-  cur.data = await (await fetch("/api/packs/" + encodeURIComponent(id))).json();
+  cur.store = col ? col.source : id; // прогресс общий с пакетом-источником
+  const data = await (await fetch("/api/packs/" + encodeURIComponent(cur.store))).json();
+  cur.data = col ? { ...data, title: col.title, questions: data.questions.filter((q) => col.themes.includes(q.theme)) } : data;
+  for (const p of packs) if (p.id === id && col) p.count = cur.data.questions.length;
   if (!keepThemes) cur.themes = [];
+  cur.themes = cur.themes.filter((t) => themesOf(cur.data).includes(t));
   menu();
 }
 
@@ -131,13 +143,13 @@ function menu() {
   mood(""); $counter.textContent = "";
   try { localStorage.setItem("quiz-learn-choice", JSON.stringify({ pack: cur.pack, themes: cur.themes, level: cur.level, count: cur.count })); } catch {}
   const qs = cur.data.questions, themes = themesOf(cur.data);
-  const learned = (list) => list.filter((q) => box(cur.pack, q) >= 3).length;
+  const learned = (list) => list.filter((q) => box(cur.store, q) >= 3).length;
   const pool = qs.filter(fits);
   $main.innerHTML = `
     <div><div class="eyebrow">Тренировка</div><h1>Учи в своём темпе</h1>
       <p class="muted">Отвечай без спешки — сразу увидишь правильный ответ. Ошибки вернутся через пару вопросов, пока не запомнишь.</p></div>
     <div class="section"><b>Пакет</b><div class="packs">${packs.map((p) => `
-      <button class="pack ${p.id === cur.pack ? "on" : ""}" data-pack="${esc(p.id)}"><b>${esc(p.title)}</b><small>${p.count} вопросов</small></button>`).join("")}</div></div>
+      <button class="pack ${p.id === cur.pack ? "on" : ""}" data-pack="${esc(p.id)}"><b>${esc(p.title)}</b><small>${p.sub ? esc(p.sub) + (p.count ? ` · ${p.count}` : "") : `${p.count} вопросов`}</small></button>`).join("")}</div></div>
     <div class="section"><b>Темы</b> <span class="muted">${cur.themes.length ? "выбрано: " + cur.themes.length : "все темы"} · зелёная полоска — сколько уже выучено</span>
       <div class="chips">${themes.map((t) => { const list = qs.filter((q) => (q.theme || "Без темы") === t); return `
         <button class="chip ${cur.themes.includes(t) ? "on" : ""}" data-theme="${esc(t)}">${esc(t)}<small>${learned(list)}/${list.length}</small>
@@ -152,7 +164,7 @@ function menu() {
 
 function begin(list) {
   // сначала невыученные, внутри — случайно
-  const pool = (list || cur.data.questions.filter(fits)).map((q) => ({ q, b: box(cur.pack, q), r: Math.random() }))
+  const pool = (list || cur.data.questions.filter(fits)).map((q) => ({ q, b: box(cur.store, q), r: Math.random() }))
     .sort((a, c) => a.b - c.b || a.r - c.r).map((x) => x.q);
   const take = list ? pool : pool.slice(0, cur.count || pool.length);
   session = { queue: take.slice(), total: take.length, done: new Set(), firstTry: 0, mistakes: new Map(), answered: false, picks: [] };
@@ -213,10 +225,10 @@ async function judge(value) {
   if (ok) {
     s.done.add(q);
     if (s.firstAttempt) s.firstTry++;
-    setBox(cur.pack, q, s.firstAttempt ? Math.min(3, box(cur.pack, q) + (box(cur.pack, q) ? 1 : 3)) : 1);
+    setBox(cur.store, q, s.firstAttempt ? Math.min(3, box(cur.store, q) + (box(cur.store, q) ? 1 : 3)) : 1);
   } else {
     s.mistakes.set(q, (s.mistakes.get(q) || 0) + 1);
-    setBox(cur.pack, q, 0);
+    setBox(cur.store, q, 0);
     s.queue.splice(Math.min(3, s.queue.length), 0, q); // вернётся через пару вопросов
   }
   mood(ok ? "good" : "bad");
@@ -276,7 +288,14 @@ document.addEventListener("click", async (e) => {
   if (t.closest("#go") || t.closest("#again")) return begin();
   if (t.closest("#again-wrong")) return begin(session.wrongList);
   if (t.closest("#to-menu")) return menu();
-  if (t.closest("#reset-progress")) { if (confirm("Сбросить, что выучено в этом пакете?")) { delete progress[cur.pack]; save(progress); menu(); } return; }
+  if (t.closest("#reset-progress")) {
+    if (confirm("Сбросить, что выучено в этом пакете?")) {
+      const mine = progress[cur.store] || {};
+      for (const q of cur.data.questions) delete mine[qkey(q)]; // только вопросы этой подборки
+      save(progress); menu();
+    }
+    return;
+  }
   if (t.closest("#next")) return next();
   if (t.closest("#play-melody") && session) { const q = session.q; QuizMusic.melody(q.melody, q.tempo, q.instrument || "piano"); return; }
   const opt = t.closest("[data-opt]");

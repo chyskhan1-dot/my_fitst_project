@@ -45,7 +45,8 @@
   темы внутри `general.json`, флаги рисует `tools/make_flags.py` (только без гербов, владелец так решил).
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы.
 - `static/learn.html` — тренировка (`/learn`): один игрок, пакет из `/api/packs/<id>`, свой ответ проверяет
-  `POST /api/learn/text`, прогресс — в localStorage (`quiz-learn`).
+  `POST /api/learn/text`, прогресс — в localStorage (`quiz-learn`). Подборки только для тренировки —
+  `COLLECTIONS` в learn.html («Страны мира» = темы Флаги/Столицы/Страны и города из `general`, прогресс общий).
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 

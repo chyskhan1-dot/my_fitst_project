@@ -1646,6 +1646,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_media(self, body, mime):
+        """Файл с поддержкой Range: без неё Safari (iPhone, Mac) не играет аудио и видео."""
+        cache, extra = "public, max-age=86400", {"Accept-Ranges": "bytes"}
+        m = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range", "").strip())
+        if not m or not (m[1] or m[2]):
+            return self.send_bytes(body, mime, cache=cache, extra=extra)
+        size = len(body)
+        start, end = (int(m[1]), int(m[2]) if m[2] else size - 1) if m[1] else (max(0, size - int(m[2])), size - 1)
+        if start >= size or start > end:
+            return self.send_bytes(b"", mime, 416, cache, dict(extra, **{"Content-Range": f"bytes */{size}"}))
+        end = min(end, size - 1)
+        self.send_bytes(body[start:end + 1], mime, 206, cache, dict(extra, **{"Content-Range": f"bytes {start}-{end}/{size}"}))
+
     def device(self):
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
         return cookie[DEVICE_COOKIE].value if DEVICE_COOKIE in cookie else None
@@ -1696,7 +1709,7 @@ class Handler(BaseHTTPRequestHandler):
             if not path.is_relative_to(MEDIA_DIR.resolve()) or not path.is_file():
                 return self.send_json({"error": "Файл не найден"}, 404)
             mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-            self.send_bytes(path.read_bytes(), mime, cache="public, max-age=86400")
+            self.send_media(path.read_bytes(), mime)
         elif parts[0] == "m" and len(parts) == 3:
             with lock:
                 room = rooms.get(parts[1])
@@ -1706,7 +1719,7 @@ class Handler(BaseHTTPRequestHandler):
                     item = room and (room.media.get(parts[2]) or room.si_media.get(parts[2]))
             if not item:
                 return self.send_json({"error": "Файл не найден"}, 404)
-            self.send_bytes(item[1], item[0], cache="public, max-age=86400")
+            self.send_media(item[1], item[0])
         elif url.path == "/api/packs":
             self.send_json([{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()])
         elif parts[:2] == ["api", "packs"] and len(parts) == 3 and parts[2] in PACK_FILES:

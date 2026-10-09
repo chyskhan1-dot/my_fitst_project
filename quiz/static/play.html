@@ -269,7 +269,7 @@ function startScreen() {
       <div class="roles">
         <button class="role rise" style="--i:2" id="as-player"><span class="ico">📱</span><b>Я игрок</b><small>Есть код комнаты от ведущего</small></button>
         <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
-        <a class="role rise" style="--i:4" href="/learn"><span class="ico">📚</span><b>Тренировка</b><small>Учи флаги, столицы и другие темы в своём темпе</small></a>
+        <a class="role rise" style="--i:4" href="/learn"><span class="ico">📚</span><b>Тренировка</b><small>Учи флаги, столицы и страны в своём темпе</small></a>
       </div>
       <div class="error" id="err"></div>
       <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
@@ -493,8 +493,16 @@ function bindForm(id, action, field) {
   });
 }
 
+// звук вопроса играет на экране ведущего; ведущий без телевизора может включить его на своём телефоне
+let hereAudio = null;
+function siSoundHint(c) {
+  if (!c.audio && !c.melody && !c.video) return "";
+  return `<p class="hint">🎵 Звучит на экране ведущего</p>${hostToken() && c.audio ? `<button class="btn ghost small" data-play-here="${esc(mediaSrc(c.audio))}" type="button">🔊 Включить на этом телефоне</button>` : ""}`;
+}
+
 function renderSi(s, me) {
   const si = s.si, m = si.me || {}, c = si.cur || {}, f = si.final || {};
+  if (hereAudio && !["si_question", "si_answer", "si_final_q"].includes(s.phase)) { hereAudio.pause(); hereAudio = null; }
   const timebar = (left) => `<div class="timebar" style="width:100%"><i style="animation-duration:${left}s"></i></div>`;
   clearTimeout(buzzTimer);
   mood("");
@@ -532,7 +540,7 @@ function renderSi(s, me) {
     bindForm("si-answer", "answer", "text");
   } else if (s.phase === "si_question" && !c.exclusive) {
     const can = !m.tried;
-    $main.innerHTML = `${head}<div id="si-tb">${can && c.buzz_open ? timebar(c.left) : ""}</div><p class="muted">${esc(c.text || "")}</p>
+    $main.innerHTML = `${head}<div id="si-tb">${can && c.buzz_open ? timebar(c.left) : ""}</div><p class="muted">${esc(c.text || "")}</p>${siSoundHint(c)}
       <button class="buzz ${c.buzz_open ? "open" : ""}" id="buzz" ${can ? "" : "disabled"}>${!can ? "Ты уже отвечал" : c.buzz_open ? "ОТВЕТИТЬ!" : "Подожди…"}</button>
       <p class="hint" id="buzz-hint">${can ? "Кто первым нажмёт, тот и отвечает" : "Ждём остальных"}</p>`;
     if (can && !c.buzz_open) buzzTimer = setTimeout(() => {
@@ -541,7 +549,7 @@ function renderSi(s, me) {
       if (tb) tb.innerHTML = timebar(Math.max(0, c.left - c.buzz_in)); // сколько осталось после открытия кнопок
     }, c.buzz_in * 1000);
   } else if (s.phase === "si_question" || s.phase === "si_answer") {
-    $main.innerHTML = scene(`${head}<h2>✋ Отвечает ${c.answerer ? esc(c.answerer.name) : "…"}</h2>${m.tried ? `<p class="muted">Ты уже отвечал на этот вопрос</p>` : ""}`);
+    $main.innerHTML = scene(`${head}<h2>✋ Отвечает ${c.answerer ? esc(c.answerer.name) : "…"}</h2>${siSoundHint(c)}${m.tried ? `<p class="muted">Ты уже отвечал на этот вопрос</p>` : ""}`);
   } else if (s.phase === "si_reveal") {
     const mine = (si.verdicts || []).filter((v) => v.pid === pid).pop();
     if (mine) mood(mine.ok ? "good" : "bad");
@@ -984,6 +992,8 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (e.target.closest("#skip")) return send(SKIP);
+  const here = e.target.closest("[data-play-here]");
+  if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const db = e.target.closest("#double");
   if (db) {
     doubleOn = !doubleOn; buzz(15);

@@ -575,6 +575,7 @@ function render(s) {
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
+  if (siKeep.el && !s.phase.startsWith("si_")) { siKeep.el.pause(); siKeep = { key: "", el: null }; }
   if (s.phase.startsWith("si_")) return renderSi(s);
   if (s.phase.startsWith("fd_")) return renderFd(s);
   soundtrack(s);
@@ -691,11 +692,30 @@ function siScores(s, highlight) {
 function siMedia(c) {
   const parts = [];
   if (c.image) parts.push(`<img class="qimg" src="${esc(QuizPack.mediaSrc(c.image))}" alt="Картинка к вопросу">`);
-  if (c.video) parts.push(`<video class="qimg" src="${esc(c.video)}" controls autoplay playsinline></video>`);
-  if (c.audio) parts.push(`<div class="qaudio">🎵 <audio controls autoplay src="${esc(QuizPack.mediaSrc(c.audio))}"></audio></div>`);
+  if (c.video) parts.push(`<video class="qimg" src="${esc(QuizPack.mediaSrc(c.video))}" controls playsinline preload="auto"></video>`);
+  if (c.audio) parts.push(`<div class="qaudio">🎵 <audio controls preload="auto" src="${esc(QuizPack.mediaSrc(c.audio))}"></audio></div>`);
   if (c.melody) parts.push(`<div class="melody"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию</div>`);
   if (c.melody || c.audio || c.video) parts.push(`<button class="btn ghost small" data-si-replay type="button">▶ Ещё раз</button>`);
   return parts.length ? `<div class="qmedia si-media">${parts.join("")}</div>` : "";
+}
+
+// Звук и видео вопроса живут весь вопрос: перерисовка экрана их не перезапускает,
+// пока игрок отвечает — пауза. Если браузер не дал включить звук сам — кнопка.
+let siKeep = { key: "", el: null };
+function siKeepMedia(s) {
+  const si = s.si, c = si.cur || {};
+  const key = s.phase === "si_final_q" ? "final:" + si.round_index
+    : s.phase === "si_question" || s.phase === "si_answer" ? `${si.round_index}:${c.theme}:${c.price}` : "";
+  const fresh = document.querySelector(".si-media audio, .si-media video");
+  if (!key || !fresh) { if (siKeep.el) siKeep.el.pause(); siKeep = { key: "", el: null }; return; }
+  if (siKeep.key === key && siKeep.el) fresh.replaceWith(siKeep.el);
+  else { if (siKeep.el) siKeep.el.pause(); siKeep = { key, el: fresh }; }
+  const el = siKeep.el;
+  if (s.phase === "si_answer") return el.pause();
+  if (el.paused && !el.ended) el.play().catch(() => {
+    const box = document.querySelector(".si-media");
+    if (box && !box.querySelector("[data-si-unlock]")) box.insertAdjacentHTML("afterbegin", `<button class="btn" data-si-unlock type="button">🔊 Включить звук</button>`);
+  });
 }
 
 function siSound(s) {
@@ -781,6 +801,7 @@ function renderSi(s) {
   }
   $main.innerHTML = body;
   $actions.innerHTML = actions;
+  siKeepMedia(s);
   live(s);
 }
 
@@ -1192,6 +1213,8 @@ document.addEventListener("click", async (e) => {
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");
   if (ovr) { await post("si_override", { index: Number(ovr.dataset.siOvr) }); lastSig = ""; return poll(); }
+  const unlock = e.target.closest("[data-si-unlock]");
+  if (unlock) { unlock.remove(); if (siKeep.el) siKeep.el.play().catch(() => {}); return; }
   if (e.target.closest("[data-si-replay]") && lastState && lastState.si) {
     const c = lastState.si.cur || {};
     if (c.melody) QuizMusic.melody(c.melody, c.tempo, c.instrument || "piano");

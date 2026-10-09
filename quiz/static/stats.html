@@ -77,7 +77,7 @@ async function load() {
         ${r.live.length ? `<p class="muted">${r.live.map((g) => `${MODES[g.mode] || g.mode} — ${PHASE(g.phase)}, игроков: ${g.players}`).map(esc).join("<br>")}</p>` : ""}</section>
       <section><h2>С момента запуска</h2><div class="tiles">
         ${tile(r.visitors, "разных устройств зашло")}${tile(c.rooms || 0, "комнат создано")}${tile(c.players || 0, "игроков вошло")}
-        ${tile(started, "игр начато")}${tile(finished, "доиграно до конца")}${tile(c.answers || 0, "ответов дано")}</div>
+        ${tile(started, "игр начато")}${tile(finished, "доиграно до конца")}${tile(c.answers || 0, "ответов дано")}${tile(c.learn || 0, "ответов в тренировке (свой ответ)")}</div>
         <p class="muted">Начато — ${games("games:")}<br>Доиграно — ${games("finished:")}<br>Просмотры страниц — ${views}</p></section>
       <section><h2>Игры по часам, последние сутки</h2>${hoursChart(r)}</section>
       <section><h2>Последние события</h2>${r.events.length

@@ -73,6 +73,8 @@ MODES = ["quiz", "jeopardy", "100to1"]
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
+DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
+DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
 
 
 class PackError(ValueError):
@@ -190,7 +192,7 @@ def parse_number(value):
         n = float(value)
     else:
         try:
-            n = float(re.sub(r"\s", "", str(value or "")).replace(",", "."))
+            n = float(re.sub(r"\s", "", str(value or "")).replace(",", ".").replace("−", "-").replace("–", "-"))
         except ValueError:
             return None
     if n != n or abs(n) > 1e12:  # NaN или слишком большое
@@ -416,6 +418,7 @@ DEFAULTS = {
     "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
     "speed": True,  # бонус за скорость ответа
     "streak": False,  # бонус за серию правильных ответов
+    "doubles": False,  # «Ставка ×2»: верно — очки ×2, неверно — минус 1000, два раза за игру
     "leaders": True,  # таблица лидеров после каждого вопроса
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
@@ -1169,7 +1172,7 @@ class Game:
 
     def reset(self, phase="setup"):
         for p in self.players.values():
-            p.update(score=0, last_points=0, prev_place=0, streak=0)
+            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False)
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
@@ -1328,11 +1331,12 @@ class Game:
             self.players[row["id"]]["prev_place"] = place
         self.team_prev = {t["team"]: place for place, t in enumerate(self.team_board(), 1)}
         if self.question()["type"] == "number":  # ближайший ответ среди всех
-            errs = [abs(a["value"] - self.question()["answer"]) for a in self.answers.values()]
+            errs = [abs(a["value"] - self.question()["answer"]) for a in self.answers.values() if a["value"] is not None]
             self.best_err = min(errs) if errs else 0
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
+            p["doubled"] = bool(a and a.get("double"))
             points = 0
             if frac > 0:
                 if rules["speed"]:
@@ -1347,10 +1351,13 @@ class Game:
                     points += min(500, 100 * (p["streak"] - 1))  # +100 за каждый ответ серии, до +500
             else:
                 p["streak"] = 0
-                if a and frac == 0 and rules["penalty"]:
+                if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
+            if p["doubled"]:  # ставка ×2: выигрыш удваивается, а промах стоит 1000
+                points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
+            skipped = bool(a and a.get("skip"))
             a = a or {}
-            a["result"] = "right" if frac == 1 else "partial" if frac > 0 else "wrong" if a else "none"
+            a["result"] = "right" if frac == 1 else "partial" if frac > 0 else "skip" if skipped else "wrong" if a else "none"
             if pid in self.answers:
                 self.answers[pid] = a
             p["last_points"] = points
@@ -1390,6 +1397,7 @@ class Game:
                 "last": p["last_points"],
                 "prev": p["prev_place"],
                 "streak": p["streak"],
+                "doubled": p.get("doubled", False),
                 "avatar": p.get("avatar"),
                 "online": time.time() - p.get("seen", 0) <= OFFLINE_AFTER,
             }
@@ -1465,6 +1473,7 @@ class Game:
             s["qtype"] = q["type"]
             s["question"] = q["q"]
             s["theme"] = q.get("theme")
+            s["level"] = q.get("level")
             s["unit"] = q.get("unit")
             s["image_fx"] = q.get("image_fx") if q["image"] else None
             s["focus"] = q.get("focus") or [50, 50]
@@ -1492,7 +1501,7 @@ class Game:
                 s["correct"] = q["answer"]
                 counts = [0] * len(q["options"])
                 for a in self.answers.values():
-                    for v in a["value"] if isinstance(a["value"], list) else [a["value"]]:
+                    for v in a["value"] if isinstance(a["value"], list) else [a["value"]] if a["value"] is not None else []:
                         counts[v] += 1
                 s["counts"] = counts
             elif q["type"] == "order":
@@ -1501,13 +1510,13 @@ class Game:
                 s["correct_number"] = q["answer"]
                 rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "value": a["value"],
                          "diff": a["value"] - q["answer"], "best": a.get("result") == "right"}
-                        for pid, a in self.answers.items() if pid in self.players]
+                        for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["number_answers"] = sorted(rows, key=lambda r: abs(r["diff"]))
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [
                     {"name": self.players[pid]["name"], "text": a["value"], "ok": a.get("result") == "right"}
-                    for pid, a in self.answers.items() if pid in self.players
+                    for pid, a in self.answers.items() if pid in self.players and a["value"] is not None
                 ]
         if self.owns(pid, device):
             me = self.players[pid]
@@ -1520,7 +1529,10 @@ class Game:
                 "last": me["last_points"],
                 "prev": me["prev_place"],
                 "streak": me["streak"],
+                "doubles": me.get("doubles", DOUBLES) if self.settings.get("doubles") else 0,
+                "doubled": self.answers.get(pid, {}).get("double", False),
                 "answer": self.answers.get(pid, {}).get("value"),
+                "answered": pid in self.answers,
                 "result": self.answers.get(pid, {}).get("result"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
@@ -1634,6 +1646,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_media(self, body, mime):
+        """Файл с поддержкой Range: без неё Safari (iPhone, Mac) не играет аудио и видео."""
+        cache, extra = "public, max-age=86400", {"Accept-Ranges": "bytes"}
+        m = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range", "").strip())
+        if not m or not (m[1] or m[2]):
+            return self.send_bytes(body, mime, cache=cache, extra=extra)
+        size = len(body)
+        start, end = (int(m[1]), int(m[2]) if m[2] else size - 1) if m[1] else (max(0, size - int(m[2])), size - 1)
+        if start >= size or start > end:
+            return self.send_bytes(b"", mime, 416, cache, dict(extra, **{"Content-Range": f"bytes */{size}"}))
+        end = min(end, size - 1)
+        self.send_bytes(body[start:end + 1], mime, 206, cache, dict(extra, **{"Content-Range": f"bytes {start}-{end}/{size}"}))
+
     def device(self):
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
         return cookie[DEVICE_COOKIE].value if DEVICE_COOKIE in cookie else None
@@ -1684,7 +1709,7 @@ class Handler(BaseHTTPRequestHandler):
             if not path.is_relative_to(MEDIA_DIR.resolve()) or not path.is_file():
                 return self.send_json({"error": "Файл не найден"}, 404)
             mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-            self.send_bytes(path.read_bytes(), mime, cache="public, max-age=86400")
+            self.send_media(path.read_bytes(), mime)
         elif parts[0] == "m" and len(parts) == 3:
             with lock:
                 room = rooms.get(parts[1])
@@ -1694,7 +1719,7 @@ class Handler(BaseHTTPRequestHandler):
                     item = room and (room.media.get(parts[2]) or room.si_media.get(parts[2]))
             if not item:
                 return self.send_json({"error": "Файл не найден"}, 404)
-            self.send_bytes(item[1], item[0], cache="public, max-age=86400")
+            self.send_media(item[1], item[0])
         elif url.path == "/api/packs":
             self.send_json([{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()])
         elif parts[:2] == ["api", "packs"] and len(parts) == 3 and parts[2] in PACK_FILES:
@@ -1805,7 +1830,7 @@ class Handler(BaseHTTPRequestHandler):
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
                     "name": name, "device": device, "team": team, "avatar": avatar, "seen": time.time(),
-                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
+                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False,
                 }
                 game.balance_teams()
                 STATS.counts["players"] += 1
@@ -1872,11 +1897,17 @@ class Handler(BaseHTTPRequestHandler):
                 pid = data.get("pid")
                 game.tick()
                 ok = game.phase == "question" and game.owns(pid, device) and pid not in game.answers
-                value = game.check(data.get("answer")) if ok else None
-                ok = value is not None
+                skip = ok and data.get("skip") is True  # «Пропустить вопрос»: без штрафа и без очков
+                value = game.check(data.get("answer")) if ok and not skip else None
+                ok = skip or value is not None
                 if ok:
                     STATS.counts["answers"] += 1
-                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at}
+                    me = game.players[pid]
+                    double = (not skip and data.get("double") is True and game.settings.get("doubles")
+                              and me.get("doubles", DOUBLES) > 0)
+                    if double:
+                        me["doubles"] = me.get("doubles", DOUBLES) - 1
+                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 

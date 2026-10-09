@@ -23,7 +23,8 @@
     может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`, `number` (кто ближе, `best_err`); правила в `DEFAULTS`,
-    фильтр вопросов по `themes` и `level` — `Game.pool()`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
+    фильтр вопросов по `themes` и `level` — `Game.pool()`. Ответ можно пропустить (`skip`, value `None` —
+    в списках ответов не считать); правило «Ставка ×2» (`doubles`): `DOUBLES` раза за игру, ошибка — `-DOUBLE_LOSS`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
     поле вопроса `seconds`). Картинка с эффектом: `image_fx` (`blur`/`zoom`) + `focus`, `fxImg()` в host/play.
     Комментарии к таблице лидеров — `static/comments.js` (общие для ведущего и телефонов).
   - `FeudEngine` — «100 к 1» (две команды): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
@@ -44,9 +45,9 @@
 - `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
   темы внутри `general.json`, флаги рисует `tools/make_flags.py` (только без гербов, владелец так решил).
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы.
-- `static/learn.html` — тренировка (`/learn`): один игрок, пакет из `/api/packs/<id>`, свой ответ проверяет
-  `POST /api/learn/text`, прогресс — в localStorage (`quiz-learn`). Подборки только для тренировки —
-  `COLLECTIONS` в learn.html («Страны мира» = темы Флаги/Столицы/Страны и города из `general`, прогресс общий).
+- `static/learn.html` — тренировка (`/learn`): один игрок, свой ответ проверяет `POST /api/learn/text`,
+  прогресс — в localStorage (`quiz-learn`). Владелец решил: тренировка только по странам — в меню лишь
+  подборки `COLLECTIONS` («Страны мира» = темы Флаги/Столицы/Страны и города из `general`).
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 

@@ -69,6 +69,9 @@ input.answer { font: 700 22px var(--body); padding: 16px; border-radius: 16px; b
 .verdict.ok { border: 2px solid var(--good); } .verdict.no { border: 2px solid var(--bad); }
 .verdict b.big { font-family: var(--display); font-size: 24px; }
 .good { color: var(--good); } .bad { color: var(--bad); }
+.btn.auto { position: relative; overflow: hidden; }
+.btn.auto::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--accent); transform-origin: left; animation: drain var(--t) linear forwards; }
+@keyframes drain { to { transform: scaleX(0); } }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
 .stats div { background: var(--panel); border-radius: 14px; padding: 12px 6px; }
 .stats b { display: block; font: 800 26px var(--display); }
@@ -107,7 +110,7 @@ const setBox = (packId, q, v) => { (progress[packId] = progress[packId] || {})[q
 let packs = [], cur = { pack: null, data: null, themes: [], level: "any", count: 10 };
 let session = null;
 
-// Тренировочные подборки: темы из пакета, отдельной карточкой (в викторине они — внутри «Общих знаний»)
+// Тренировка — только по подборкам: темы из пакета (в викторине они — внутри «Общих знаний»)
 const COLLECTIONS = [
   { id: "countries", title: "🌍 Страны мира", sub: "Флаги, столицы, страны", source: "general", themes: ["Флаги", "Столицы", "Страны и города"] },
 ];
@@ -115,7 +118,8 @@ const COLLECTIONS = [
 async function start() {
   try {
     const all = await (await fetch("/api/packs")).json();
-    packs = [...COLLECTIONS.filter((c) => all.some((p) => p.id === c.source)), ...all];
+    packs = COLLECTIONS.filter((c) => all.some((p) => p.id === c.source));
+    if (!packs.length) throw new Error();
   } catch { $main.innerHTML = `<p class="bad">Нет связи с сервером</p>`; return; }
   try { Object.assign(cur, JSON.parse(localStorage.getItem("quiz-learn-choice")) || {}); } catch {}
   if (!packs.some((p) => p.id === cur.pack)) cur.pack = packs[0].id;
@@ -146,10 +150,10 @@ function menu() {
   const learned = (list) => list.filter((q) => box(cur.store, q) >= 3).length;
   const pool = qs.filter(fits);
   $main.innerHTML = `
-    <div><div class="eyebrow">Тренировка</div><h1>Учи в своём темпе</h1>
-      <p class="muted">Отвечай без спешки — сразу увидишь правильный ответ. Ошибки вернутся через пару вопросов, пока не запомнишь.</p></div>
-    <div class="section"><b>Пакет</b><div class="packs">${packs.map((p) => `
-      <button class="pack ${p.id === cur.pack ? "on" : ""}" data-pack="${esc(p.id)}"><b>${esc(p.title)}</b><small>${p.sub ? esc(p.sub) + (p.count ? ` · ${p.count}` : "") : `${p.count} вопросов`}</small></button>`).join("")}</div></div>
+    <div><div class="eyebrow">Тренировка</div><h1>🌍 Страны мира</h1>
+      <p class="muted">Флаги, столицы и страны. Отвечай без спешки — сразу увидишь правильный ответ. Ошибки вернутся через пару вопросов, пока не запомнишь.</p></div>
+    ${packs.length < 2 ? "" : `<div class="section"><b>Пакет</b><div class="packs">${packs.map((p) => `
+      <button class="pack ${p.id === cur.pack ? "on" : ""}" data-pack="${esc(p.id)}"><b>${esc(p.title)}</b><small>${p.sub ? esc(p.sub) + (p.count ? ` · ${p.count}` : "") : `${p.count} вопросов`}</small></button>`).join("")}</div></div>`}
     <div class="section"><b>Темы</b> <span class="muted">${cur.themes.length ? "выбрано: " + cur.themes.length : "все темы"} · зелёная полоска — сколько уже выучено</span>
       <div class="chips">${themes.map((t) => { const list = qs.filter((q) => (q.theme || "Без темы") === t); return `
         <button class="chip ${cur.themes.includes(t) ? "on" : ""}" data-theme="${esc(t)}">${esc(t)}<small>${learned(list)}/${list.length}</small>
@@ -174,6 +178,7 @@ function begin(list) {
 function next() {
   mood("");
   const s = session;
+  clearTimeout(s.autoTimer);
   if (!s.queue.length) return finish();
   s.q = s.queue[0]; s.answered = false; s.picks = []; s.firstAttempt = !s.mistakes.has(s.q);
   $counter.textContent = `${s.done.size} из ${s.total}`;
@@ -210,7 +215,7 @@ async function judge(value) {
   else if (type === "multi") ok = JSON.stringify([...value].sort()) === JSON.stringify([...q.answer].sort());
   else if (type === "order") ok = value.every((v, i) => v === i);
   else if (type === "number") {
-    const n = Number(String(value).replace(/\s/g, "").replace(",", "."));
+    const n = Number(String(value).replace(/\s/g, "").replace(",", ".").replace(/[−–]/g, "-"));
     if (!Number.isFinite(n)) return;
     const err = Math.abs(n - q.answer);
     ok = err <= Math.abs(q.answer) * 0.05 && (Number.isInteger(q.answer) && Math.abs(q.answer) < 100 ? err === 0 : true);
@@ -247,8 +252,9 @@ async function judge(value) {
       ${said ? `<span class="muted">${said}</span>` : ""}
       ${ok && type === "choice" ? "" : `<span>Правильный ответ: <b>${answerText}</b></span>`}
       ${ok ? "" : `<span class="muted">Этот вопрос вернётся чуть позже</span>`}</div>
-    <button class="btn" id="next" style="width:100%;margin-top:10px">Дальше</button>`;
-  document.getElementById("next").focus();
+    <button class="btn ghost auto" id="next" style="width:100%;margin-top:10px;--t:${ok ? 1.2 : 2.8}s">Дальше</button>`;
+  // следующий вопрос — сам: после верного ответа быстро, после ошибки — чтобы успеть прочитать
+  s.autoTimer = setTimeout(next, ok ? 1200 : 2800);
 }
 
 function answerOf(q) {

@@ -412,6 +412,7 @@ const RULES = [
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
+  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок может удвоить ставку: верно — очки ×2, неверно — минус 1000" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -574,6 +575,7 @@ function render(s) {
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;
   confetti(false);
+  if (siKeep.el && !s.phase.startsWith("si_")) { siKeep.el.pause(); siKeep = { key: "", el: null }; }
   if (s.phase.startsWith("si_")) return renderSi(s);
   if (s.phase.startsWith("fd_")) return renderFd(s);
   soundtrack(s);
@@ -630,7 +632,7 @@ function render(s) {
   } else if (s.phase === "question") {
     $main.innerHTML = `
       <div class="qhead">
-        <div><div class="eyebrow">Вопрос ${s.index + 1}${s.theme ? " · " + esc(s.theme) : ""}</div><h2 class="rise">${esc(s.question)}</h2></div>
+        <div><div class="eyebrow">Вопрос ${s.index + 1}${s.theme ? " · " + esc(s.theme) : ""}${s.level === "hard" ? " · сложный" : ""}</div><h2 class="rise">${esc(s.question)}</h2></div>
         <div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="bar" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><span id="timer">${Math.ceil(s.left)}</span></div>
       </div>
       ${media(s)}
@@ -690,11 +692,30 @@ function siScores(s, highlight) {
 function siMedia(c) {
   const parts = [];
   if (c.image) parts.push(`<img class="qimg" src="${esc(QuizPack.mediaSrc(c.image))}" alt="Картинка к вопросу">`);
-  if (c.video) parts.push(`<video class="qimg" src="${esc(c.video)}" controls autoplay playsinline></video>`);
-  if (c.audio) parts.push(`<div class="qaudio">🎵 <audio controls autoplay src="${esc(QuizPack.mediaSrc(c.audio))}"></audio></div>`);
+  if (c.video) parts.push(`<video class="qimg" src="${esc(QuizPack.mediaSrc(c.video))}" controls playsinline preload="auto"></video>`);
+  if (c.audio) parts.push(`<div class="qaudio">🎵 <audio controls preload="auto" src="${esc(QuizPack.mediaSrc(c.audio))}"></audio></div>`);
   if (c.melody) parts.push(`<div class="melody"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию</div>`);
   if (c.melody || c.audio || c.video) parts.push(`<button class="btn ghost small" data-si-replay type="button">▶ Ещё раз</button>`);
   return parts.length ? `<div class="qmedia si-media">${parts.join("")}</div>` : "";
+}
+
+// Звук и видео вопроса живут весь вопрос: перерисовка экрана их не перезапускает,
+// пока игрок отвечает — пауза. Если браузер не дал включить звук сам — кнопка.
+let siKeep = { key: "", el: null };
+function siKeepMedia(s) {
+  const si = s.si, c = si.cur || {};
+  const key = s.phase === "si_final_q" ? "final:" + si.round_index
+    : s.phase === "si_question" || s.phase === "si_answer" ? `${si.round_index}:${c.theme}:${c.price}` : "";
+  const fresh = document.querySelector(".si-media audio, .si-media video");
+  if (!key || !fresh) { if (siKeep.el) siKeep.el.pause(); siKeep = { key: "", el: null }; return; }
+  if (siKeep.key === key && siKeep.el) fresh.replaceWith(siKeep.el);
+  else { if (siKeep.el) siKeep.el.pause(); siKeep = { key, el: fresh }; }
+  const el = siKeep.el;
+  if (s.phase === "si_answer") return el.pause();
+  if (el.paused && !el.ended) el.play().catch(() => {
+    const box = document.querySelector(".si-media");
+    if (box && !box.querySelector("[data-si-unlock]")) box.insertAdjacentHTML("afterbegin", `<button class="btn" data-si-unlock type="button">🔊 Включить звук</button>`);
+  });
 }
 
 function siSound(s) {
@@ -780,6 +801,7 @@ function renderSi(s) {
   }
   $main.innerHTML = body;
   $actions.innerHTML = actions;
+  siKeepMedia(s);
   live(s);
 }
 
@@ -922,7 +944,8 @@ function packCards(s, d) {
     <p class="error" id="pack-err" role="alert"></p>`;
 }
 
-// Темы и сложность: какие вопросы пакета играть
+// Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
+let themesOpen = false;
 const LEVELS = [["any", "Любая"], ["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const packMeta = (s, d) => ((d.pack === "custom" ? s.custom : s.packs.find((p) => p.id === d.pack)) || {}).meta || [];
 function themePicker(s, d) {
@@ -931,7 +954,9 @@ function themePicker(s, d) {
   const chosen = new Set(d.themes && d.themes.length ? d.themes : themes);
   const fits = meta.filter((m) => (!themes.length || chosen.has(m[0])) && (d.level === "any" || m[1] === d.level)).length;
   const levels = new Set(meta.map((m) => m[1]).filter(Boolean));
-  return `${themes.length > 1 ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}<small>${meta.filter((m) => m[0] === t).length}</small></button>`).join("")}
+  const label = !d.themes || !d.themes.length ? `все ${themes.length}` : d.themes.length <= 2 ? d.themes.join(", ") : `${d.themes.length} из ${themes.length}`;
+  return `${themes.length > 1 ? `<div class="picker-line"><button type="button" class="btn ghost small" data-themes-open aria-expanded="${themesOpen}">🏷 Темы: ${esc(label)} ${themesOpen ? "▴" : "▾"}</button></div>` : ""}
+    ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}<small>${meta.filter((m) => m[0] === t).length}</small></button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
     <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="seg">${LEVELS.map(([v, n]) => `<button type="button" class="${d.level === v ? "on" : ""}" data-level="${v}">${n}</button>`).join("")}</span>` : ""}
       <span class="muted">Подходит вопросов: <b style="color:${fits ? "var(--ink)" : "var(--bad)"}">${fits || "0 — будет весь пакет"}</b></span></div>`;
@@ -1041,6 +1066,7 @@ document.addEventListener("click", (e) => {
   if (!draft) return;
   if (e.target.closest("[data-open-rules]")) { rulesOpen = true; return renderSetup(lastState); }
   if (e.target.closest("[data-close-rules]")) { rulesOpen = false; return renderSetup(lastState); }
+  if (e.target.closest("[data-themes-open]")) { themesOpen = !themesOpen; return renderSetup(lastState); }
   const tt = e.target.closest("[data-theme-toggle], [data-themes-all]");
   if (tt) {
     const all = [...new Set(packMeta(lastState, draft).map((m) => m[0]).filter(Boolean))];
@@ -1187,6 +1213,8 @@ document.addEventListener("click", async (e) => {
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");
   if (ovr) { await post("si_override", { index: Number(ovr.dataset.siOvr) }); lastSig = ""; return poll(); }
+  const unlock = e.target.closest("[data-si-unlock]");
+  if (unlock) { unlock.remove(); if (siKeep.el) siKeep.el.play().catch(() => {}); return; }
   if (e.target.closest("[data-si-replay]") && lastState && lastState.si) {
     const c = lastState.si.cur || {};
     if (c.melody) QuizMusic.melody(c.melody, c.tempo, c.instrument || "piano");

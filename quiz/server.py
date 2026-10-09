@@ -13,6 +13,7 @@
 """
 
 import base64
+import collections
 import binascii
 import hashlib
 import json
@@ -50,7 +51,7 @@ MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
 MAX_SIQ = 60 * 1024 * 1024  # самый большой пакет «Своей игры» (.siq)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
-MAX_QUESTIONS = 200
+MAX_QUESTIONS = 1000  # вопросов в одном пакете
 OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
 AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙", "🦄", "🐲", "🐺",
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
@@ -58,6 +59,7 @@ INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
 QTYPES = ("choice", "multi", "order", "text", "number")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе)
 LEVELS = ("easy", "normal", "hard")  # сложность вопроса
+TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25}  # на сложные типы — больше времени
 
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
@@ -196,6 +198,23 @@ def parse_number(value):
     return int(n) if n == int(n) else n
 
 
+def clean_focus(value):
+    """Точка, куда приближать картинку: [x, y] в процентах."""
+    try:
+        x, y = (max(0.0, min(100.0, float(v))) for v in value)
+    except (TypeError, ValueError):
+        return None
+    return [round(x, 1), round(y, 1)]
+
+
+def clean_seconds(value):
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return max(5, min(120, n)) if n else None
+
+
 def clean_pack(data, store=None, scope="_"):
     """Проверяет пакет вопросов и приводит его к единому виду."""
     if not isinstance(data, dict):
@@ -252,6 +271,10 @@ def clean_pack(data, store=None, scope="_"):
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
+                "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
+                # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
+                "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
+                "focus": clean_focus(q.get("focus")),
                 "instrument": q.get("instrument") if q.get("instrument") in INSTRUMENTS else None,
             })
         except PackError as e:
@@ -1206,7 +1229,12 @@ class Game:
 
     @property
     def seconds(self):
-        return self.settings["seconds"]
+        """Время на текущий вопрос: своё у вопроса или общее, для сложных типов — больше."""
+        base = self.settings["seconds"]
+        if self.si or self.fd or not 0 <= self.index < len(self.selected):
+            return base
+        q = self.question()
+        return q.get("seconds") or int(base * TYPE_TIME.get(q["type"], 1) + 0.5)
 
     def question(self):
         return self.selected[self.index]
@@ -1420,6 +1448,8 @@ class Game:
             s["question"] = q["q"]
             s["theme"] = q.get("theme")
             s["unit"] = q.get("unit")
+            s["image_fx"] = q.get("image_fx") if q["image"] else None
+            s["focus"] = q.get("focus") or [50, 50]
             s["options"] = [q["options"][i] for i in self.display]
             s["image"] = q["image"]
             s["audio"] = q["audio"]
@@ -1484,6 +1514,59 @@ class Game:
 rooms = {}  # код комнаты -> Game
 
 
+class Stats:
+    """Статистика сайта для владельца: только счётчики, без имён. Живёт в памяти —
+    обнуляется, когда сервер перезапускается (после обновления или сна на Render)."""
+
+    def __init__(self):
+        self.started = time.time()
+        self.visitors = set()  # обезличенные метки устройств
+        self.views = collections.Counter()  # страница -> просмотры
+        self.counts = collections.Counter()  # rooms, players, answers, games:<режим>, finished:<режим>
+        self.peak_players = self.peak_rooms = 0
+        self.hours = collections.Counter()  # час (unix-время / 3600) -> начатых игр
+        self.events = collections.deque(maxlen=80)
+        self.sampled = 0.0
+
+    def visit(self, device, page):
+        self.views[page] += 1
+        if device:
+            self.visitors.add(hashlib.sha256(device.encode()).hexdigest()[:16])
+
+    def event(self, text):
+        self.events.appendleft((time.time(), text))
+        print(f"[статистика] {text}", flush=True)  # остаётся в логах Render
+
+    def sample(self):
+        """Раз в 10 секунд считаем, сколько людей сейчас в игре, — для рекорда онлайна."""
+        now = time.time()
+        if now - self.sampled < 10:
+            return
+        self.sampled = now
+        online = sum(len(g.online()) for g in rooms.values())
+        active = sum(1 for g in rooms.values() if g.online())
+        self.peak_players = max(self.peak_players, online)
+        self.peak_rooms = max(self.peak_rooms, active)
+
+    def report(self):
+        now = time.time()
+        live = [g for g in rooms.values() if now - g.touched < 120]
+        return {
+            "since": self.started, "now": now,
+            "visitors": len(self.visitors), "views": dict(self.views), "counts": dict(self.counts),
+            "peak_players": self.peak_players, "peak_rooms": self.peak_rooms,
+            "online_rooms": len(live), "online_players": sum(len(g.online()) for g in live),
+            "live": [{"mode": g.settings["mode"], "phase": g.phase, "players": len(g.online())} for g in live],
+            "hours": {str(h * 3600): n for h, n in sorted(self.hours.items())[-48:]},
+            "events": [{"t": t, "text": x} for t, x in self.events],
+        }
+
+
+STATS = Stats()
+STATS_KEY = os.environ.get("STATS_KEY", "")  # ключ к странице /stats (на Render — в Environment)
+MODE_NAMES = {"quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
+
+
 def cleanup():
     now = time.time()
     for code in [c for c, g in rooms.items() if now - g.touched > ROOM_IDLE]:
@@ -1501,6 +1584,7 @@ def create_room(device):
     while code in rooms:
         code = f"{secrets.randbelow(9000) + 1000}"
     rooms[code] = Game(code, device)
+    STATS.counts["rooms"] += 1
     return rooms[code]
 
 
@@ -1537,11 +1621,13 @@ class Handler(BaseHTTPRequestHandler):
         return cookie[DEVICE_COOKIE].value if DEVICE_COOKIE in cookie else None
 
     def send_file(self, name, set_device=False):
-        extra = {}
-        if set_device and not self.device():
-            extra["Set-Cookie"] = f"{DEVICE_COOKIE}={secrets.token_urlsafe(12)}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax"
+        extra, device = {}, self.device()
+        if set_device and not device:
+            device = secrets.token_urlsafe(12)
+            extra["Set-Cookie"] = f"{DEVICE_COOKIE}={device}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax"
         mime = "text/html; charset=utf-8" if name.endswith(".html") else "text/javascript; charset=utf-8"
         self.send_bytes((STATIC / name).read_bytes(), mime, extra=extra)
+        return device
 
     def read_json(self):
         length = int(self.headers.get("Content-Length") or 0)
@@ -1557,12 +1643,20 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
-        if url.path == "/":
-            self.send_file("play.html", set_device=True)
-        elif url.path == "/host":
-            self.send_file("host.html", set_device=True)
-        elif url.path == "/editor":
-            self.send_file("editor.html", set_device=True)
+        if url.path in ("/", "/host", "/editor"):
+            name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html"}[url.path]
+            device = self.send_file(name, set_device=True)
+            with lock:
+                STATS.visit(device, {"/": "Главная", "/host": "Экран ведущего", "/editor": "Редактор"}[url.path])
+        elif url.path == "/stats":
+            if STATS_KEY and query.get("key", [""])[0] != STATS_KEY:
+                return self.send_json({"error": "Нужен ключ: /stats?key=… (STATS_KEY в настройках Render)"}, 403)
+            self.send_file("stats.html")
+        elif url.path == "/api/stats":
+            if STATS_KEY and query.get("key", [""])[0] != STATS_KEY:
+                return self.send_json({"error": "Неверный ключ"}, 403)
+            with lock:
+                self.send_json(STATS.report())
         elif parts[0] == "static" and len(parts) == 2 and parts[1].endswith(".js") and (STATIC / parts[1]).is_file():
             self.send_file(parts[1])
         elif url.path == "/healthz":
@@ -1593,6 +1687,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not game:
                     return self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
                 game.touched = time.time()
+                STATS.sample()
                 self.send_json(game.state(query.get("pid", [None])[0], self.device()))
         else:
             self.send_json({"error": "Страница не найдена"}, 404)
@@ -1688,6 +1783,7 @@ class Handler(BaseHTTPRequestHandler):
                     "score": 0, "last_points": 0, "prev_place": 0, "streak": 0,
                 }
                 game.balance_teams()
+                STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
             if path.startswith("/api/fd/"):
@@ -1697,6 +1793,7 @@ class Handler(BaseHTTPRequestHandler):
                 game.tick()
                 action = path.rsplit("/", 1)[1]
                 ok = fd.guess(pid, data.get("text")) if action == "guess" else fd.big_answer(pid, data.get("text")) if action == "big" else False
+                STATS.counts["answers"] += bool(ok)
                 game.tick()
                 return self.send_json({"ok": bool(ok)})
 
@@ -1723,6 +1820,7 @@ class Handler(BaseHTTPRequestHandler):
                     ok = si.final_answer(pid, data.get("text"))
                 else:
                     ok = False
+                STATS.counts["answers"] += bool(ok) and action in ("answer", "final")
                 game.tick()
                 return self.send_json({"ok": bool(ok)})
 
@@ -1752,6 +1850,7 @@ class Handler(BaseHTTPRequestHandler):
                 value = game.check(data.get("answer")) if ok else None
                 ok = value is not None
                 if ok:
+                    STATS.counts["answers"] += 1
                     game.answers[pid] = {"value": value, "time": time.time() - game.started_at}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
@@ -1760,62 +1859,77 @@ class Handler(BaseHTTPRequestHandler):
                 if data.get("token") != game.host_token or device != game.host_device:
                     return self.send_json({"error": "Управлять игрой может только ведущий этой комнаты"}, 403)
                 action = path.rsplit("/", 1)[1]
-                if action == "upload":
-                    if game.phase != "setup":
-                        return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
-                    try:
-                        pack = game.upload(data.get("pack"))
-                    except PackError as e:
-                        return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
-                    return self.send_json({"ok": True, "title": pack["title"], "count": len(pack["questions"])})
-                if action == "configure":
-                    game.configure(data.get("settings") or {})
-                elif action == "setup":
-                    game.reset("setup")  # назад в меню, игроки остаются
-                elif action == "upload_fd":
-                    if game.phase != "setup":
-                        return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
-                    try:
-                        game.fd_custom = clean_fd_pack(data.get("pack"))
-                    except PackError as e:
-                        return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
-                    game.settings.update(fd_pack="custom", mode="100to1")
-                    return self.send_json({"ok": True, "title": game.fd_custom["title"], "count": len(game.fd_custom["questions"])})
-                elif action == "fd_open" and game.fd:
-                    game.fd.host_open(data.get("index"))
-                elif action == "fd_unstrike" and game.fd:
-                    game.fd.unstrike()
-                elif action == "next" and game.fd and game.phase == "lobby":
-                    game.fd.start()
-                elif action == "next" and game.fd and game.phase.startswith("fd_"):
-                    game.tick()
-                    game.fd.host_next()
-                elif action == "si_pick" and game.si:
-                    game.si.pick(data.get("theme"), data.get("question"))
-                elif action == "si_override" and game.si:
-                    game.si.override(data.get("index"))
-                elif action == "next" and game.si and game.phase == "lobby":
-                    game.si.start()
-                elif action == "next" and game.si and game.phase.startswith("si_"):
-                    game.tick()
-                    game.si.host_next()
-                elif action == "next":
-                    if game.phase in ("setup", "final"):
-                        return self.send_json({"error": "Сначала создай игру"}, 400)
-                    game.tick()
-                    if game.phase == "question":
-                        game.finish_question()  # ведущий может показать ответ досрочно
-                    else:
-                        game.next()
-                elif action == "reset":
-                    game.reset("lobby")  # та же игра с теми же правилами ещё раз
-                elif action == "kick":
-                    game.players.pop(data.get("pid"), None)
-                elif action != "check":
-                    return self.send_json({"error": "Неизвестное действие"}, 400)
-                return self.send_json({"ok": True})
+                before = game.phase
+                result = self.host_action(game, action, data)
+                after = game.phase
+                mode = game.settings["mode"]
+                if before == "lobby" and after not in ("lobby", "setup"):
+                    STATS.counts["games:" + mode] += 1
+                    STATS.hours[int(time.time() // 3600)] += 1
+                    STATS.event(f"Началась игра: {MODE_NAMES.get(mode, mode)}, игроков: {len(game.players)}")
+                if after == "final" and before != "final":
+                    STATS.counts["finished:" + mode] += 1
+                    STATS.event(f"Игра доиграна до конца: {MODE_NAMES.get(mode, mode)}")
+                return result
 
         self.send_json({"error": "Страница не найдена"}, 404)
+
+    def host_action(self, game, action, data):
+        """Действие ведущего; вызывается под lock."""
+        if action == "upload":
+            if game.phase != "setup":
+                return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
+            try:
+                pack = game.upload(data.get("pack"))
+            except PackError as e:
+                return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
+            return self.send_json({"ok": True, "title": pack["title"], "count": len(pack["questions"])})
+        if action == "configure":
+            game.configure(data.get("settings") or {})
+        elif action == "setup":
+            game.reset("setup")  # назад в меню, игроки остаются
+        elif action == "upload_fd":
+            if game.phase != "setup":
+                return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
+            try:
+                game.fd_custom = clean_fd_pack(data.get("pack"))
+            except PackError as e:
+                return self.send_json({"error": f"Пакет не загружен: {e}"}, 400)
+            game.settings.update(fd_pack="custom", mode="100to1")
+            return self.send_json({"ok": True, "title": game.fd_custom["title"], "count": len(game.fd_custom["questions"])})
+        elif action == "fd_open" and game.fd:
+            game.fd.host_open(data.get("index"))
+        elif action == "fd_unstrike" and game.fd:
+            game.fd.unstrike()
+        elif action == "next" and game.fd and game.phase == "lobby":
+            game.fd.start()
+        elif action == "next" and game.fd and game.phase.startswith("fd_"):
+            game.tick()
+            game.fd.host_next()
+        elif action == "si_pick" and game.si:
+            game.si.pick(data.get("theme"), data.get("question"))
+        elif action == "si_override" and game.si:
+            game.si.override(data.get("index"))
+        elif action == "next" and game.si and game.phase == "lobby":
+            game.si.start()
+        elif action == "next" and game.si and game.phase.startswith("si_"):
+            game.tick()
+            game.si.host_next()
+        elif action == "next":
+            if game.phase in ("setup", "final"):
+                return self.send_json({"error": "Сначала создай игру"}, 400)
+            game.tick()
+            if game.phase == "question":
+                game.finish_question()  # ведущий может показать ответ досрочно
+            else:
+                game.next()
+        elif action == "reset":
+            game.reset("lobby")  # та же игра с теми же правилами ещё раз
+        elif action == "kick":
+            game.players.pop(data.get("pid"), None)
+        elif action != "check":
+            return self.send_json({"error": "Неизвестное действие"}, 400)
+        return self.send_json({"ok": True})
 
 
 def main():

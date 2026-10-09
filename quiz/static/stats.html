@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Квиз — статистика</title>
+<style>
+/* Страница владельца: что происходит на сайте. Только счётчики, без имён. */
+:root {
+  --bg: #0e1330; --panel: rgba(255, 255, 255, .06); --line: rgba(255, 255, 255, .12);
+  --ink: #f4f5ff; --muted: #a7aedb; --accent: #ffd23f; --good: #3ddc84; --bad: #ff6b6b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 "Segoe UI", system-ui, sans-serif; padding: 24px 16px 48px; }
+main { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1 { margin: 0; font-size: 28px; }
+h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.muted { color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.tile b { display: block; font-size: 30px; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--muted); font-size: 14px; }
+.tile.live b { color: var(--good); }
+.chart { position: relative; display: flex; align-items: flex-end; gap: 2px; height: 160px; padding: 0 0 22px; border-bottom: 1px solid var(--line); }
+.bar { flex: 1; min-width: 4px; background: var(--accent); border-radius: 4px 4px 0 0; position: relative; }
+.bar.zero { background: transparent; }
+.bar:hover { filter: brightness(1.2); }
+.bar .tip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap;
+  background: #1c2354; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; font-size: 13px; color: var(--ink); z-index: 2; }
+.bar:hover .tip, .bar:focus .tip { display: block; }
+.axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
+td:first-child { color: var(--muted); white-space: nowrap; width: 1%; padding-right: 14px; font-variant-numeric: tabular-nums; }
+.error { color: var(--bad); }
+</style>
+</head>
+<body>
+<main id="main"><p class="muted">Загружаю…</p></main>
+<script>
+const $main = document.getElementById("main");
+const key = new URLSearchParams(location.search).get("key") || "";
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MODES = { quiz: "Викторина", jeopardy: "Своя игра", "100to1": "100 к 1" };
+const PHASE = (p) => p === "setup" ? "выбирает правила" : p === "lobby" ? "ждёт игроков" : p === "final" ? "итоги" : "идёт игра";
+const time = (t) => new Date(t * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const tile = (n, label, cls = "") => `<div class="tile ${cls}"><b>${n}</b><span>${label}</span></div>`;
+
+function hoursChart(r) {
+  // последние 24 часа, по часу на столбик
+  const now = Math.floor(r.now / 3600), hours = [];
+  for (let h = now - 23; h <= now; h++) hours.push([h, r.hours[String(h * 3600)] || 0]);
+  const max = Math.max(1, ...hours.map((x) => x[1]));
+  const label = (h) => new Date(h * 3600 * 1000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return `<div class="chart" role="img" aria-label="Игры по часам за последние сутки">${hours.map(([h, n]) =>
+    `<div class="bar ${n ? "" : "zero"}" tabindex="0" style="height:${n ? Math.max(4, (n / max) * 100) : 100}%"><span class="tip">${label(h)} — игр: ${n}</span></div>`).join("")}</div>
+    <div class="axis"><span>${label(hours[0][0])}</span><span>${label(hours[12][0])}</span><span>сейчас</span></div>`;
+}
+
+async function load() {
+  try {
+    const res = await fetch("/api/stats?key=" + encodeURIComponent(key), { cache: "no-store" });
+    const r = await res.json();
+    if (r.error) throw new Error(r.error);
+    const c = r.counts, games = (p) => Object.entries(MODES).map(([m, n]) => `${n}: ${c[p + m] || 0}`).join(" · ");
+    const started = Object.keys(MODES).reduce((a, m) => a + (c["games:" + m] || 0), 0);
+    const finished = Object.keys(MODES).reduce((a, m) => a + (c["finished:" + m] || 0), 0);
+    const views = Object.entries(r.views).map(([p, n]) => `${esc(p)}: ${n}`).join(" · ") || "пока нет";
+    $main.innerHTML = `
+      <div><h1>Статистика сайта</h1>
+        <p class="muted">С ${time(r.since)} — с последнего запуска сервера. Render перезапускает его после обновления
+          и после 15 минут без посетителей, тогда счётчики начинаются заново. Имена игроков здесь не хранятся.</p></div>
+      <section><h2>Сейчас</h2><div class="tiles">
+        ${tile(r.online_players, "игроков на связи", "live")}${tile(r.online_rooms, "активных комнат", "live")}
+        ${tile(r.peak_players, "рекорд игроков онлайн")}${tile(r.peak_rooms, "рекорд комнат одновременно")}</div>
+        ${r.live.length ? `<p class="muted">${r.live.map((g) => `${MODES[g.mode] || g.mode} — ${PHASE(g.phase)}, игроков: ${g.players}`).map(esc).join("<br>")}</p>` : ""}</section>
+      <section><h2>С момента запуска</h2><div class="tiles">
+        ${tile(r.visitors, "разных устройств зашло")}${tile(c.rooms || 0, "комнат создано")}${tile(c.players || 0, "игроков вошло")}
+        ${tile(started, "игр начато")}${tile(finished, "доиграно до конца")}${tile(c.answers || 0, "ответов дано")}</div>
+        <p class="muted">Начато — ${games("games:")}<br>Доиграно — ${games("finished:")}<br>Просмотры страниц — ${views}</p></section>
+      <section><h2>Игры по часам, последние сутки</h2>${hoursChart(r)}</section>
+      <section><h2>Последние события</h2>${r.events.length
+        ? `<table>${r.events.map((e) => `<tr><td>${time(e.t)}</td><td>${esc(e.text)}</td></tr>`).join("")}</table>`
+        : `<p class="muted">Пока ничего не происходило</p>`}</section>`;
+  } catch (x) {
+    $main.innerHTML = `<h1>Статистика сайта</h1><p class="error">${esc(x.message || "Нет связи с сервером")}</p>`;
+  }
+}
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>

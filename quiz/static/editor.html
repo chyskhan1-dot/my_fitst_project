@@ -82,6 +82,10 @@ textarea { resize: vertical; min-height: 54px; }
 .slot-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: var(--muted); }
 .slot-head .btn { margin-left: auto; padding: 6px 10px; font-size: 12px; }
 .slot img { max-width: 100%; max-height: 140px; border-radius: 8px; align-self: flex-start; background: #fff; }
+.fx-pick { position: relative; align-self: flex-start; line-height: 0; }
+.fx-pick.zoom { cursor: crosshair; }
+.fx-pick.zoom img { max-height: 220px; }
+.fx-pick .dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: var(--bad); box-shadow: 0 0 0 2px rgba(0, 0, 0, .5); pointer-events: none; }
 .slot audio { width: 100%; }
 .errs { color: var(--bad); font-size: 13px; font-weight: 700; }
 .add { align-self: center; }
@@ -187,7 +191,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text" || type === "number") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "" };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null };
     }),
   };
 }
@@ -206,11 +210,13 @@ function toPack() {
       if (q.type === "choice") q2.answer = kept.findIndex((o) => o.i === q.answer);
       if (q.type === "multi") q2.answer = kept.map((o, k) => (q.answer.includes(o.i) ? k : -1)).filter((k) => k >= 0);
       if (q.image) q2.image = q.image;
+      if (q.image && q.image_fx) { q2.image_fx = q.image_fx; if (q.image_fx === "zoom" && q.focus) q2.focus = q.focus; }
       if (q.audio) q2.audio = q.audio;
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
       if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();
       if (q.level) q2.level = q.level;
+      if (Number(q.seconds) > 0) q2.seconds = Math.max(5, Math.min(120, Math.round(Number(q.seconds))));
       return q2;
     }),
   };
@@ -250,8 +256,12 @@ function toast(text) {
 function slot(q, i, kind) {
   const label = kind === "image" ? "🖼 Картинка" : "🎵 Аудио";
   const v = q[kind];
+  const [fx, fy] = q.focus || [50, 50];
   const preview = !v ? "" : kind === "image"
-    ? `<img src="${esc(QuizPack.mediaSrc(v))}" alt="">`
+    ? `<div class="fx-pick ${q.image_fx === "zoom" ? "zoom" : ""}" data-focus="${i}"><img src="${esc(QuizPack.mediaSrc(v))}" alt="">
+        ${q.image_fx === "zoom" ? `<span class="dot" style="left:${fx}%;top:${fy}%"></span>` : ""}</div>
+      <select data-fx="${i}" aria-label="Эффект картинки">${[["", "Без эффекта"], ["blur", "Размыта — постепенно проясняется"], ["zoom", "Виден кусочек — постепенно отдаляется"]].map(([val, n]) => `<option value="${val}" ${(q.image_fx || "") === val ? "selected" : ""}>${n}</option>`).join("")}</select>
+      ${q.image_fx === "zoom" ? `<span class="help">Нажми на картинку — с этого места начнётся показ (например, на ногу или на кусочек лица)</span>` : ""}`
     : `<audio controls preload="none" src="${esc(QuizPack.mediaSrc(v))}"></audio>`;
   const link = v && !String(v).startsWith("data:") ? v : "";
   return `<div class="slot">
@@ -291,6 +301,7 @@ function card(q, i) {
     <div class="row">
       <select data-type="${i}" aria-label="Тип вопроса ${i + 1}" style="width:auto">${TYPES.map(([v, n]) => `<option value="${v}" ${q.type === v ? "selected" : ""}>${n}</option>`).join("")}</select>
       <select data-level="${i}" aria-label="Сложность вопроса ${i + 1}" style="width:auto">${LEVELS.map(([v, n]) => `<option value="${v}" ${q.level === v ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <input type="text" data-secs="${i}" inputmode="numeric" maxlength="3" value="${esc(q.seconds || "")}" placeholder="Время, с" title="Своё время на этот вопрос (5–120 с). Пусто — как в правилах игры" aria-label="Время на вопрос ${i + 1}" style="width:96px">
       <input type="text" data-theme="${i}" list="theme-list" maxlength="40" value="${esc(q.theme || "")}" placeholder="Тема" aria-label="Тема вопроса ${i + 1}" style="width:auto;flex:0 1 180px">
       <span class="help" style="flex:1 1 260px">${TYPE_HINTS[q.type]}</span>
     </div>
@@ -347,6 +358,7 @@ $list.addEventListener("input", (e) => {
   const t = e.target, i = Number(t.dataset.i ?? t.dataset.q);
   if (t.dataset.emoji != null) { pack.questions[Number(t.dataset.emoji)].emoji = t.value; return summary(); }
   if (t.dataset.theme != null) { pack.questions[Number(t.dataset.theme)].theme = t.value; return; }
+  if (t.dataset.secs != null) { pack.questions[Number(t.dataset.secs)].seconds = t.value.replace(/\D/g, ""); return summary(); }
   if (t.dataset.melody != null) { pack.questions[Number(t.dataset.melody)].melody = t.value; return refreshCard(Number(t.dataset.melody)); }
   if (t.dataset.tempo != null) { pack.questions[Number(t.dataset.tempo)].tempo = Number(t.value) || 110; return summary(); }
   if (t.dataset.q != null) pack.questions[i].q = t.value;
@@ -358,6 +370,7 @@ $list.addEventListener("input", (e) => {
 $list.addEventListener("change", async (e) => {
   const t = e.target, i = Number(t.dataset.i);
   if (t.dataset.inst != null) { pack.questions[Number(t.dataset.inst)].instrument = t.value; return summary(); }
+  if (t.dataset.fx != null) { pack.questions[Number(t.dataset.fx)].image_fx = t.value; return render(); }
   if (t.dataset.level != null) { pack.questions[Number(t.dataset.level)].level = t.value; return summary(); }
   if (t.dataset.type != null) {
     const q = pack.questions[Number(t.dataset.type)], was = q.type;
@@ -383,6 +396,14 @@ $list.addEventListener("change", async (e) => {
 });
 
 $list.addEventListener("click", (e) => {
+  const pick = e.target.closest(".fx-pick.zoom");
+  if (pick) { // точка, с которой начнётся показ картинки
+    const r = pick.querySelector("img").getBoundingClientRect();
+    const x = Math.round(Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)));
+    const y = Math.round(Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100)));
+    pack.questions[Number(pick.dataset.focus)].focus = [x, y];
+    return render();
+  }
   const b = e.target.closest("button");
   if (!b) return;
   const i = Number(b.dataset.i);

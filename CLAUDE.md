@@ -23,7 +23,9 @@
     может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`, `number` (кто ближе, `best_err`); правила в `DEFAULTS`,
-    фильтр вопросов по `themes` и `level` — `Game.pool()`. Комментарии к таблице лидеров — `comments()` в host.html.
+    фильтр вопросов по `themes` и `level` — `Game.pool()`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
+    поле вопроса `seconds`). Картинка с эффектом: `image_fx` (`blur`/`zoom`) + `focus`, `fxImg()` в host/play.
+    Комментарии к таблице лидеров — `static/comments.js` (общие для ведущего и телефонов).
   - `FeudEngine` — «100 к 1» (две команды): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
     (простая, двойная, тройная, наоборот) → `fd_big_intro → fd_big_q × 5 → fd_big_result → final`.
   - `SiEngine` — «Своя игра»: `si_round → si_board → [si_cat_give|si_stake] → si_question ⇄ si_answer
@@ -33,6 +35,8 @@
   - Клиенты опрашивают `/api/state` каждые 0,5–0,7 с, но не больше одного запроса за раз
     (`poll`/`pollOnce`, обрыв через 5 с, «Нет связи» — после 3 неудач подряд); `VERSION` — хэш
     файлов: открытые страницы сами перезагружаются после деплоя.
+- Статистика для владельца: `Stats`/`STATS` в server.py (только счётчики, в памяти), страница
+  `static/stats.html` по `/stats?key=` (`STATS_KEY` из окружения, в render.yaml — `generateValue`).
 - `siq.py` — чтение пакетов SIGame (`.siq`, zip с `content.xml`, обе версии разметки).
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,

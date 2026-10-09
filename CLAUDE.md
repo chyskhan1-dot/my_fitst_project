@@ -41,7 +41,11 @@
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
   `static/music.js` — синтезированная музыка (Web Audio, без файлов).
-- `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц),
+- `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
+  темы внутри `general.json`, флаги рисует `tools/make_flags.py` (только без гербов, владелец так решил).
+  Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы.
+- `static/learn.html` — тренировка (`/learn`): один игрок, пакет из `/api/packs/<id>`, свой ответ проверяет
+  `POST /api/learn/text`, прогресс — в localStorage (`quiz-learn`).
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 

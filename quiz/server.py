@@ -366,6 +366,24 @@ for f in sorted(FD_DIR.glob("*.json")) if FD_DIR.exists() else []:
         print(f"Пакет «100 к 1» {f.name} пропущен: {e}", flush=True)
 
 
+def balanced_sample(indexes, n, questions):
+    """Случайные вопросы поровну из каждой темы: большая тема (флаги, столицы) не вытесняет остальные."""
+    groups = collections.defaultdict(list)
+    for i in indexes:
+        groups[questions[i].get("theme") or ""].append(i)
+    for g in groups.values():
+        random.shuffle(g)
+    themes = list(groups)
+    random.shuffle(themes)
+    out = []
+    while len(out) < n:
+        for t in themes:  # по одному вопросу из каждой темы по кругу
+            if groups[t] and len(out) < n:
+                out.append(groups[t].pop())
+    random.shuffle(out)
+    return out
+
+
 def pack_meta(pack):
     """Для меню: тема и сложность каждого вопроса — чтобы считать, сколько вопросов подходит."""
     return [[q.get("theme") or "", q.get("level") or ""] for q in pack["questions"]]
@@ -1192,7 +1210,7 @@ class Game:
         if len(fresh) < n:  # вопросы закончились — начинаем круг заново
             used.difference_update(pool)
             fresh = list(pool)
-        chosen = random.sample(fresh, n)
+        chosen = balanced_sample(fresh, n, allq)
         used.update(chosen)
         self.selected = [allq[i] for i in chosen]
 
@@ -1643,11 +1661,11 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
-        if url.path in ("/", "/host", "/editor"):
-            name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html"}[url.path]
+        if url.path in ("/", "/host", "/editor", "/learn"):
+            name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html", "/learn": "learn.html"}[url.path]
             device = self.send_file(name, set_device=True)
             with lock:
-                STATS.visit(device, {"/": "Главная", "/host": "Экран ведущего", "/editor": "Редактор"}[url.path])
+                STATS.visit(device, {"/": "Главная", "/host": "Экран ведущего", "/editor": "Редактор", "/learn": "Тренировка"}[url.path])
         elif url.path == "/stats":
             if STATS_KEY and query.get("key", [""])[0] != STATS_KEY:
                 return self.send_json({"error": "Нужен ключ: /stats?key=… (STATS_KEY в настройках Render)"}, 403)
@@ -1725,6 +1743,13 @@ class Handler(BaseHTTPRequestHandler):
         with lock:
             if not device:
                 return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
+
+            if path == "/api/learn/text":
+                # тренировка: проверка «своего ответа» так же, как в игре (опечатки, русская и латинская запись)
+                answers = data.get("answers")
+                answers = [str(a)[:60] for a in (answers if isinstance(answers, list) else [answers]) if a][:10]
+                STATS.counts["learn"] += 1
+                return self.send_json({"ok": bool(answers) and text_matches(str(data.get("text") or "")[:60], answers)})
 
             if path == "/api/my_room":
                 # своя игра этого устройства: чтобы ведущий мог вернуться, а не создавать новую

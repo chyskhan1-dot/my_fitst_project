@@ -298,6 +298,7 @@ def clean_pack(data, store=None, scope="_"):
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
                 "place": str(q.get("place") or "").strip()[:80] or None,  # для карты: что это за место
+                "si": q.get("si") is not False,  # False — без вариантов вопрос не сыграть в «Своей игре»
                 "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
                 # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
                 "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
@@ -355,6 +356,71 @@ for f in sorted(SI_DIR.glob("*")) if SI_DIR.exists() else []:
             SI_PACKS[f.stem] = clean_si_json(json.loads(f.read_text(encoding="utf-8")))
     except (SiqError, PackError, KeyError, ValueError, json.JSONDecodeError) as e:
         print(f"Пакет «Своей игры» {f.name} пропущен: {e}", flush=True)
+
+
+# «Своя игра» из вопросов викторины: каждый раз новое табло из случайных тем «Общих знаний»
+SI_AUTO, SI_AUTO_SRC = "auto", "general"
+SI_ROUNDS = ((100, "1-й раунд"), (200, "2-й раунд"))  # шаг цены и название; 6 тем × 5 вопросов в раунде
+SI_LEVEL = {"easy": 0, "normal": 1, "hard": 2}
+# без вариантов такие вопросы не сыграть: «Какой из этих городов…», «Что лишнее…»
+SI_NEEDS_OPTIONS = re.compile(r"из (этих|перечисленн|них|списка)|как(ой|ая|ое|ие) из\b|кто из\b|что из\b|не явля|лишн|выбер|верно ли|правда ли", re.I)
+
+
+def si_answers(q):
+    """Ответы для «Своей игры» или None, если вопрос не подходит (нужны варианты, ответ длинный, карта…)."""
+    if not q.get("si", True):
+        return None
+    if q["type"] == "text":
+        return q["answer"]
+    if q["type"] != "choice" or SI_NEEDS_OPTIONS.search(q["q"]):
+        return None
+    a = q["options"][q["answer"]]
+    if len(a) > 28 or len(a.split()) > 4:
+        return None
+    digits = re.sub(r"\D", "", a)
+    return [a, digits] if digits and digits != a else [a]  # «В 4 раза» засчитываем и за «4»
+
+
+def si_question(q, answers, price):
+    return {"price": price, "special": "simple", "cat_cost": None, "cat_theme": None,
+            "text": q["q"], "image": q["image"], "audio": q["audio"], "video": None,
+            "melody": q.get("melody"), "tempo": q.get("tempo"), "instrument": q.get("instrument"),
+            "answer": answers, "answer_text": answers[0], "answer_image": None, "answer_audio": None, "answer_note": None}
+
+
+def si_from_quiz(pack, used=frozenset()):
+    """Случайная «Своя игра»: 2 раунда по 6 тем × 5 вопросов + финал. Цена растёт со сложностью,
+    в раунде один кот в мешке и один аукцион. used — уже сыгранные в этой комнате вопросы, их — в последнюю очередь."""
+    themes = collections.defaultdict(list)
+    for q in pack["questions"]:
+        a = si_answers(q)
+        if a:
+            themes[q.get("theme") or "Разное"].append((q, a))
+    names = [t for t, items in themes.items() if len(items) >= 5]
+    random.shuffle(names)
+    key = lambda q: q["q"] + (q["image"] or "")
+
+    def take(items, n):
+        fresh = [x for x in items if key(x[0]) not in used]
+        pick = random.sample(fresh if len(fresh) >= n else items, n)
+        return sorted(pick, key=lambda x: (SI_LEVEL.get(x[0].get("level"), 1), random.random()))
+
+    rounds = []
+    for r, (step, title) in enumerate(SI_ROUNDS):
+        chosen = names[r * 6:(r + 1) * 6]
+        if len(chosen) < 3:
+            break
+        board = [{"name": t, "questions": [si_question(q, a, step * (k + 1)) for k, (q, a) in enumerate(take(themes[t], 5))]}
+                 for t in chosen]
+        (ct, cq), (at, aq) = random.sample([(ti, qi) for ti in range(len(board)) for qi in range(1, 5)], 2)
+        board[ct]["questions"][cq]["special"] = "cat"
+        board[at]["questions"][aq]["special"] = "auction"
+        rounds.append({"name": title, "final": False, "themes": board})
+    rest = names[len(rounds) * 6:] or names
+    t = random.choice(rest)
+    q, a = max(take(themes[t], min(5, len(themes[t]))), key=lambda x: SI_LEVEL.get(x[0].get("level"), 1))
+    rounds.append({"name": "Финал", "final": True, "themes": [{"name": t, "questions": [si_question(q, a, 0)]}]})
+    return {"title": "Своя игра: общие знания", "rounds": rounds}
 
 
 def clean_fd_pack(data):
@@ -450,7 +516,7 @@ DEFAULTS = {
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
     "themes": [],  # какие темы пакета играть (пусто — все)
     "level": "any",  # сложность: any, easy, normal, hard
-    "si_pack": next(iter(SI_PACKS), None),  # пакет «Своей игры»
+    "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
 }
@@ -1138,6 +1204,7 @@ class Game:
         self.fd = None  # «100 к 1»
         self.fd_custom = None
         self.si_custom = None  # загруженный пакет .siq
+        self.si_auto, self.si_used = None, set()  # случайная «Своя игра» и уже сыгранные в ней вопросы
         self.si_media = {}
         self.reset()
 
@@ -1163,7 +1230,7 @@ class Game:
             s["si_round_min"] = data["si_round_min"]
         if data.get("count") in (0, 10, 20, 30):
             s["count"] = data["count"]
-        if data.get("si_pack") in SI_PACKS or (data.get("si_pack") == "custom" and self.si_custom):
+        if data.get("si_pack") in SI_PACKS or data.get("si_pack") == SI_AUTO or (data.get("si_pack") == "custom" and self.si_custom):
             s["si_pack"] = data["si_pack"]
         if data.get("fd_pack") in FD_PACKS or (data.get("fd_pack") == "custom" and self.fd_custom):
             s["fd_pack"] = data["fd_pack"]
@@ -1179,6 +1246,8 @@ class Game:
     @property
     def si_pack(self):
         key = self.settings.get("si_pack")
+        if key == SI_AUTO:
+            return self.si_auto or {"title": "Своя игра: общие знания", "rounds": []}
         return self.si_custom if key == "custom" else SI_PACKS.get(key)
 
     def upload_siq(self, data):
@@ -1212,6 +1281,9 @@ class Game:
             if self.settings["mode"] == "100to1" and self.fd_pack:
                 self.fd = FeudEngine(self, self.fd_pack)
             elif self.settings["mode"] == "jeopardy" and self.si_pack:
+                if self.settings["si_pack"] == SI_AUTO:  # новое табло на каждую игру, сыгранные вопросы — в конец очереди
+                    self.si_auto = si_from_quiz(PACKS[SI_AUTO_SRC], self.si_used)
+                    self.si_used |= {q["text"] + (q["image"] or "") for r in self.si_auto["rounds"] for t in r["themes"] for q in t["questions"]}
                 self.si = SiEngine(self, self.si_pack)
             else:
                 self.pick_questions()
@@ -1494,7 +1566,8 @@ class Game:
             s["title"] = self.si_pack["title"]
             s["si"] = self.si.state(pid if self.owns(pid, device) else None)
         if self.phase == "setup":
-            s["si_packs"] = [{"id": k, **si_info(p)} for k, p in SI_PACKS.items()]
+            s["si_packs"] = [{"id": SI_AUTO, "title": "🎲 Случайная из «Общих знаний»", "rounds": len(SI_ROUNDS), "count": 6 * 5 * len(SI_ROUNDS),
+                              "final": True, "auto": True}] + [{"id": k, **si_info(p)} for k, p in SI_PACKS.items()]
             s["fd_packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in FD_PACKS.items()]
             if self.fd_custom:
                 s["fd_custom"] = {"title": self.fd_custom["title"], "count": len(self.fd_custom["questions"])}

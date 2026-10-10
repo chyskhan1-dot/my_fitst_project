@@ -33,6 +33,8 @@
     (простая, двойная, тройная, наоборот) → `fd_big_intro → fd_big_q × 5 → fd_big_result → final`.
   - `SiEngine` — «Своя игра»: `si_round → si_board → [si_cat_give|si_stake] → si_question ⇄ si_answer
     → si_reveal … → si_final_bet → si_final_q → si_final_reveal → final`.
+    Пакет по умолчанию `SI_AUTO` — `si_from_quiz()`: случайное табло из тем `general` на каждую игру
+    (`SI_ROUNDS`, вопросы — `si_answers()`; `"si": false` у вопроса — не брать; сыгранные — `Game.si_used`).
   - Проверка текстовых ответов: `text_matches` (транслитерация по «звучанию», опечатки, фамилия
     без имени), для «Своей игры» — `si_match` (плюс варианты из `answer_variants`).
   - Клиенты опрашивают `/api/state` каждые 0,5–0,7 с, но не больше одного запроса за раз

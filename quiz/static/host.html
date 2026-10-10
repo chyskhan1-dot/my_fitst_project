@@ -961,7 +961,7 @@ function packCards(s, d) {
   }
   const si = d.mode === "jeopardy";
   const list = si
-    ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.rounds} раунд. · ${p.count} вопр.${p.final ? " · финал" : ""}` }))
+    ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: p.auto ? "Каждую игру — новые темы · 2 раунда + финал" : `${p.rounds} раунд. · ${p.count} вопр.${p.final ? " · финал" : ""}` }))
     : s.packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.count} вопросов` }));
   const custom = si ? s.si_custom : s.custom;
   if (custom) list.push({ id: "custom", title: custom.title, sub: "Свой пакет · " + (si ? `${custom.rounds} раунд. · ${custom.count} вопр.` : `${custom.count} вопросов`) });

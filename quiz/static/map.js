@@ -2,7 +2,8 @@
 // Равнопромежуточная проекция: долгота → x, широта → y. Карта без подписей и границ (tools/make_map.py).
 // Увеличение — колесом, щипком или кнопками +/−; перетаскивание пальцем или мышью; касание — точка.
 (function () {
-  const SRC = "/media/map/world.jpg";
+  // сначала лёгкая карта (~150 КБ, быстро грузится даже по мобильному интернету), подробная — только при увеличении
+  const SRC = "/media/map/world-2k.jpg", SRC_FULL = "/media/map/world.jpg";
   const MAX_ZOOM = 12;
   const frac = (p) => [(p[1] + 180) / 360, (90 - p[0]) / 180]; // [широта, долгота] → доли ширины и высоты
   const toPoint = (fx, fy) => [Math.round((90 - fy * 180) * 1e4) / 1e4, Math.round((fx * 360 - 180) * 1e4) / 1e4];
@@ -21,6 +22,7 @@
 .qmap.pick { cursor: crosshair; }
 .qmap-in { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .qmap-in img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.qmap-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font: 700 15px system-ui, sans-serif; pointer-events: none; }
 .qmap-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .qmap-lines line { stroke: #fff; stroke-width: 2.5; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; opacity: .9; }
 .qpin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
@@ -42,8 +44,12 @@
     box.classList.add("qmap");
     box.classList.toggle("pick", !!opts.onPick);
     box.innerHTML = `<div class="qmap-in"><img src="${SRC}" alt="Карта мира" draggable="false">
-      <svg class="qmap-lines" viewBox="0 0 1000 500" preserveAspectRatio="none"></svg><div class="qmap-pins"></div></div>
+      <div class="qmap-wait">Карта загружается…</div><svg class="qmap-lines" viewBox="0 0 1000 500" preserveAspectRatio="none"></svg><div class="qmap-pins"></div></div>
       <div class="qmap-zoom"><button type="button" data-qz="1" aria-label="Приблизить">+</button><button type="button" data-qz="-1" aria-label="Отдалить">−</button></div>`;
+    const img = box.querySelector("img"), wait = box.querySelector(".qmap-wait");
+    const shown = () => wait && wait.remove();
+    if (img.complete && img.naturalWidth) shown(); else img.addEventListener("load", shown, { once: true });
+    let full = false;
     const inner = box.querySelector(".qmap-in"), pinsEl = box.querySelector(".qmap-pins"), linesEl = box.querySelector(".qmap-lines");
     let z = 1, tx = 0, ty = 0, fitTo = null;
     const dims = () => {
@@ -56,6 +62,12 @@
       ty = d.h <= d.bh ? (d.bh - d.h) / 2 : Math.min(0, Math.max(d.bh - d.h, ty));
       inner.style.width = d.w + "px"; inner.style.height = d.h + "px";
       inner.style.transform = `translate(${tx}px, ${ty}px)`;
+      if (!full && d.w * (window.devicePixelRatio || 1) > 2600) { // увеличили — подгружаем подробную карту, потом подменяем
+        full = true;
+        const big = new Image();
+        big.onload = () => { img.src = SRC_FULL; };
+        big.src = SRC_FULL;
+      }
     }
     function zoomAt(k, cx, cy) {
       const nz = Math.max(1, Math.min(MAX_ZOOM, z * k)), f = nz / z;
@@ -149,5 +161,7 @@
     return { setPins, setLines, view, el: box };
   }
 
-  window.QuizMap = { create, distance, km };
+  // заранее скачать лёгкую карту, пока идёт лобби (чтобы на вопросе она появилась сразу)
+  const prefetch = () => { const i = new Image(); i.src = SRC; };
+  window.QuizMap = { create, distance, km, prefetch };
 })();

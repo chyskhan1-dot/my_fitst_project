@@ -173,6 +173,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .step .ava { font-size: 1.5em; }
 .ava.emo { background: var(--panel); box-shadow: none; font-size: 1.15em; }
 .chip.off { opacity: .5; }
+#to-player { text-decoration: none; white-space: nowrap; }
 .sound { font: inherit; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 .sound.blocked { border-color: var(--accent); color: var(--accent); animation: blink2 1.2s ease-in-out infinite; }
 @keyframes blink2 { 50% { opacity: .5; } }
@@ -391,7 +392,7 @@ button.fd-slot:hover { background: #2a3bb0; }
 <div class="stage">
   <div class="top">
     <span class="brand" id="brand">Квиз</span>
-    <span class="row-right"><span id="progress"></span> <button class="sound" id="sound" type="button" aria-label="Звук">🔊</button></span>
+    <span class="row-right"><span id="progress"></span> <a class="sound" id="to-player" href="/" hidden>📱 В игру</a> <button class="sound" id="sound" type="button" aria-label="Звук">🔊</button></span>
   </div>
   <main id="main"><h2 class="muted waiting">Подключаюсь к серверу</h2></main>
   <div class="actions" id="actions"></div>
@@ -602,6 +603,10 @@ function soundButton() {
 
 function render(s) {
   document.getElementById("brand").textContent = `${s.title} · комната ${s.room}`;
+  // это устройство ещё и игрок — кнопка вернуться к своему телефонному экрану
+  const tp = document.getElementById("to-player");
+  let mine = ""; try { mine = localStorage.getItem("quiz-pid-" + room) || ""; } catch {}
+  tp.hidden = !mine || !s.players.some((p) => p.id === mine); tp.href = "/?room=" + room;
   document.title = s.title + " — ведущий";
   const prog = document.getElementById("progress");
   prog.innerHTML = s.index >= 0 && s.phase !== "final" ? dots(s) : `Игроков: ${s.players.length}`;

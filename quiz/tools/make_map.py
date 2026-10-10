@@ -4,6 +4,7 @@
 # Запуск из папки quiz: python3 tools/make_map.py <папка с geojson>  → media/map/world.svg
 # Картинку для игры (media/map/world.jpg, 4096×2048) снимает с этого SVG браузер: открыть SVG
 # в Chromium с окном 4096×2048 и сохранить скриншот в JPEG (качество 85).
+# Лёгкая версия для медленного интернета: convert media/map/world.jpg -resize 2048x1024 -quality 82 -strip media/map/world-2k.jpg
 import json, os, sys
 
 W, H = 4096, 2048  # равнопромежуточная проекция: долгота → x, широта → y

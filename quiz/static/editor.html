@@ -196,7 +196,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text" || type === "number" || type === "map") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si };
     }),
   };
 }
@@ -222,6 +222,7 @@ function toPack() {
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
       if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();
       if (q.level) q2.level = q.level;
+      if (q.si === false) q2.si = false; // не для «Своей игры» (без вариантов не сыграть)
       if (Number(q.seconds) > 0) q2.seconds = Math.max(5, Math.min(120, Math.round(Number(q.seconds))));
       return q2;
     }),

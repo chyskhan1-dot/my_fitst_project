@@ -51,6 +51,9 @@
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы. Картинки к вопросам: `media/signs/`
   (знаки и светофоры, рисует `tools/make_signs.py`), `media/pics/` — Microsoft Fluent Emoji (MIT, `media/pics/LICENSE`,
   брать с GitHub `microsoft/fluentui-emoji`, папки `3D`). Картинка не должна подсказывать ответ — она сама вопрос.
+  Смайлики (аватарки, ребусы, метки на карте) рисуются картинками: `QuizEmoji.html()` из `static/emoji.js`, файлы —
+  `media/emoji/<коды>.png`; новые смайлики в `AVATARS` или ребусах — докачать `tools/fetch_emoji.py`.
+  Кнопки форм на телефоне срабатывают по касанию (`pointerdown` в play.html) — иначе клавиатура сдвигает экран и нажатие теряется.
 - `static/learn.html` — тренировка (`/learn`): один игрок, свой ответ проверяет `POST /api/learn/text`,
   прогресс — в localStorage (`quiz-learn`). Владелец решил: тренировка только по странам — в меню лишь
   подборки `COLLECTIONS` («Страны мира» = темы Флаги/Столицы/Страны и города из `general`).

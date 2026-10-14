@@ -92,7 +92,7 @@
     function setPins(list) {
       pinsEl.innerHTML = list.map((p) => {
         const [x, y] = frac(p.point);
-        return `<div class="qpin ${p.kind || ""}" style="left:${x * 100}%;top:${y * 100}%"><span><i>${esc(p.icon || "")}</i></span>${p.label ? `<small>${esc(p.label)}</small>` : ""}</div>`;
+        return `<div class="qpin ${p.kind || ""}" style="left:${x * 100}%;top:${y * 100}%"><span><i>${window.QuizEmoji ? QuizEmoji.html(p.icon || "") : esc(p.icon || "")}</i></span>${p.label ? `<small>${esc(p.label)}</small>` : ""}</div>`;
       }).join("");
     }
     function setLines(pairs) {

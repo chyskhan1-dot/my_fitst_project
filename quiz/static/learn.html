@@ -90,6 +90,7 @@ input.answer { font: 700 22px var(--body); padding: 16px; border-radius: 16px; b
 </div>
 <script src="/static/pack.js"></script>
 <script src="/static/music.js"></script>
+<script src="/static/emoji.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const LEVELS = [["any", "Любая"], ["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
@@ -184,7 +185,7 @@ function next() {
   $counter.textContent = `${s.done.size} из ${s.total}`;
   const q = s.q, type = q.type || "choice";
   const media = (q.image ? `<img class="qimg" src="${esc(QuizPack.mediaSrc(q.image))}" alt="Картинка к вопросу">` : "")
-    + (q.emoji ? `<div class="emoji-pic">${esc(q.emoji)}</div>` : "")
+    + (q.emoji ? `<div class="emoji-pic">${window.QuizEmoji ? QuizEmoji.html(q.emoji) : esc(q.emoji)}</div>` : "")
     + (q.melody ? `<button class="btn ghost" id="play-melody" type="button">▶ Послушать мелодию</button>` : "")
     + (q.audio ? `<audio controls src="${esc(QuizPack.mediaSrc(q.audio))}"></audio>` : "");
   let controls = "";

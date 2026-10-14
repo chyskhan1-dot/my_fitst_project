@@ -55,7 +55,8 @@
   Поле `answer_image` — картинка к ответу (после ответа: host/play/learn, редактор, колонка CSV `Картинка к ответу`):
   флаг, если ответ — страна; портрет, если человек (`media/people/`, только общественное достояние);
   иначе Fluent Emoji (`media/pics/ans-*.png`).
-  `media/art/` — картины (общественное достояние, Wikimedia Commons; источники — `media/art/CREDITS.md`).
+  `media/art/` — картины (общественное достояние, Wikimedia Commons; источники — `media/art/CREDITS.md`),
+  `media/space/` — снимки NASA (общественное достояние; `media/space/CREDITS.md`).
   Wikimedia из этой среды: API (`commons.wikimedia.org/w/api.php`) часто отвечает 429, а `thumb.wikimedia.org`
   закрыт — файлы брать напрямую с `upload.wikimedia.org/wikipedia/commons/thumb/<md5[0]>/<md5[:2]>/<Имя>/960px-<Имя>`
   (md5 от имени файла с «_» вместо пробелов; размеры только стандартные: 500, 960, 1280).

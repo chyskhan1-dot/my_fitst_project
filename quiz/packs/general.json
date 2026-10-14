@@ -12,7 +12,7 @@
    "answer": 1,
    "theme": "Космос",
    "level": "easy",
-   "answer_image": "media/pics/ans-ringed-planet.png"
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "q": "Сколько струн у классической гитары?",
@@ -1231,7 +1231,7 @@
    "answer": 2,
    "theme": "Космос",
    "level": "normal",
-   "answer_image": "media/people/armstrong.jpg"
+   "answer_image": "media/space/aldrin.jpg"
   },
   {
    "type": "text",
@@ -1511,7 +1511,8 @@
    ],
    "answer": 1,
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/space/venus.jpg"
   },
   {
    "q": "Сколько планет в Солнечной системе?",
@@ -3087,7 +3088,8 @@
     "Юпитер",
     "Меркурий"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "q": "Вокруг какой планеты вращается Ганимед — самый большой спутник в Солнечной системе?",
@@ -3100,7 +3102,7 @@
     "Уран"
    ],
    "answer": 2,
-   "answer_image": "media/pics/ans-ringed-planet.png"
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "q": "Сколько спутников у Марса?",
@@ -3112,7 +3114,8 @@
     "2",
     "4"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "q": "Сколько будет 15% от 200?",
@@ -6327,7 +6330,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 6371,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/space/earth.jpg"
   },
   {
    "type": "number",
@@ -6335,7 +6339,8 @@
    "theme": "Космос",
    "level": "hard",
    "answer": 687,
-   "unit": "суток"
+   "unit": "суток",
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "type": "number",
@@ -6343,7 +6348,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 150,
-   "unit": "млн км"
+   "unit": "млн км",
+   "answer_image": "media/space/earth.jpg"
   },
   {
    "type": "number",
@@ -6351,7 +6357,8 @@
    "theme": "Космос",
    "level": "hard",
    "answer": 464,
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/space/venus.jpg"
   },
   {
    "type": "number",
@@ -6860,7 +6867,7 @@
     "Венера"
    ],
    "answer": 2,
-   "answer_image": "media/pics/ans-ringed-planet.png"
+   "answer_image": "media/space/uranus.jpg"
   },
   {
    "q": "Какая звезда — ближайшая к Солнцу?",
@@ -10210,6 +10217,136 @@
    "image": "media/flags/south-africa.png",
    "theme": "Флаги",
    "level": "normal"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Луна",
+    "Меркурий",
+    "Марс",
+    "Уран"
+   ],
+   "answer": 1,
+   "image": "media/space/mercury.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Меркурий",
+    "Юпитер",
+    "Венера",
+    "Уран"
+   ],
+   "answer": 2,
+   "image": "media/space/venus.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Марс",
+    "Нептун",
+    "Юпитер"
+   ],
+   "answer": 0,
+   "image": "media/space/earth.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Юпитер",
+    "Марс",
+    "Меркурий"
+   ],
+   "answer": 2,
+   "image": "media/space/mars.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Венера",
+    "Юпитер"
+   ],
+   "answer": 3,
+   "image": "media/space/jupiter.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Сатурн",
+    "Меркурий",
+    "Юпитер"
+   ],
+   "answer": 1,
+   "image": "media/space/saturn.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Меркурий",
+    "Сатурн"
+   ],
+   "answer": 0,
+   "image": "media/space/uranus.jpg",
+   "theme": "Космос",
+   "level": "normal"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Венера",
+    "Марс"
+   ],
+   "answer": 1,
+   "image": "media/space/neptune.jpg",
+   "theme": "Космос",
+   "level": "normal"
+  },
+  {
+   "q": "Как называют этот знаменитый снимок телескопа «Хаббл»?",
+   "options": [
+    "Глаз Бога",
+    "Крабовидная туманность",
+    "Столпы творения",
+    "Конская Голова"
+   ],
+   "answer": 2,
+   "image": "media/space/pillars.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Как называется эта станция на орбите Земли?",
+   "options": [
+    "«Мир»",
+    "«Салют-7»",
+    "«Тяньгун»",
+    "МКС"
+   ],
+   "answer": 3,
+   "image": "media/space/iss.jpg",
+   "theme": "Космос",
+   "level": "easy"
   }
  ]
 }

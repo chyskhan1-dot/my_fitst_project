@@ -7589,7 +7589,8 @@
    ],
    "place": "Агра, Индия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/taj-mahal.jpg"
   },
   {
    "type": "map",
@@ -7668,7 +7669,8 @@
    ],
    "place": "юг Англии, Великобритания",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/stonehenge.jpg"
   },
   {
    "type": "map",
@@ -7714,7 +7716,8 @@
    ],
    "place": "Пиза, Италия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/pisa.jpg"
   },
   {
    "type": "map",
@@ -7725,7 +7728,8 @@
    ],
    "place": "Сан-Франциско, США",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/golden-gate.jpg"
   },
   {
    "type": "map",
@@ -7736,7 +7740,8 @@
    ],
    "place": "Лондон, Великобритания",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/big-ben.jpg"
   },
   {
    "type": "map",
@@ -7793,7 +7798,8 @@
    ],
    "place": "Лхаса, Тибет (Китай)",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/potala.jpg"
   },
   {
    "type": "map",
@@ -7893,7 +7899,8 @@
    ],
    "place": "Гималаи, граница Непала и Китая",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/everest.jpg"
   },
   {
    "type": "map",
@@ -7916,7 +7923,8 @@
    ],
    "place": "Альпы, граница Франции и Италии",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/montblanc.jpg"
   },
   {
    "type": "map",
@@ -7961,7 +7969,8 @@
    ],
    "place": "центр Австралии",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/uluru.jpg"
   },
   {
    "type": "map",
@@ -8016,7 +8025,8 @@
    ],
    "place": "Камчатка, Россия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/klyuchevskaya.jpg"
   },
   {
    "type": "map",
@@ -8038,7 +8048,8 @@
    ],
    "place": "Йеллоустон, США",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/old-faithful.jpg"
   },
   {
    "type": "map",
@@ -8060,7 +8071,8 @@
    ],
    "place": "юг Африки, ЮАР",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/cape-good-hope.jpg"
   },
   {
    "type": "map",
@@ -8137,7 +8149,8 @@
    ],
    "place": "Мали, Африка",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/timbuktu.jpg"
   },
   {
    "type": "map",
@@ -8346,7 +8359,8 @@
    ],
    "place": "Монако",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/monaco.jpg"
   },
   {
    "type": "map",
@@ -8412,7 +8426,8 @@
    ],
    "place": "Гавайи, США",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/pearl-harbor.jpg"
   },
   {
    "type": "map",
@@ -8423,7 +8438,8 @@
    ],
    "place": "у Неаполя, Италия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/pompeii.jpg"
   },
   {
    "type": "map",
@@ -8500,7 +8516,8 @@
    ],
    "place": "Казахстан",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/baikonur.jpg"
   },
   {
    "type": "map",

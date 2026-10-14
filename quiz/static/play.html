@@ -967,7 +967,7 @@ async function pollOnce() {
     lastState = s;
     if (!pid) {
       const hb = document.getElementById("hostbar");
-      if (hb) { hb.innerHTML = ""; document.body.classList.remove("has-hostbar"); }
+      if (hb) { hb.innerHTML = ""; delete hb.dataset.html; document.body.classList.remove("has-hostbar"); }
       const teams = s.phase === "lobby" ? s.settings.teams : 0;
       if (!document.getElementById("join") || joinTeams !== teams) joinForm();
       return;

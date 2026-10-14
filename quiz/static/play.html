@@ -883,14 +883,14 @@ function render(s) {
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
-        ${s.qtype === "map" ? `<div class="phone-map small" id="phone-map"></div>` : ""}
+        ${s.qtype === "map" ? `<div class="phone-map small" id="reveal-map"></div>` : ""}
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
         ${s.settings.leaders ? "" : standings(s, me)}
       </div>`;
     if (s.qtype === "map") {
-      const m = QuizMap.create(document.getElementById("phone-map"));
+      const m = QuizMap.create(document.getElementById("reveal-map"));
       const mine = Array.isArray(me.answer) ? [me.answer] : [];
       m.setLines(mine.map((p) => [p, s.correct_point]));
       m.setPins([...mine.map((p) => ({ point: p, kind: "me", icon: "📍", label: "Ты" })), { point: s.correct_point, kind: "right", icon: "✓", label: s.place || "Здесь" }]);

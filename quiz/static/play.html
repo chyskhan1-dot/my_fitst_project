@@ -226,6 +226,7 @@ body.has-hostbar { padding-bottom: 84px; }
 
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
+<script src="/static/emoji.js"></script>
 <script>
 const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
@@ -354,11 +355,11 @@ function codeForm() {
 const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
 let pickAva = recall("quiz-avatar") || null;
-const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${esc(p.avatar)}</span>` : ava(p.name, cls));
+const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
 
 function avatarPicker(list, selected) {
   return `<div class="avatars" role="group" aria-label="Аватарка">${list.map((a) =>
-    `<button type="button" class="av ${a === selected ? "on" : ""}" data-ava="${esc(a)}" aria-label="${esc(a)}">${esc(a)}</button>`).join("")}</div>`;
+    `<button type="button" class="av ${a === selected ? "on" : ""}" data-ava="${esc(a)}" aria-label="${esc(a)}">${QuizEmoji.html(a)}</button>`).join("")}</div>`;
 }
 
 function joinForm() {
@@ -545,7 +546,7 @@ function renderSi(s, me) {
   } else if (s.phase === "si_cat_give" && m.is_chooser) {
     $main.innerHTML = scene(`<h1>🐱 Кот в мешке!</h1><p class="muted">Тема «${esc(c.theme)}», ${c.stake} очков. Кому отдать вопрос?</p>
       <div class="stack" style="width:100%">${s.players.filter((p) => p.id !== si.chooser.id).map((p) =>
-        `<button class="btn ghost wide" data-give="${esc(p.id)}">${esc(p.avatar || "")} ${esc(p.name)}</button>`).join("")}</div>`);
+        `<button class="btn ghost wide" data-give="${esc(p.id)}">${QuizEmoji.html(p.avatar || "")} ${esc(p.name)}</button>`).join("")}</div>`);
   } else if (s.phase === "si_cat_give") {
     $main.innerHTML = scene(`<h1>🐱 Кот в мешке!</h1><p class="muted">${chooser} выбирает, кому отдать вопрос</p>`);
   } else if (s.phase === "si_stake" && m.is_chooser) {
@@ -824,7 +825,7 @@ function render(s) {
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
-      ${s.emoji ? `<div class="emoji-pic">${esc(s.emoji)}</div>` : ""}
+      ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
       ${answerControls(s)}
       <div class="extra">${me.doubles > 0 ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
@@ -1007,6 +1008,20 @@ function confetti(on) {
     if (t - t0 < 6000) requestAnimationFrame(frame); else cv.hidden = true;
   })(t0);
 }
+
+// На телефоне первое касание кнопки под полем ввода закрывает клавиатуру: экран сдвигается, и нажатие
+// приходится мимо кнопки. Поэтому кнопку формы срабатываем уже при касании, пока экран не сдвинулся.
+document.addEventListener("pointerdown", (e) => {
+  const b = e.target.closest("form button[type=submit]");
+  if (!b || b.disabled || e.pointerType === "mouse") return;
+  e.preventDefault();
+  if (b.form.requestSubmit) b.form.requestSubmit(b); else b.click();
+  b.dataset.tapped = Date.now();
+});
+document.addEventListener("click", (e) => { // обычный «клик» после такого касания — уже лишний
+  const b = e.target.closest("form button[type=submit]");
+  if (b && Date.now() - (b.dataset.tapped || 0) < 800) { e.preventDefault(); e.stopPropagation(); }
+}, true);
 
 document.addEventListener("click", async (e) => {
   const ss = e.target.closest("[data-share-site]");

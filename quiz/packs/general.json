@@ -7542,7 +7542,8 @@
    ],
    "place": "Париж, Франция",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/eiffel.jpg"
   },
   {
    "type": "map",
@@ -7553,7 +7554,8 @@
    ],
    "place": "Рим, Италия",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/colosseum.jpg"
   },
   {
    "type": "map",
@@ -7575,7 +7577,8 @@
    ],
    "place": "Анды, Перу",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/machu-picchu.jpg"
   },
   {
    "type": "map",
@@ -7597,7 +7600,8 @@
    ],
    "place": "Гиза у Каира, Египет",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/giza.jpg"
   },
   {
    "type": "map",
@@ -7652,7 +7656,8 @@
    ],
    "place": "остров Пасхи, Чили",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/moai-easter.jpg"
   },
   {
    "type": "map",
@@ -7674,7 +7679,8 @@
    ],
    "place": "Афины, Греция",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/acropolis.jpg"
   },
   {
    "type": "map",
@@ -7685,7 +7691,8 @@
    ],
    "place": "Дубай, ОАЭ",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/burj-khalifa.jpg"
   },
   {
    "type": "map",
@@ -7762,7 +7769,8 @@
    ],
    "place": "Бавария, Германия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/neuschwanstein.jpg"
   },
   {
    "type": "map",
@@ -7773,7 +7781,8 @@
    ],
    "place": "Гранада, Испания",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/alhambra.jpg"
   },
   {
    "type": "map",
@@ -7795,7 +7804,8 @@
    ],
    "place": "остров Ява, Индонезия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/borobudur.jpg"
   },
   {
    "type": "map",
@@ -7894,7 +7904,8 @@
    ],
    "place": "Кавказ, Россия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/elbrus.jpg"
   },
   {
    "type": "map",
@@ -7938,7 +7949,8 @@
    ],
    "place": "Аризона, США",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/grand-canyon.jpg"
   },
   {
    "type": "map",

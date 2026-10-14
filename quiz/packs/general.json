@@ -332,7 +332,8 @@
    ],
    "answer": 3,
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "type": "text",
@@ -342,7 +343,8 @@
     "Лев Толстой"
    ],
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/tolstoy.jpg"
   },
   {
    "q": "Как фамилия главного героя романа «Преступление и наказание»?",
@@ -366,7 +368,8 @@
    ],
    "answer": 0,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/gogol.jpg"
   },
   {
    "q": "Кто написал рассказ «Муму»?",
@@ -378,7 +381,8 @@
    ],
    "answer": 3,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/turgenev.jpg"
   },
   {
    "type": "order",
@@ -402,7 +406,8 @@
    ],
    "answer": 2,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/lermontov.jpg"
   },
   {
    "type": "text",
@@ -475,7 +480,8 @@
    ],
    "answer": 0,
    "theme": "История",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/peter1.jpg"
   },
   {
    "q": "В каком году экспедиция Колумба достигла Америки?",
@@ -823,7 +829,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/people/mendeleev.jpg"
   },
   {
    "q": "Какого газа больше всего в воздухе?",
@@ -1528,7 +1535,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/einstein.jpg"
   },
   {
    "q": "Что измеряют в герцах?",
@@ -2349,7 +2357,7 @@
     "Людвиг ван Бетховен"
    ],
    "answer": 3,
-   "answer_image": "media/pics/ans-musical-notes.png"
+   "answer_image": "media/people/beethoven.jpg"
   },
   {
    "type": "text",
@@ -2788,7 +2796,8 @@
     "Пётр I",
     "Александр I"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/people/peter1.jpg"
   },
   {
    "q": "Как называлась столица Византийской империи?",
@@ -2824,7 +2833,8 @@
     "Пётр Багратион",
     "Михаил Барклай-де-Толли"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/people/kutuzov.jpg"
   },
   {
    "type": "order",
@@ -2860,7 +2870,8 @@
     "Александр Пушкин",
     "Иван Тургенев"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "q": "Кто написал роман «Отцы и дети»?",
@@ -2872,7 +2883,8 @@
     "Иван Гончаров",
     "Иван Тургенев"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/turgenev.jpg"
   },
   {
    "type": "text",
@@ -2882,7 +2894,8 @@
    "answer": [
     "Грибоедов",
     "Александр Грибоедов"
-   ]
+   ],
+   "answer_image": "media/people/griboyedov.jpg"
   },
   {
    "q": "Кто автор «Трёх мушкетёров»?",
@@ -2906,7 +2919,8 @@
     "Артур Конан Дойл",
     "Марк Твен"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/verne.jpg"
   },
   {
    "q": "Как зовут сыщика, которого придумал Артур Конан Дойл?",
@@ -2931,7 +2945,8 @@
     "Лев Толстой",
     "Антон Чехов"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/chekhov.jpg"
   },
   {
    "q": "Какой город — столица Бразилии?",
@@ -6597,7 +6612,8 @@
     "Вильгельм Рентген",
     "Анри Беккерель"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/becquerel.jpg"
   },
   {
    "q": "Сколько раз Мария Склодовская-Кюри получала Нобелевскую премию?",

@@ -53,7 +53,8 @@
   (знаки и светофоры, рисует `tools/make_signs.py`), `media/pics/` — Microsoft Fluent Emoji (MIT, `media/pics/LICENSE`,
   брать с GitHub `microsoft/fluentui-emoji`, папки `3D`). Картинка не должна подсказывать ответ — она сама вопрос.
   Поле `answer_image` — картинка к ответу (после ответа: host/play/learn, редактор, колонка CSV `Картинка к ответу`):
-  флаг, если ответ — страна, иначе Fluent Emoji (`media/pics/ans-*.png`).
+  флаг, если ответ — страна; портрет, если человек (`media/people/`, только общественное достояние);
+  иначе Fluent Emoji (`media/pics/ans-*.png`).
   `media/art/` — картины (общественное достояние, Wikimedia Commons; источники — `media/art/CREDITS.md`).
   Wikimedia из этой среды: API (`commons.wikimedia.org/w/api.php`) часто отвечает 429, а `thumb.wikimedia.org`
   закрыт — файлы брать напрямую с `upload.wikimedia.org/wikipedia/commons/thumb/<md5[0]>/<md5[:2]>/<Имя>/960px-<Имя>`

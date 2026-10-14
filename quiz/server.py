@@ -291,6 +291,7 @@ def clean_pack(data, store=None, scope="_"):
                 "options": options,
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
+                "answer_image": media_ref(q.get("answer_image"), "image", store, scope),  # показывается после ответа
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
@@ -1602,6 +1603,7 @@ class Game:
             s["right_total"] = len(right)
             s["answers_total"] = len(self.answers)
         if self.phase == "reveal":
+            s["answer_image"] = q.get("answer_image")
             results = [a.get("result") for a in self.answers.values()]
             s["right_count"] = results.count("right")
             s["partial_count"] = results.count("partial")

@@ -200,6 +200,7 @@ a.btn { text-decoration: none; display: inline-block; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 
 /* картинка и аудио в вопросе */
+.qimg.answer-pic { max-height: min(34vh, 320px); }
 .qmedia { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .qimg { max-width: 100%; max-height: 36vh; border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); background: #fff; }
 .qimg.small { max-height: 18vh; }
@@ -512,6 +513,7 @@ function questionBody(s) {
 function revealBody(s) {
   if (s.qtype === "map") {
     return `${s.place ? `<div class="place rise">📍 ${esc(s.place)}</div>` : ""}
+      ${s.answer_image ? `<div class="qmedia pop"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>` : ""}
       <div class="map-reveal"><div class="host-map" id="host-map"></div>
       ${s.map_answers.length ? `<ol class="num-list">${s.map_answers.map((a, i) => `
         <li class="${a.best ? "best" : ""}" style="--i:${i}"><span class="pos">${i + 1}</span>${avaP(a)}<span class="nm">${esc(a.name)}${a.best ? " 🎯" : ""}</span>
@@ -684,7 +686,8 @@ function render(s) {
     const partial = s.partial_count ? `, частично: <b style="color:var(--ink)">${s.partial_count}</b>` : "";
     $main.innerHTML = `
       <div><div class="eyebrow">Правильный ответ</div><h2>${esc(s.question)}</h2></div>
-      ${s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
+      ${s.answer_image && s.qtype !== "map" ? `<div class="qmedia pop"><img class="qimg answer-pic" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>`
+        : s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
       ${revealBody(s)}
       <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>`;
     mountMap(s);

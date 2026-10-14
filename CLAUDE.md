@@ -47,10 +47,13 @@
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
   `static/music.js` — синтезированная музыка (Web Audio, без файлов).
 - `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
-  темы внутри `general.json`, флаги рисует `tools/make_flags.py` (только без гербов, владелец так решил).
+  темы внутри `general.json`; простые флаги рисует `tools/make_flags.py` (SVG), флаги с гербами — PNG с Wikimedia Commons
+  (владелец разрешил; источники — `media/flags/CREDITS.md`). Нет флагов Афганистана и Сирии (спорные/сменились).
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы. Картинки к вопросам: `media/signs/`
   (знаки и светофоры, рисует `tools/make_signs.py`), `media/pics/` — Microsoft Fluent Emoji (MIT, `media/pics/LICENSE`,
   брать с GitHub `microsoft/fluentui-emoji`, папки `3D`). Картинка не должна подсказывать ответ — она сама вопрос.
+  Поле `answer_image` — картинка к ответу (после ответа: host/play/learn, редактор, колонка CSV `Картинка к ответу`):
+  флаг, если ответ — страна, иначе Fluent Emoji (`media/pics/ans-*.png`).
   `media/art/` — картины (общественное достояние, Wikimedia Commons; источники — `media/art/CREDITS.md`).
   Wikimedia из этой среды: API (`commons.wikimedia.org/w/api.php`) часто отвечает 429, а `thumb.wikimedia.org`
   закрыт — файлы брать напрямую с `upload.wikimedia.org/wikipedia/commons/thumb/<md5[0]>/<md5[:2]>/<Имя>/960px-<Имя>`

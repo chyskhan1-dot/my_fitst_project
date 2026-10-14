@@ -494,7 +494,7 @@
    "answer": 1,
    "theme": "История",
    "level": "normal",
-   "answer_image": "media/pics/ans-sailboat.png"
+   "answer_image": "media/people/columbus.jpg"
   },
   {
    "type": "order",
@@ -1231,7 +1231,7 @@
    "answer": 2,
    "theme": "Космос",
    "level": "normal",
-   "answer_image": "media/pics/ans-crescent-moon.png"
+   "answer_image": "media/people/armstrong.jpg"
   },
   {
    "type": "text",
@@ -1242,7 +1242,7 @@
    ],
    "theme": "Космос",
    "level": "normal",
-   "answer_image": "media/pics/ans-astronaut.png"
+   "answer_image": "media/people/armstrong.jpg"
   },
   {
    "q": "Кто первым получил патент на телефон?",
@@ -1255,7 +1255,7 @@
    "answer": 2,
    "theme": "Изобретения и техника",
    "level": "hard",
-   "answer_image": "media/pics/ans-telephone.png"
+   "answer_image": "media/people/bell.jpg"
   },
   {
    "type": "order",
@@ -2644,7 +2644,7 @@
     "Луи Пастер"
    ],
    "answer": 1,
-   "answer_image": "media/pics/ans-firecracker.png"
+   "answer_image": "media/people/nobel.jpg"
   },
   {
    "q": "Какая компания создала Windows?",
@@ -2772,7 +2772,8 @@
     "Алексей Михайлович",
     "Иван Грозный"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/mikhail-romanov.jpg"
   },
   {
    "q": "В каком году распался СССР?",

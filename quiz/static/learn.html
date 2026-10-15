@@ -252,10 +252,11 @@ async function judge(value) {
     <div class="verdict ${ok ? "ok" : "no"}"><b class="big ${ok ? "good" : "bad"}">${ok ? "Верно!" : "Не совсем"}</b>
       ${said ? `<span class="muted">${said}</span>` : ""}
       ${ok && type === "choice" ? "" : `<span>Правильный ответ: <b>${answerText}</b></span>`}
+      ${q.answer_image ? `<img class="qimg" style="max-height:18vh" src="${esc(QuizPack.mediaSrc(q.answer_image))}" alt="Картинка к ответу">` : ""}
       ${ok ? "" : `<span class="muted">Этот вопрос вернётся чуть позже</span>`}</div>
-    <button class="btn ghost auto" id="next" style="width:100%;margin-top:10px;--t:${ok ? 1.2 : 2.8}s">Дальше</button>`;
+    <button class="btn ghost auto" id="next" style="width:100%;margin-top:10px;--t:${ok ? (q.answer_image ? 2 : 1.2) : 2.8}s">Дальше</button>`;
   // следующий вопрос — сам: после верного ответа быстро, после ошибки — чтобы успеть прочитать
-  s.autoTimer = setTimeout(next, ok ? 1200 : 2800);
+  s.autoTimer = setTimeout(next, ok ? (q.answer_image ? 2000 : 1200) : 2800); // с картинкой к ответу — чуть дольше
 }
 
 function answerOf(q) {

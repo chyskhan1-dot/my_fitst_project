@@ -11,7 +11,8 @@
    ],
    "answer": 1,
    "theme": "Космос",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "q": "Сколько струн у классической гитары?",
@@ -23,7 +24,8 @@
    ],
    "answer": 2,
    "theme": "Искусство",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-guitar.png"
   },
   {
    "q": "Какая самая длинная река из тех, что целиком текут по России?",
@@ -35,7 +37,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Кто написал роман «Мастер и Маргарита»?",
@@ -47,7 +50,8 @@
    ],
    "answer": 0,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-black-cat.png"
   },
   {
    "q": "Сколько минут в одних сутках?",
@@ -59,7 +63,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-alarm-clock.png"
   },
   {
    "q": "Какой химический элемент обозначается символом «O»?",
@@ -71,7 +76,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-lungs.png"
   },
   {
    "q": "В какой стране придумали пиццу «Маргарита»?",
@@ -83,7 +89,8 @@
    ],
    "answer": 3,
    "theme": "Еда",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/italy.svg"
   },
   {
    "q": "Какое животное самое быстрое на суше?",
@@ -107,7 +114,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-triangular-ruler.png"
   },
   {
    "q": "Как называется отрезок от центра окружности до любой её точки?",
@@ -119,7 +127,8 @@
    ],
    "answer": 0,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-hollow-red-circle.png"
   },
   {
    "q": "Сколько будет 7 × 8?",
@@ -131,7 +140,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-multiply.png"
   },
   {
    "q": "Какое из этих чисел НЕ простое?",
@@ -143,7 +153,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Чему равен квадратный корень из 144?",
@@ -155,7 +166,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Чему равна площадь прямоугольника со сторонами 6 и 4 см (в см²)?",
@@ -167,7 +179,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-straight-ruler.png"
   },
   {
    "type": "text",
@@ -177,7 +190,8 @@
     "Правильный"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-triangular-ruler.png"
   },
   {
    "type": "multi",
@@ -193,7 +207,8 @@
     3
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-divide.png"
   },
   {
    "type": "order",
@@ -205,7 +220,8 @@
     "3/4"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Как называется результат деления?",
@@ -217,7 +233,8 @@
    ],
    "answer": 3,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-divide.png"
   },
   {
    "q": "Сколько букв в русском алфавите?",
@@ -229,7 +246,8 @@
    ],
    "answer": 2,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-open-book.png"
   },
   {
    "q": "Какая часть речи обозначает действие предмета?",
@@ -241,7 +259,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-person-running.png"
   },
   {
    "q": "В каком слове ударение падает на последний слог?",
@@ -254,7 +273,8 @@
    "answer": 0,
    "theme": "Русский язык",
    "level": "hard",
-   "si": false
+   "si": false,
+   "answer_image": "media/pics/ans-telephone-receiver.png"
   },
   {
    "q": "Как называется член предложения, который отвечает на вопрос «кто?» или «что?»?",
@@ -266,7 +286,8 @@
    ],
    "answer": 0,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-memo.png"
   },
   {
    "type": "text",
@@ -276,7 +297,8 @@
     "Синоним"
    ],
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-lion.png"
   },
   {
    "type": "multi",
@@ -292,7 +314,8 @@
     3
    ],
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-writing-hand.png"
   },
   {
    "q": "Сколько падежей в русском языке?",
@@ -304,7 +327,8 @@
    ],
    "answer": 1,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-books.png"
   },
   {
    "q": "Как называются слова с противоположным значением?",
@@ -316,7 +340,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-yin-yang.png"
   },
   {
    "q": "Кто написал роман в стихах «Евгений Онегин»?",
@@ -328,7 +353,8 @@
    ],
    "answer": 3,
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "type": "text",
@@ -338,7 +364,8 @@
     "Лев Толстой"
    ],
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/tolstoy.jpg"
   },
   {
    "q": "Как фамилия главного героя романа «Преступление и наказание»?",
@@ -350,7 +377,8 @@
    ],
    "answer": 0,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/dostoevsky.jpg"
   },
   {
    "q": "Кто написал поэму «Мёртвые души»?",
@@ -362,7 +390,8 @@
    ],
    "answer": 0,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/gogol.jpg"
   },
   {
    "q": "Кто написал рассказ «Муму»?",
@@ -374,7 +403,8 @@
    ],
    "answer": 3,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/turgenev.jpg"
   },
   {
    "type": "order",
@@ -386,7 +416,8 @@
     "Чехов"
    ],
    "theme": "Литература",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "q": "Кто автор романа «Герой нашего времени»?",
@@ -398,7 +429,8 @@
    ],
    "answer": 2,
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/lermontov.jpg"
   },
   {
    "type": "text",
@@ -408,7 +440,8 @@
     "Иван Крылов"
    ],
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-fox.png"
   },
   {
    "type": "multi",
@@ -424,7 +457,8 @@
     3
    ],
    "theme": "Литература",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/lermontov.jpg"
   },
   {
    "q": "Как звали девочку, которая попала в Страну чудес?",
@@ -436,7 +470,8 @@
    ],
    "answer": 3,
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-rabbit.png"
   },
   {
    "q": "В каком году началась Великая Отечественная война?",
@@ -448,7 +483,8 @@
    ],
    "answer": 1,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-military-helmet.png"
   },
   {
    "type": "text",
@@ -458,7 +494,8 @@
     "Юрий Гагарин"
    ],
    "theme": "Космос",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-rocket.png"
   },
   {
    "q": "Какой город основал Пётр I в 1703 году?",
@@ -470,7 +507,8 @@
    ],
    "answer": 0,
    "theme": "История",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/people/peter1.jpg"
   },
   {
    "q": "В каком году экспедиция Колумба достигла Америки?",
@@ -482,7 +520,8 @@
    ],
    "answer": 1,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/columbus.jpg"
   },
   {
    "type": "order",
@@ -494,7 +533,8 @@
     "Полёт Гагарина"
    ],
    "theme": "История",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-scroll.png"
   },
   {
    "q": "Кто был первым президентом США?",
@@ -506,7 +546,8 @@
    ],
    "answer": 2,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/washington.jpg"
   },
   {
    "q": "Как называется битва на Чудском озере в 1242 году?",
@@ -518,7 +559,8 @@
    ],
    "answer": 3,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-ice.png"
   },
   {
    "type": "multi",
@@ -534,7 +576,8 @@
     1
    ],
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-handshake.png"
   },
   {
    "q": "Как назывались правители Древнего Египта?",
@@ -546,7 +589,8 @@
    ],
    "answer": 0,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-crown.png"
   },
   {
    "q": "Какое озеро — самое глубокое в мире?",
@@ -558,7 +602,8 @@
    ],
    "answer": 0,
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "q": "Какой океан — самый большой?",
@@ -570,7 +615,8 @@
    ],
    "answer": 2,
    "theme": "География",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Какой город — столица Австралии?",
@@ -582,7 +628,8 @@
    ],
    "answer": 3,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/australia.svg"
   },
   {
    "type": "text",
@@ -592,7 +639,8 @@
     "В Африке"
    ],
    "theme": "География",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-desert.png"
   },
   {
    "q": "Какая гора — самая высокая в мире?",
@@ -604,7 +652,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/places/everest.jpg"
   },
   {
    "type": "order",
@@ -616,7 +665,8 @@
     "Австралия"
    ],
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "type": "multi",
@@ -632,7 +682,8 @@
     2
    ],
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "q": "Какая река — самая длинная в Европе?",
@@ -644,7 +695,8 @@
    ],
    "answer": 0,
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Какой орган человека — самый большой по площади и весу?",
@@ -656,7 +708,8 @@
    ],
    "answer": 1,
    "theme": "Человек",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-hand-with-fingers-splayed.png"
   },
   {
    "type": "text",
@@ -665,7 +718,8 @@
     "Фотосинтез"
    ],
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-seedling.png"
   },
   {
    "q": "Сколько камер в сердце человека?",
@@ -677,7 +731,8 @@
    ],
    "answer": 2,
    "theme": "Человек",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-anatomical-heart.png"
   },
   {
    "q": "Какое из этих животных — млекопитающее?",
@@ -689,7 +744,8 @@
    ],
    "answer": 2,
    "theme": "Животные и растения",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-spouting-whale.png"
   },
   {
    "type": "multi",
@@ -705,7 +761,8 @@
     3
    ],
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-ant.png"
   },
   {
    "q": "Какой газ растения поглощают при фотосинтезе?",
@@ -717,7 +774,8 @@
    ],
    "answer": 3,
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-seedling.png"
   },
   {
    "q": "В каких единицах измеряют силу?",
@@ -729,7 +787,8 @@
    ],
    "answer": 0,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-red-apple.png"
   },
   {
    "q": "При какой температуре кипит вода при обычном атмосферном давлении?",
@@ -741,7 +800,8 @@
    ],
    "answer": 1,
    "theme": "Физика и химия",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-hot-beverage.png"
   },
   {
    "type": "text",
@@ -751,7 +811,8 @@
     "Исаак Ньютон"
    ],
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-red-apple.png"
   },
   {
    "q": "Какова скорость света в вакууме (примерно)?",
@@ -763,7 +824,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-flashlight.png"
   },
   {
    "type": "order",
@@ -775,7 +837,8 @@
     "Марс"
    ],
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-sun.png"
   },
   {
    "q": "Какая формула у воды?",
@@ -787,7 +850,8 @@
    ],
    "answer": 1,
    "theme": "Физика и химия",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-droplet.png"
   },
   {
    "type": "text",
@@ -796,7 +860,8 @@
     "Железо"
    ],
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-magnet.png"
   },
   {
    "q": "Кто создал периодическую таблицу химических элементов?",
@@ -808,7 +873,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/people/mendeleev.jpg"
   },
   {
    "q": "Какого газа больше всего в воздухе?",
@@ -820,7 +886,8 @@
    ],
    "answer": 3,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-wind-face.png"
   },
   {
    "q": "Как переводится с английского «Thursday»?",
@@ -832,7 +899,8 @@
    ],
    "answer": 0,
    "theme": "Разное",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-calendar.png"
   },
   {
    "q": "Какой из этих английских глаголов — неправильный?",
@@ -844,7 +912,8 @@
    ],
    "answer": 1,
    "theme": "Разное",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-person-walking.png"
   },
   {
    "q": "Сколько бит в одном байте?",
@@ -856,7 +925,8 @@
    ],
    "answer": 1,
    "theme": "Изобретения и техника",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-computer-disk.png"
   },
   {
    "q": "Какое животное — самое крупное на Земле?",
@@ -868,7 +938,8 @@
    ],
    "answer": 0,
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-whale.png"
   },
   {
    "q": "Сколько ног у паука?",
@@ -880,7 +951,8 @@
    ],
    "answer": 1,
    "theme": "Животные и растения",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-spider.png"
   },
   {
    "q": "Какая из этих птиц не умеет летать?",
@@ -892,7 +964,8 @@
    ],
    "answer": 3,
    "theme": "Животные и растения",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-penguin.png"
   },
   {
    "q": "Чем в основном питается большая панда?",
@@ -904,7 +977,8 @@
    ],
    "answer": 3,
    "theme": "Животные и растения",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-panda.png"
   },
   {
    "type": "text",
@@ -914,7 +988,8 @@
     "Жеребенок"
    ],
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-horse.png"
   },
   {
    "q": "Какое животное называют «кораблём пустыни»?",
@@ -926,7 +1001,8 @@
    ],
    "answer": 0,
    "theme": "Животные и растения",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-camel.png"
   },
   {
    "type": "multi",
@@ -942,7 +1018,8 @@
     3
    ],
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-bear.png"
   },
   {
    "q": "Сколько сердец у осьминога?",
@@ -954,7 +1031,8 @@
    ],
    "answer": 2,
    "theme": "Животные и растения",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-octopus.png"
   },
   {
    "q": "Какое хвойное дерево сбрасывает хвою на зиму?",
@@ -966,7 +1044,8 @@
    ],
    "answer": 0,
    "theme": "Животные и растения",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-fallen-leaf.png"
   },
   {
    "q": "Какой город — столица Канады?",
@@ -978,7 +1057,8 @@
    ],
    "answer": 3,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/canada.png"
   },
   {
    "q": "Какой город — столица Турции?",
@@ -990,7 +1070,8 @@
    ],
    "answer": 3,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/turkey.svg"
   },
   {
    "q": "В какой стране находится древний город Мачу-Пикчу?",
@@ -1002,7 +1083,8 @@
    ],
    "answer": 0,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/peru.svg"
   },
   {
    "q": "Какая страна — самая большая по площади?",
@@ -1014,7 +1096,8 @@
    ],
    "answer": 0,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/russia.svg"
   },
   {
    "type": "text",
@@ -1024,7 +1107,8 @@
     "В Париже"
    ],
    "theme": "Страны и города",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/places/eiffel.jpg"
   },
   {
    "q": "Какой пролив разделяет Евразию и Северную Америку?",
@@ -1036,7 +1120,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "type": "multi",
@@ -1052,7 +1137,8 @@
     2
    ],
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-cityscape.png"
   },
   {
    "type": "order",
@@ -1064,7 +1150,8 @@
     "Россия"
    ],
    "theme": "Страны и города",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-busts-in-silhouette.png"
   },
   {
    "q": "Какой водопад — самый высокий в мире?",
@@ -1088,7 +1175,8 @@
    ],
    "answer": 0,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/places/colosseum.jpg"
   },
   {
    "type": "text",
@@ -1098,7 +1186,8 @@
     "Атлантический океан"
    ],
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-globe-showing-europe-africa.png"
   },
   {
    "q": "В каком городе стоит статуя Христа-Искупителя с раскинутыми руками?",
@@ -1110,7 +1199,8 @@
    ],
    "answer": 1,
    "theme": "Страны и города",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/brazil.png"
   },
   {
    "q": "В какой стране находится часовая башня Биг-Бен?",
@@ -1122,10 +1212,11 @@
    ],
    "answer": 1,
    "theme": "Страны и города",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/uk.svg"
   },
   {
-   "q": "Кто написал картину «Мона Лиза»?",
+   "q": "Кто написал эту картину?",
    "options": [
     "Микеланджело",
     "Рафаэль",
@@ -1134,17 +1225,19 @@
    ],
    "answer": 3,
    "theme": "Искусство",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/art/mona-lisa.jpg"
   },
   {
    "type": "text",
-   "q": "Кто написал картину «Чёрный квадрат»?",
+   "q": "Кто написал эту картину?",
    "answer": [
     "Малевич",
     "Казимир Малевич"
    ],
    "theme": "Искусство",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/art/black-square.jpg"
   },
   {
    "q": "В каком городе прошли первые современные Олимпийские игры в 1896 году?",
@@ -1156,7 +1249,8 @@
    ],
    "answer": 0,
    "theme": "Спорт",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "Какое из семи чудес света сохранилось до наших дней?",
@@ -1168,7 +1262,8 @@
    ],
    "answer": 0,
    "theme": "История",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/places/giza.jpg"
   },
   {
    "q": "Как назывался лайнер, затонувший в 1912 году после столкновения с айсбергом?",
@@ -1180,7 +1275,8 @@
    ],
    "answer": 1,
    "theme": "История",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "q": "В каком году человек впервые высадился на Луну?",
@@ -1192,7 +1288,8 @@
    ],
    "answer": 2,
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/space/aldrin.jpg"
   },
   {
    "type": "text",
@@ -1202,7 +1299,8 @@
     "Нил Армстронг"
    ],
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/armstrong.jpg"
   },
   {
    "q": "Кто первым получил патент на телефон?",
@@ -1214,7 +1312,8 @@
    ],
    "answer": 2,
    "theme": "Изобретения и техника",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/people/bell.jpg"
   },
   {
    "type": "order",
@@ -1226,7 +1325,8 @@
     "Интернет"
    ],
    "theme": "Изобретения и техника",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-light-bulb.png"
   },
   {
    "q": "Кто написал музыку к балету «Лебединое озеро»?",
@@ -1238,7 +1338,8 @@
    ],
    "answer": 3,
    "theme": "Искусство",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-swan.png"
   },
   {
    "q": "В каком городе находится музей Лувр?",
@@ -1250,7 +1351,8 @@
    ],
    "answer": 0,
    "theme": "Страны и города",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/art/mona-lisa.jpg"
   },
   {
    "q": "Какой театр в Москве украшен квадригой Аполлона на фасаде?",
@@ -1262,7 +1364,8 @@
    ],
    "answer": 1,
    "theme": "Искусство",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-performing-arts.png"
   },
   {
    "q": "Кто написал книги о Гарри Поттере?",
@@ -1274,7 +1377,8 @@
    ],
    "answer": 2,
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-magic-wand.png"
   },
   {
    "type": "text",
@@ -1283,7 +1387,8 @@
     "Пятачок"
    ],
    "theme": "Литература",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-pig-face.png"
   },
   {
    "q": "В какой стране появились суши в привычном нам виде?",
@@ -1295,7 +1400,8 @@
    ],
    "answer": 3,
    "theme": "Еда",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/japan.svg"
   },
   {
    "q": "Из чего делают мексиканский соус гуакамоле?",
@@ -1307,7 +1413,8 @@
    ],
    "answer": 0,
    "theme": "Еда",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-avocado.png"
   },
   {
    "q": "Какой сыр кладут в классическую пиццу «Маргарита»?",
@@ -1319,7 +1426,8 @@
    ],
    "answer": 1,
    "theme": "Еда",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-pizza.png"
   },
   {
    "type": "text",
@@ -1330,7 +1438,8 @@
     "Турецкий горох"
    ],
    "theme": "Еда",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-bowl-with-spoon.png"
   },
   {
    "q": "Из какого растения делают текилу?",
@@ -1342,7 +1451,8 @@
    ],
    "answer": 2,
    "theme": "Еда",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-cactus.png"
   },
   {
    "type": "multi",
@@ -1358,7 +1468,8 @@
     1
    ],
    "theme": "Животные и растения",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-banana.png"
   },
   {
    "q": "Сколько игроков одной команды одновременно на поле в футболе?",
@@ -1370,7 +1481,8 @@
    ],
    "answer": 2,
    "theme": "Спорт",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-soccer-ball.png"
   },
   {
    "q": "Как часто проходят летние Олимпийские игры?",
@@ -1382,7 +1494,8 @@
    ],
    "answer": 3,
    "theme": "Спорт",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "Сколько колец на олимпийском флаге?",
@@ -1394,7 +1507,8 @@
    ],
    "answer": 1,
    "theme": "Спорт",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "В каком виде спорта выполняют «тройной аксель»?",
@@ -1406,7 +1520,8 @@
    ],
    "answer": 0,
    "theme": "Спорт",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-ice-skate.png"
   },
   {
    "q": "Какова длина марафонской дистанции?",
@@ -1418,7 +1533,8 @@
    ],
    "answer": 2,
    "theme": "Спорт",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-running-shoe.png"
   },
   {
    "type": "text",
@@ -1430,7 +1546,8 @@
     "В США"
    ],
    "theme": "Спорт",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/usa.svg"
   },
   {
    "q": "Сколько минут длится основное время футбольного матча?",
@@ -1442,7 +1559,8 @@
    ],
    "answer": 1,
    "theme": "Спорт",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-soccer-ball.png"
   },
   {
    "q": "Какая планета — самая горячая в Солнечной системе?",
@@ -1454,7 +1572,8 @@
    ],
    "answer": 1,
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/space/venus.jpg"
   },
   {
    "q": "Сколько планет в Солнечной системе?",
@@ -1466,7 +1585,8 @@
    ],
    "answer": 1,
    "theme": "Космос",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-ringed-planet.png"
   },
   {
    "q": "Кто создал теорию относительности?",
@@ -1478,7 +1598,8 @@
    ],
    "answer": 2,
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/people/einstein.jpg"
   },
   {
    "q": "Что измеряют в герцах?",
@@ -1490,7 +1611,8 @@
    ],
    "answer": 3,
    "theme": "Физика и химия",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-radio.png"
   },
   {
    "q": "Какой металл жидкий при комнатной температуре?",
@@ -1502,7 +1624,8 @@
    ],
    "answer": 0,
    "theme": "Физика и химия",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-thermometer.png"
   },
   {
    "q": "Какой витамин вырабатывается в коже под солнечными лучами?",
@@ -1514,7 +1637,8 @@
    ],
    "answer": 1,
    "theme": "Человек",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-sun.png"
   },
   {
    "q": "Сколько костей в скелете взрослого человека?",
@@ -1526,7 +1650,8 @@
    ],
    "answer": 1,
    "theme": "Человек",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-bone.png"
   },
   {
    "q": "Какой орган вырабатывает инсулин?",
@@ -1538,7 +1663,8 @@
    ],
    "answer": 2,
    "theme": "Человек",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-syringe.png"
   },
   {
    "q": "Какая компания выпускает iPhone?",
@@ -1550,7 +1676,8 @@
    ],
    "answer": 3,
    "theme": "Изобретения и техника",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-mobile-phone.png"
   },
   {
    "q": "Какого газа в выдыхаемом воздухе больше, чем во вдыхаемом?",
@@ -1562,7 +1689,8 @@
    ],
    "answer": 0,
    "theme": "Человек",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-lungs.png"
   },
   {
    "q": "Какой химический элемент самый распространённый во Вселенной?",
@@ -1574,7 +1702,8 @@
    ],
    "answer": 1,
    "theme": "Физика и химия",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-milky-way.png"
   },
   {
    "type": "text",
@@ -1585,7 +1714,8 @@
     "Водород"
    ],
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-balloon.png"
   },
   {
    "type": "multi",
@@ -1601,7 +1731,8 @@
     3
    ],
    "theme": "Космос",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "type": "order",
@@ -1613,7 +1744,8 @@
     "Человек"
    ],
    "theme": "Физика и химия",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-flashlight.png"
   },
   {
    "type": "order",
@@ -1625,7 +1757,8 @@
     "Юпитер"
    ],
    "theme": "Космос",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "q": "Какого цвета «чёрный ящик» самолёта на самом деле?",
@@ -1637,7 +1770,8 @@
    ],
    "answer": 2,
    "theme": "Изобретения и техника",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-airplane.png"
   },
   {
    "q": "Сколько дней в високосном году?",
@@ -1649,7 +1783,8 @@
    ],
    "answer": 2,
    "theme": "Разное",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-calendar.png"
   },
   {
    "q": "Как называют слово, которое одинаково читается в обе стороны, например «шалаш»?",
@@ -1661,7 +1796,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-hut.png"
   },
   {
    "q": "Сколько часов в неделе?",
@@ -1673,7 +1809,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-spiral-calendar.png"
   },
   {
    "q": "Какой цвет получится, если смешать синюю и жёлтую краску?",
@@ -1685,7 +1822,8 @@
    ],
    "answer": 0,
    "theme": "Разное",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-artist-palette.png"
   },
   {
    "q": "Как называется японское искусство складывания фигур из бумаги?",
@@ -1697,7 +1835,8 @@
    ],
    "answer": 1,
    "theme": "Искусство",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-bird.png"
   },
   {
    "type": "multi",
@@ -1713,7 +1852,8 @@
     2
    ],
    "theme": "Разное",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-memo.png"
   },
   {
    "q": "Какая полоса на флаге России — средняя?",
@@ -1725,7 +1865,8 @@
    ],
    "answer": 2,
    "theme": "Разное",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/russia.svg"
   },
   {
    "q": "Сколько цветов в радуге?",
@@ -1737,7 +1878,8 @@
    ],
    "answer": 2,
    "theme": "Разное",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-rainbow.png"
   },
   {
    "type": "order",
@@ -1749,7 +1891,8 @@
     "Метр"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-straight-ruler.png"
   },
   {
    "q": "Сколько клавиш у стандартного фортепиано?",
@@ -1761,7 +1904,8 @@
    ],
    "answer": 2,
    "theme": "Искусство",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-musical-keyboard.png"
   },
   {
    "q": "Как называется валюта Японии?",
@@ -1773,7 +1917,8 @@
    ],
    "answer": 3,
    "theme": "Разное",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-yen-banknote.png"
   },
   {
    "q": "Как называется валюта Великобритании?",
@@ -1785,7 +1930,8 @@
    ],
    "answer": 0,
    "theme": "Разное",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-pound-banknote.png"
   },
   {
    "q": "Какой знак зодиака у тех, кто родился 1 января?",
@@ -1797,7 +1943,8 @@
    ],
    "answer": 1,
    "theme": "Разное",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-capricorn.png"
   },
   {
    "type": "number",
@@ -1805,7 +1952,8 @@
    "answer": 8849,
    "theme": "География",
    "level": "normal",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-snow-capped-mountain.png"
   },
   {
    "type": "number",
@@ -1813,7 +1961,8 @@
    "answer": 5642,
    "theme": "География",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/places/elbrus.jpg"
   },
   {
    "type": "number",
@@ -1821,7 +1970,8 @@
    "answer": 3530,
    "theme": "География",
    "level": "hard",
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "type": "number",
@@ -1829,7 +1979,8 @@
    "answer": 17.1,
    "theme": "География",
    "level": "hard",
-   "unit": "млн км²"
+   "unit": "млн км²",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "type": "number",
@@ -1837,7 +1988,8 @@
    "answer": 10994,
    "theme": "География",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "type": "number",
@@ -1845,7 +1997,8 @@
    "answer": 1147,
    "theme": "История",
    "level": "normal",
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-scroll.png"
   },
   {
    "type": "number",
@@ -1853,7 +2006,8 @@
    "answer": 37,
    "theme": "Литература",
    "level": "normal",
-   "unit": "лет"
+   "unit": "лет",
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "type": "number",
@@ -1861,7 +2015,8 @@
    "answer": 540,
    "theme": "Изобретения и техника",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-satellite-antenna.png"
   },
   {
    "type": "number",
@@ -1869,7 +2024,8 @@
    "answer": 1998,
    "theme": "Изобретения и техника",
    "level": "normal",
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-laptop.png"
   },
   {
    "type": "number",
@@ -1877,7 +2033,8 @@
    "answer": 384,
    "theme": "Космос",
    "level": "hard",
-   "unit": "тыс. км"
+   "unit": "тыс. км",
+   "answer_image": "media/pics/ans-full-moon.png"
   },
   {
    "type": "number",
@@ -1885,7 +2042,8 @@
    "answer": 8.3,
    "theme": "Космос",
    "level": "normal",
-   "unit": "мин"
+   "unit": "мин",
+   "answer_image": "media/pics/ans-sun.png"
   },
   {
    "type": "number",
@@ -1893,7 +2051,8 @@
    "answer": 5500,
    "theme": "Космос",
    "level": "hard",
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/pics/ans-sun.png"
   },
   {
    "type": "number",
@@ -1901,7 +2060,8 @@
    "answer": 343,
    "theme": "Физика и химия",
    "level": "hard",
-   "unit": "м/с"
+   "unit": "м/с",
+   "answer_image": "media/pics/ans-loudspeaker.png"
   },
   {
    "type": "number",
@@ -1909,7 +2069,8 @@
    "answer": 193,
    "theme": "Разное",
    "level": "hard",
-   "unit": "стран"
+   "unit": "стран",
+   "answer_image": "media/pics/ans-globe-with-meridians.png"
   },
   {
    "type": "number",
@@ -1917,7 +2078,8 @@
    "answer": 1852,
    "theme": "Разное",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-anchor.png"
   },
   {
    "type": "number",
@@ -1925,7 +2087,8 @@
    "answer": 8.2,
    "theme": "Разное",
    "level": "normal",
-   "unit": "млрд"
+   "unit": "млрд",
+   "answer_image": "media/pics/ans-busts-in-silhouette.png"
   },
   {
    "type": "number",
@@ -1977,7 +2140,8 @@
     "10",
     "12"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-musical-notes.png"
   },
   {
    "q": "Какая из этих букв не обозначает звука?",
@@ -1989,7 +2153,8 @@
     "Э",
     "Ь"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-writing-hand.png"
   },
   {
    "q": "Как называется часть слова перед корнем?",
@@ -2001,7 +2166,8 @@
     "Основа",
     "Приставка"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-puzzle-piece.png"
   },
   {
    "type": "text",
@@ -2010,7 +2176,8 @@
    "level": "hard",
    "answer": [
     "Спряжение"
-   ]
+   ],
+   "answer_image": "media/pics/ans-pencil.png"
   },
   {
    "q": "Сколько склонений у существительных в школьной программе?",
@@ -2022,7 +2189,8 @@
     "4",
     "5"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-books.png"
   },
   {
    "q": "Какое из этих слов — существительное?",
@@ -2034,7 +2202,8 @@
     "Беглый",
     "Бегом"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-person-running.png"
   },
   {
    "q": "Как называется часть речи, которая обозначает признак действия: «быстро», «громко»?",
@@ -2046,7 +2215,8 @@
     "Глагол",
     "Наречие"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-bullet-train.png"
   },
   {
    "type": "order",
@@ -2058,7 +2228,8 @@
     "Корень",
     "Суффикс",
     "Окончание"
-   ]
+   ],
+   "answer_image": "media/pics/ans-puzzle-piece.png"
   },
   {
    "q": "Сколько зубов у взрослого человека вместе с зубами мудрости?",
@@ -2070,7 +2241,8 @@
     "32",
     "36"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-tooth.png"
   },
   {
    "q": "Какая кость — самая длинная в теле человека?",
@@ -2082,7 +2254,8 @@
     "Большая берцовая",
     "Ключица"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-bone.png"
   },
   {
    "q": "Какой орган очищает кровь и вырабатывает мочу?",
@@ -2094,7 +2267,8 @@
     "Лёгкие",
     "Почки"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-droplet.png"
   },
   {
    "q": "Сколько литров крови у взрослого человека (примерно)?",
@@ -2106,7 +2280,8 @@
     "8",
     "12"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-drop-of-blood.png"
   },
   {
    "q": "Где находится самая маленькая кость человека?",
@@ -2118,7 +2293,8 @@
     "В носу",
     "В запястье"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-ear.png"
   },
   {
    "type": "text",
@@ -2127,7 +2303,8 @@
    "level": "hard",
    "answer": [
     "Меланин"
-   ]
+   ],
+   "answer_image": "media/pics/ans-sun.png"
   },
   {
    "q": "Какую часть тела взрослого человека составляет вода (примерно)?",
@@ -2139,7 +2316,8 @@
     "60%",
     "85%"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-droplet.png"
   },
   {
    "q": "Какого витамина больше всего в цитрусовых?",
@@ -2151,7 +2329,8 @@
     "Витамина K",
     "Витамина C"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-tangerine.png"
   },
   {
    "type": "multi",
@@ -2167,7 +2346,8 @@
    "answer": [
     0,
     2
-   ]
+   ],
+   "answer_image": "media/pics/ans-fork-and-knife-with-plate.png"
   },
   {
    "type": "number",
@@ -2175,10 +2355,11 @@
    "theme": "Человек",
    "level": "normal",
    "answer": 70,
-   "unit": "уд/мин"
+   "unit": "уд/мин",
+   "answer_image": "media/pics/ans-anatomical-heart.png"
   },
   {
-   "q": "Кто написал картину «Звёздная ночь»?",
+   "q": "Кто написал эту картину?",
    "theme": "Искусство",
    "level": "normal",
    "options": [
@@ -2187,10 +2368,11 @@
     "Пабло Пикассо",
     "Сальвадор Дали"
    ],
-   "answer": 0
+   "answer": 0,
+   "image": "media/art/starry-night.jpg"
   },
   {
-   "q": "Кто автор картины «Утро в сосновом лесу»?",
+   "q": "Кто написал эту картину?",
    "theme": "Искусство",
    "level": "normal",
    "options": [
@@ -2199,10 +2381,11 @@
     "Иван Айвазовский",
     "Иван Шишкин"
    ],
-   "answer": 3
+   "answer": 3,
+   "image": "media/art/pine-forest.jpg"
   },
   {
-   "q": "Какой художник прославился картинами моря, например «Девятым валом»?",
+   "q": "Кто написал эту картину?",
    "theme": "Искусство",
    "level": "normal",
    "options": [
@@ -2211,10 +2394,11 @@
     "Карл Брюллов",
     "Виктор Васнецов"
    ],
-   "answer": 0
+   "answer": 0,
+   "image": "media/art/ninth-wave.jpg"
   },
   {
-   "q": "Кто написал картину «Последний день Помпеи»?",
+   "q": "Кто написал эту картину?",
    "theme": "Искусство",
    "level": "hard",
    "options": [
@@ -2223,10 +2407,11 @@
     "Алексей Саврасов",
     "Карл Брюллов"
    ],
-   "answer": 3
+   "answer": 3,
+   "image": "media/art/pompeii.jpg"
   },
   {
-   "q": "Кто автор картины «Бурлаки на Волге»?",
+   "q": "Кто написал эту картину?",
    "theme": "Искусство",
    "level": "normal",
    "options": [
@@ -2235,7 +2420,8 @@
     "Василий Верещагин",
     "Валентин Серов"
    ],
-   "answer": 0
+   "answer": 0,
+   "image": "media/art/barge-haulers.jpg"
   },
   {
    "q": "В каком городе находится Третьяковская галерея?",
@@ -2247,7 +2433,8 @@
     "Нижний Новгород",
     "Москва"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/art/bogatyrs.jpg"
   },
   {
    "q": "Кто написал оперу «Евгений Онегин»?",
@@ -2259,7 +2446,8 @@
     "Михаил Глинка",
     "Сергей Прокофьев"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/people/tchaikovsky.jpg"
   },
   {
    "q": "Какой композитор потерял слух, но продолжал сочинять музыку?",
@@ -2271,7 +2459,8 @@
     "Фредерик Шопен",
     "Людвиг ван Бетховен"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/beethoven.jpg"
   },
   {
    "type": "text",
@@ -2280,10 +2469,11 @@
    "level": "easy",
    "answer": [
     "Пейзаж"
-   ]
+   ],
+   "answer_image": "media/art/pine-forest.jpg"
   },
   {
-   "q": "Кто расписал потолок Сикстинской капеллы?",
+   "q": "Кто расписал потолок с этой фреской в Сикстинской капелле?",
    "theme": "Искусство",
    "level": "normal",
    "options": [
@@ -2292,7 +2482,8 @@
     "Леонардо да Винчи",
     "Сандро Боттичелли"
    ],
-   "answer": 0
+   "answer": 0,
+   "image": "media/art/creation-of-adam.jpg"
   },
   {
    "q": "Из какой страны родом паэлья?",
@@ -2304,7 +2495,8 @@
     "Португалия",
     "Испания"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/flags/spain.png"
   },
   {
    "q": "Какой овощ даёт борщу красный цвет?",
@@ -2316,7 +2508,8 @@
     "Томат",
     "Перец"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-pot-of-food.png"
   },
   {
    "q": "Из чего делают тофу?",
@@ -2328,7 +2521,8 @@
     "Из нута",
     "Из соевого молока"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-bowl-with-spoon.png"
   },
   {
    "q": "Как называется японский суп на основе соевой пасты?",
@@ -2340,7 +2534,8 @@
     "Фо",
     "Том ям"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-steaming-bowl.png"
   },
   {
    "q": "Из какой страны родом суп фо?",
@@ -2352,7 +2547,8 @@
     "Вьетнам",
     "Япония"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/flags/vietnam.svg"
   },
   {
    "q": "Какую самую дорогую специю получают из рылец цветков крокуса?",
@@ -2364,7 +2560,8 @@
     "Шафран",
     "Кардамон"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-blossom.png"
   },
   {
    "q": "Какой «орех» на самом деле бобовое растение?",
@@ -2376,7 +2573,8 @@
     "Грецкий орех",
     "Арахис"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-peanuts.png"
   },
   {
    "type": "text",
@@ -2385,7 +2583,8 @@
    "level": "normal",
    "answer": [
     "Тирамису"
-   ]
+   ],
+   "answer_image": "media/pics/ans-shortcake.png"
   },
   {
    "q": "Из какого молока делают настоящую «моцареллу ди буфала»?",
@@ -2397,7 +2596,8 @@
     "Из овечьего",
     "Из коровьего"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-water-buffalo.png"
   },
   {
    "type": "multi",
@@ -2413,7 +2613,8 @@
    "answer": [
     0,
     2
-   ]
+   ],
+   "answer_image": "media/pics/ans-cucumber.png"
   },
   {
    "q": "Сколько игроков одной команды на площадке в баскетболе?",
@@ -2425,7 +2626,8 @@
     "6",
     "7"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-basketball.png"
   },
   {
    "q": "Сколько игроков одной команды на площадке в волейболе?",
@@ -2437,7 +2639,8 @@
     "7",
     "8"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-volleyball.png"
   },
   {
    "q": "Сколько периодов в хоккейном матче?",
@@ -2449,7 +2652,8 @@
     "4",
     "5"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ice-hockey.png"
   },
   {
    "q": "В каком городе прошли летние Олимпийские игры 2024 года?",
@@ -2461,7 +2665,8 @@
     "Париж",
     "Лондон"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "Где пройдут летние Олимпийские игры 2028 года?",
@@ -2473,7 +2678,8 @@
     "Рим",
     "Лос-Анджелес"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "За какой трофей играют в хоккейной НХЛ?",
@@ -2485,7 +2691,8 @@
     "Кубок Гагарина",
     "Кубок Либертадорес"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-trophy.png"
   },
   {
    "q": "Кто выиграл больше всех олимпийских золотых медалей?",
@@ -2497,7 +2704,8 @@
     "Карл Льюис",
     "Лариса Латынина"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-1st-place-medal.png"
   },
   {
    "type": "number",
@@ -2505,7 +2713,8 @@
    "theme": "Спорт",
    "level": "hard",
    "answer": 9.58,
-   "unit": "с"
+   "unit": "с",
+   "answer_image": "media/pics/ans-person-running.png"
   },
   {
    "type": "text",
@@ -2514,7 +2723,8 @@
    "level": "easy",
    "answer": [
     "Подача"
-   ]
+   ],
+   "answer_image": "media/pics/ans-tennis.png"
   },
   {
    "q": "Сколько клеток на шахматной доске?",
@@ -2526,7 +2736,8 @@
     "81",
     "100"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-chess-pawn.png"
   },
   {
    "q": "Кто изобрёл динамит?",
@@ -2538,7 +2749,8 @@
     "Дмитрий Менделеев",
     "Луи Пастер"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/nobel.jpg"
   },
   {
    "q": "Какая компания создала Windows?",
@@ -2550,7 +2762,8 @@
     "Microsoft",
     "Google"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-laptop.png"
   },
   {
    "q": "Кто придумал Всемирную паутину (WWW)?",
@@ -2562,7 +2775,8 @@
     "Марк Цукерберг",
     "Тим Бернерс-Ли"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-globe-with-meridians.png"
   },
   {
    "q": "Кто основал Facebook?",
@@ -2574,7 +2788,8 @@
     "Ларри Пейдж",
     "Джефф Безос"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-mobile-phone.png"
   },
   {
    "q": "Как называется российская спутниковая система навигации?",
@@ -2586,7 +2801,8 @@
     "Galileo",
     "BeiDou"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-satellite.png"
   },
   {
    "q": "Кто создал первую электрическую батарею — «столб»?",
@@ -2598,7 +2814,8 @@
     "Алессандро Вольта",
     "Джеймс Уатт"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-battery.png"
   },
   {
    "q": "В каком году вышел первый iPhone?",
@@ -2610,7 +2827,8 @@
     "2009",
     "2010"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-mobile-phone.png"
   },
   {
    "q": "Что создали братья Райт в 1903 году?",
@@ -2622,7 +2840,8 @@
     "Кинопроектор",
     "Самолёт с мотором, который смог взлететь"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-airplane.png"
   },
   {
    "q": "Кто устроил первый платный киносеанс в 1895 году?",
@@ -2634,7 +2853,8 @@
     "Томас Эдисон",
     "Никола Тесла"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-film-frames.png"
   },
   {
    "q": "В каком году в России отменили крепостное право?",
@@ -2646,7 +2866,8 @@
     "1861",
     "1905"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-chains.png"
   },
   {
    "q": "Кто был первым царём из династии Романовых?",
@@ -2658,7 +2879,8 @@
     "Алексей Михайлович",
     "Иван Грозный"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/mikhail-romanov.jpg"
   },
   {
    "q": "В каком году распался СССР?",
@@ -2670,7 +2892,8 @@
     "1991",
     "1993"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-spiral-calendar.png"
   },
   {
    "q": "Кто первым в России принял титул императора?",
@@ -2682,7 +2905,8 @@
     "Пётр I",
     "Александр I"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/people/peter1.jpg"
   },
   {
    "q": "Как называлась столица Византийской империи?",
@@ -2694,7 +2918,8 @@
     "Александрия",
     "Константинополь"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-classical-building.png"
   },
   {
    "q": "В каком году началась Первая мировая война?",
@@ -2706,7 +2931,8 @@
     "1918",
     "1939"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-military-helmet.png"
   },
   {
    "q": "Кто командовал русской армией в войне 1812 года с августа?",
@@ -2718,7 +2944,8 @@
     "Пётр Багратион",
     "Михаил Барклай-де-Толли"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/people/kutuzov.jpg"
   },
   {
    "type": "order",
@@ -2730,7 +2957,8 @@
     "Пётр I",
     "Екатерина II",
     "Николай II"
-   ]
+   ],
+   "answer_image": "media/people/peter1.jpg"
   },
   {
    "q": "Какая цивилизация построила Мачу-Пикчу?",
@@ -2742,7 +2970,8 @@
     "Ацтеки",
     "Ольмеки"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/places/machu-picchu.jpg"
   },
   {
    "q": "Кто написал «Капитанскую дочку»?",
@@ -2754,7 +2983,8 @@
     "Александр Пушкин",
     "Иван Тургенев"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/people/pushkin.jpg"
   },
   {
    "q": "Кто написал роман «Отцы и дети»?",
@@ -2766,7 +2996,8 @@
     "Иван Гончаров",
     "Иван Тургенев"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/turgenev.jpg"
   },
   {
    "type": "text",
@@ -2776,7 +3007,8 @@
    "answer": [
     "Грибоедов",
     "Александр Грибоедов"
-   ]
+   ],
+   "answer_image": "media/people/griboyedov.jpg"
   },
   {
    "q": "Кто автор «Трёх мушкетёров»?",
@@ -2788,7 +3020,8 @@
     "Жюль Верн",
     "Оноре де Бальзак"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-crossed-swords.png"
   },
   {
    "q": "Кто написал «Двадцать тысяч льё под водой»?",
@@ -2800,7 +3033,8 @@
     "Артур Конан Дойл",
     "Марк Твен"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/verne.jpg"
   },
   {
    "q": "Как зовут сыщика, которого придумал Артур Конан Дойл?",
@@ -2812,7 +3046,8 @@
     "Шерлок Холмс",
     "Ниро Вульф"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-detective.png"
   },
   {
    "q": "Кто написал пьесу «Вишнёвый сад»?",
@@ -2824,7 +3059,8 @@
     "Лев Толстой",
     "Антон Чехов"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/chekhov.jpg"
   },
   {
    "q": "Какой город — столица Бразилии?",
@@ -2836,7 +3072,8 @@
     "Сан-Паулу",
     "Сальвадор"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/flags/brazil.png"
   },
   {
    "q": "Какой город — столица Казахстана?",
@@ -2848,7 +3085,8 @@
     "Шымкент",
     "Караганда"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/flags/kazakhstan.png"
   },
   {
    "q": "Какой город — столица Новой Зеландии?",
@@ -2860,7 +3098,8 @@
     "Веллингтон",
     "Сидней"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/flags/new-zealand.svg"
   },
   {
    "q": "В каком городе находится Колизей?",
@@ -2872,7 +3111,8 @@
     "Неаполь",
     "Рим"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/places/colosseum.jpg"
   },
   {
    "q": "В какой стране находится Тадж-Махал?",
@@ -2884,7 +3124,8 @@
     "Иран",
     "Бангладеш"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/flags/india.svg"
   },
   {
    "type": "multi",
@@ -2900,7 +3141,8 @@
    "answer": [
     0,
     2
-   ]
+   ],
+   "answer_image": "media/pics/ans-globe-showing-americas.png"
   },
   {
    "q": "Какой большой город стоит сразу на двух частях света — в Европе и Азии?",
@@ -2912,7 +3154,8 @@
     "Москва",
     "Мадрид"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/flags/turkey.svg"
   },
   {
    "q": "Как назывался первый искусственный спутник Земли?",
@@ -2924,7 +3167,8 @@
     "Спутник-1",
     "Мир"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-satellite.png"
   },
   {
    "q": "Кто первым вышел в открытый космос?",
@@ -2936,7 +3180,8 @@
     "Валентина Терешкова",
     "Алексей Леонов"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-astronaut.png"
   },
   {
    "q": "Кто стал первой женщиной в космосе?",
@@ -2948,7 +3193,8 @@
     "Салли Райд",
     "Елена Кондакова"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-woman-astronaut.png"
   },
   {
    "q": "Какую планету называют «Красной»?",
@@ -2960,7 +3206,8 @@
     "Юпитер",
     "Меркурий"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "q": "Вокруг какой планеты вращается Ганимед — самый большой спутник в Солнечной системе?",
@@ -2972,7 +3219,8 @@
     "Юпитер",
     "Уран"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/space/jupiter.jpg"
   },
   {
    "q": "Сколько спутников у Марса?",
@@ -2984,7 +3232,8 @@
     "2",
     "4"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "q": "Сколько будет 15% от 200?",
@@ -2996,7 +3245,8 @@
     "30",
     "45"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-hundred-points.png"
   },
   {
    "q": "Как называется прямоугольник, у которого все стороны равны?",
@@ -3008,7 +3258,8 @@
     "Параллелограмм",
     "Квадрат"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-blue-square.png"
   },
   {
    "q": "Сколько сторон у шестиугольника?",
@@ -3020,14 +3271,16 @@
     "7",
     "8"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-honeybee.png"
   },
   {
    "type": "number",
    "q": "Чему равно число π с точностью до сотых?",
    "theme": "Математика",
    "level": "normal",
-   "answer": 3.14
+   "answer": 3.14,
+   "answer_image": "media/pics/ans-pie.png"
   },
   {
    "q": "Сколько нулей в записи миллиона?",
@@ -3039,7 +3292,8 @@
     "7",
     "9"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-money-bag.png"
   },
   {
    "q": "Чему равно 2 в десятой степени?",
@@ -3051,7 +3305,8 @@
     "1024",
     "2048"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-computer-disk.png"
   },
   {
    "q": "Какая птица — самая большая в мире?",
@@ -3063,7 +3318,8 @@
     "Орёл",
     "Пеликан"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-feather.png"
   },
   {
    "q": "Как называется детёныш коровы?",
@@ -3075,7 +3331,8 @@
     "Жеребёнок",
     "Ягнёнок"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-cow.png"
   },
   {
    "q": "Какое млекопитающее умеет по-настоящему летать?",
@@ -3087,7 +3344,8 @@
     "Летучая мышь",
     "Ехидна"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-bat.png"
   },
   {
    "q": "Сколько ног у насекомых?",
@@ -3099,7 +3357,8 @@
     "8",
     "10"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ant.png"
   },
   {
    "q": "Какое животное носит детёныша в сумке?",
@@ -3111,7 +3370,8 @@
     "Бобр",
     "Кенгуру"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-kangaroo.png"
   },
   {
    "q": "На каком дереве растут жёлуди?",
@@ -3123,7 +3383,8 @@
     "На липе",
     "На берёзе"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-deciduous-tree.png"
   },
   {
    "q": "Какой газ нужен для горения?",
@@ -3135,7 +3396,8 @@
     "Гелий",
     "Углекислый газ"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-fire.png"
   },
   {
    "q": "В чём измеряют электрическое напряжение?",
@@ -3147,7 +3409,8 @@
     "В вольтах",
     "В ваттах"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-battery.png"
   },
   {
    "q": "Какой химический элемент обозначают символом Au?",
@@ -3159,7 +3422,8 @@
     "Аргон",
     "Золото"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-coin.png"
   },
   {
    "q": "При какой температуре замерзает вода при обычном давлении?",
@@ -3171,7 +3435,8 @@
     "−10 °C",
     "10 °C"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-ice.png"
   },
   {
    "q": "Как называется переход вещества из твёрдого состояния сразу в газ?",
@@ -3183,7 +3448,8 @@
     "Конденсация",
     "Плавление"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ice.png"
   },
   {
    "q": "Какое море омывает Крым с юга?",
@@ -3195,7 +3461,8 @@
     "Чёрное",
     "Средиземное"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Какой материк самый холодный?",
@@ -3207,7 +3474,8 @@
     "Австралия",
     "Антарктида"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-penguin.png"
   },
   {
    "q": "На каком материке находятся горы Анды?",
@@ -3219,7 +3487,8 @@
     "Африка",
     "Азия"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/places/machu-picchu.jpg"
   },
   {
    "q": "Какое озеро — самое большое по площади в мире?",
@@ -3231,7 +3500,8 @@
     "Верхнее",
     "Виктория"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Сколько часовых поясов в России?",
@@ -3243,7 +3513,8 @@
     "11",
     "13"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-mantelpiece-clock.png"
   },
   {
    "q": "Сколько дней в феврале високосного года?",
@@ -3255,7 +3526,8 @@
     "30",
     "31"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-calendar.png"
   },
   {
    "q": "Какой природный минерал — самый твёрдый?",
@@ -3267,7 +3539,8 @@
     "Алмаз",
     "Изумруд"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-gem-stone.png"
   },
   {
    "q": "Сколько лет супруги вместе, когда празднуют золотую свадьбу?",
@@ -3279,7 +3552,8 @@
     "50",
     "75"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-ring.png"
   },
   {
    "q": "Какой цвет получится, если смешать красную и жёлтую краску?",
@@ -3291,7 +3565,8 @@
     "Розовый",
     "Оранжевый"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-artist-palette.png"
   },
   {
    "type": "text",
@@ -3301,7 +3576,8 @@
    "answer": [
     "Век",
     "Столетие"
-   ]
+   ],
+   "answer_image": "media/pics/ans-hourglass-done.png"
   },
   {
    "q": "На каком языке говорят в Бразилии?",
@@ -3313,7 +3589,8 @@
     "На бразильском",
     "На английском"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/flags/portugal.png"
   },
   {
    "q": "Кто снял фильм «Титаник» (1997)?",
@@ -3325,7 +3602,8 @@
     "Кристофер Нолан",
     "Ридли Скотт"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "q": "Как зовут директора Хогвартса в фильмах о Гарри Поттере?",
@@ -3337,7 +3615,8 @@
     "Альбус Дамблдор",
     "Мерлин"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-magic-wand.png"
   },
   {
    "q": "В каком мультфильме звучит песня «Акуна матата»?",
@@ -3349,7 +3628,8 @@
     "«Тарзан»",
     "«Король Лев»"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-lion.png"
   },
   {
    "q": "Как зовут снеговика из мультфильма «Холодное сердце»?",
@@ -3361,7 +3641,8 @@
     "Кристофф",
     "Ганс"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-snowman.png"
   },
   {
    "q": "Кто сыграл Терминатора, сказавшего «Я вернусь»?",
@@ -3373,7 +3654,8 @@
     "Брюс Уиллис",
     "Жан-Клод Ван Дамм"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-robot.png"
   },
   {
    "q": "Какой фильм начинается словами «Давным-давно в далёкой-далёкой галактике…»?",
@@ -3385,7 +3667,8 @@
     "«Звёздные войны»",
     "«Аватар»"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-rocket.png"
   },
   {
    "q": "В каком фильме звучит фраза «Надо, Федя, надо!»?",
@@ -3397,7 +3680,8 @@
     "«Иван Васильевич меняет профессию»",
     "«Операция «Ы» и другие приключения Шурика»"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-film-frames.png"
   },
   {
    "q": "Кто снял «Иронию судьбы» и «Служебный роман»?",
@@ -3409,7 +3693,8 @@
     "Георгий Данелия",
     "Никита Михалков"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-clapper-board.png"
   },
   {
    "q": "Как зовут кота из Простоквашино?",
@@ -3421,7 +3706,8 @@
     "Том",
     "Гав"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-cat.png"
   },
   {
    "type": "text",
@@ -3430,7 +3716,8 @@
    "level": "easy",
    "answer": [
     "Волк"
-   ]
+   ],
+   "answer_image": "media/pics/ans-wolf.png"
   },
   {
    "q": "Какой фильм получил «Оскар» как лучший фильм на церемонии 2024 года?",
@@ -3442,7 +3729,8 @@
     "«Оппенгеймер»",
     "«Убийцы цветочной луны»"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-trophy.png"
   },
   {
    "q": "Какой мультфильм Pixar рассказывает, как отец ищет сына-рыбку?",
@@ -3454,7 +3742,8 @@
     "«Вверх»",
     "«В поисках Немо»"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-tropical-fish.png"
   },
   {
    "q": "За какой фильм Леонардо Ди Каприо получил «Оскар» за лучшую мужскую роль?",
@@ -3466,7 +3755,8 @@
     "«Волк с Уолл-стрит»",
     "«Начало»"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-bear.png"
   },
   {
    "q": "Кто снял «Кавказскую пленницу» и «Бриллиантовую руку»?",
@@ -3478,7 +3768,8 @@
     "Георгий Данелия",
     "Сергей Бондарчук"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-clapper-board.png"
   },
   {
    "q": "Кто в греческих мифах — бог морей?",
@@ -3490,7 +3781,8 @@
     "Посейдон",
     "Гермес"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Кто — верховный бог древних греков?",
@@ -3502,7 +3794,8 @@
     "Кронос",
     "Зевс"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-high-voltage.png"
   },
   {
    "q": "Какой герой совершил 12 подвигов?",
@@ -3514,7 +3807,8 @@
     "Ахиллес",
     "Одиссей"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-lion.png"
   },
   {
    "q": "Какое место было единственным уязвимым у Ахилла?",
@@ -3526,7 +3820,8 @@
     "Плечо",
     "Шея"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-foot.png"
   },
   {
    "q": "Кто победил Медузу Горгону?",
@@ -3538,7 +3833,8 @@
     "Персей",
     "Ясон"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-snake.png"
   },
   {
    "q": "Как звали скандинавского бога грома?",
@@ -3550,7 +3846,8 @@
     "Фрейр",
     "Тор"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-hammer.png"
   },
   {
    "q": "Кто похитил огонь у богов и отдал его людям?",
@@ -3562,7 +3859,8 @@
     "Дедал",
     "Атлант"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-fire.png"
   },
   {
    "q": "Как звали бога войны у римлян?",
@@ -3574,7 +3872,8 @@
     "Нептун",
     "Вулкан"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-crossed-swords.png"
   },
   {
    "q": "Как называется существо — наполовину человек, наполовину конь?",
@@ -3586,7 +3885,8 @@
     "Кентавр",
     "Грифон"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-horse.png"
   },
   {
    "q": "Где живёт Баба-Яга в русских сказках?",
@@ -3598,7 +3898,8 @@
     "В замке",
     "В избушке на курьих ножках"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-hut.png"
   },
   {
    "type": "text",
@@ -3608,7 +3909,8 @@
    "answer": [
     "Одиссей",
     "Улисс"
-   ]
+   ],
+   "answer_image": "media/pics/ans-sailboat.png"
   },
   {
    "q": "Флаг какой страны на картинке?",
@@ -4738,7 +5040,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/france.svg"
   },
   {
    "q": "Какой город — столица страны «Германия»?",
@@ -4750,7 +5053,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/germany.svg"
   },
   {
    "q": "Столица какой страны — Рим?",
@@ -4762,7 +5066,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/italy.svg"
   },
   {
    "q": "Какой город — столица страны «Испания»?",
@@ -4774,7 +5079,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/spain.png"
   },
   {
    "q": "Какой город — столица страны «Португалия»?",
@@ -4786,7 +5092,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/portugal.png"
   },
   {
    "q": "Столица какой страны — Лондон?",
@@ -4798,7 +5105,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/uk.svg"
   },
   {
    "q": "Какой город — столица страны «Ирландия»?",
@@ -4810,7 +5118,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/ireland.svg"
   },
   {
    "q": "Какой город — столица страны «Нидерланды»?",
@@ -4822,7 +5131,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/netherlands.svg"
   },
   {
    "q": "Столица какой страны — Брюссель?",
@@ -4834,7 +5144,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/belgium.svg"
   },
   {
    "q": "Какой город — столица страны «Швейцария»?",
@@ -4846,7 +5157,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/switzerland.svg"
   },
   {
    "q": "Какой город — столица страны «Австрия»?",
@@ -4858,7 +5170,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/austria.svg"
   },
   {
    "q": "Столица какой страны — Варшава?",
@@ -4870,7 +5183,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/poland.svg"
   },
   {
    "q": "Какой город — столица страны «Чехия»?",
@@ -4882,7 +5196,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/czechia.svg"
   },
   {
    "q": "Какой город — столица страны «Словакия»?",
@@ -4894,7 +5209,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/slovakia.png"
   },
   {
    "q": "Столица какой страны — Будапешт?",
@@ -4906,7 +5222,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/hungary.svg"
   },
   {
    "q": "Какой город — столица страны «Румыния»?",
@@ -4918,7 +5235,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/romania.svg"
   },
   {
    "q": "Какой город — столица страны «Болгария»?",
@@ -4930,7 +5248,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/bulgaria.svg"
   },
   {
    "q": "Столица какой страны — Афины?",
@@ -4942,7 +5261,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/greece.svg"
   },
   {
    "q": "Какой город — столица страны «Сербия»?",
@@ -4954,7 +5274,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/serbia.png"
   },
   {
    "q": "Какой город — столица страны «Хорватия»?",
@@ -4966,7 +5287,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/croatia.png"
   },
   {
    "q": "Столица какой страны — Любляна?",
@@ -4978,7 +5300,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/slovenia.png"
   },
   {
    "q": "Какой город — столица страны «Норвегия»?",
@@ -4990,7 +5313,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/norway.svg"
   },
   {
    "q": "Какой город — столица страны «Швеция»?",
@@ -5002,7 +5326,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/sweden.svg"
   },
   {
    "q": "Столица какой страны — Хельсинки?",
@@ -5014,7 +5339,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/finland.svg"
   },
   {
    "q": "Какой город — столица страны «Дания»?",
@@ -5026,7 +5352,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/denmark.svg"
   },
   {
    "q": "Какой город — столица страны «Исландия»?",
@@ -5038,7 +5365,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/iceland.svg"
   },
   {
    "q": "Столица какой страны — Таллин?",
@@ -5050,7 +5378,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/estonia.svg"
   },
   {
    "q": "Какой город — столица страны «Латвия»?",
@@ -5062,7 +5391,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/latvia.svg"
   },
   {
    "q": "Какой город — столица страны «Литва»?",
@@ -5074,7 +5404,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/lithuania.svg"
   },
   {
    "q": "Столица какой страны — Минск?",
@@ -5086,7 +5417,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/belarus.png"
   },
   {
    "q": "Какой город — столица страны «Украина»?",
@@ -5098,7 +5430,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/ukraine.svg"
   },
   {
    "q": "Какой город — столица страны «Молдавия»?",
@@ -5110,7 +5443,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/moldova.png"
   },
   {
    "q": "Столица какой страны — Тирана?",
@@ -5122,7 +5456,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/albania.png"
   },
   {
    "q": "Какой город — столица страны «Мальта»?",
@@ -5134,7 +5469,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/malta.png"
   },
   {
    "q": "Какой город — столица страны «Кипр»?",
@@ -5146,7 +5482,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/cyprus.png"
   },
   {
    "q": "Столица какой страны — Подгорица?",
@@ -5158,7 +5495,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/montenegro.png"
   },
   {
    "q": "Какой город — столица страны «Северная Македония»?",
@@ -5170,7 +5508,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/north-macedonia.svg"
   },
   {
    "q": "Какой город — столица страны «Босния и Герцеговина»?",
@@ -5182,7 +5521,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/bosnia.svg"
   },
   {
    "q": "Столица какой страны — Люксембург?",
@@ -5194,7 +5534,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/luxembourg.svg"
   },
   {
    "q": "Какой город — столица страны «Япония»?",
@@ -5206,7 +5547,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/japan.svg"
   },
   {
    "q": "Какой город — столица страны «Китай»?",
@@ -5218,7 +5560,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/china.svg"
   },
   {
    "q": "Столица какой страны — Сеул?",
@@ -5230,7 +5573,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/south-korea.svg"
   },
   {
    "q": "Какой город — столица страны «КНДР»?",
@@ -5242,7 +5586,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/north-korea.svg"
   },
   {
    "q": "Какой город — столица страны «Монголия»?",
@@ -5254,7 +5599,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/mongolia.png"
   },
   {
    "q": "Столица какой страны — Нью-Дели?",
@@ -5266,7 +5612,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/india.svg"
   },
   {
    "q": "Какой город — столица страны «Пакистан»?",
@@ -5278,7 +5625,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/pakistan.svg"
   },
   {
    "q": "Какой город — столица страны «Бангладеш»?",
@@ -5290,7 +5638,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/bangladesh.svg"
   },
   {
    "q": "Столица какой страны — Бангкок?",
@@ -5302,7 +5651,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/thailand.svg"
   },
   {
    "q": "Какой город — столица страны «Вьетнам»?",
@@ -5314,7 +5664,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/vietnam.svg"
   },
   {
    "q": "Какой город — столица страны «Лаос»?",
@@ -5326,7 +5677,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/laos.svg"
   },
   {
    "q": "Столица какой страны — Пномпень?",
@@ -5338,7 +5690,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/cambodia.png"
   },
   {
    "q": "Какой город — столица страны «Мьянма»?",
@@ -5350,7 +5703,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/myanmar.svg"
   },
   {
    "q": "Какой город — столица страны «Малайзия»?",
@@ -5362,7 +5716,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/malaysia.svg"
   },
   {
    "q": "Столица какой страны — Манила?",
@@ -5374,7 +5729,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/philippines.png"
   },
   {
    "q": "Какой город — столица страны «Непал»?",
@@ -5386,7 +5742,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/nepal.png"
   },
   {
    "q": "Какой город — столица страны «Афганистан»?",
@@ -5410,7 +5767,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/iran.png"
   },
   {
    "q": "Какой город — столица страны «Ирак»?",
@@ -5422,7 +5780,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/iraq.png"
   },
   {
    "q": "Какой город — столица страны «Сирия»?",
@@ -5446,7 +5805,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/jordan.png"
   },
   {
    "q": "Какой город — столица страны «Ливан»?",
@@ -5458,7 +5818,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/lebanon.png"
   },
   {
    "q": "Какой город — столица страны «Саудовская Аравия»?",
@@ -5470,7 +5831,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/saudi-arabia.png"
   },
   {
    "q": "Столица какой страны — Абу-Даби?",
@@ -5482,7 +5844,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/uae.svg"
   },
   {
    "q": "Какой город — столица страны «Катар»?",
@@ -5494,7 +5857,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/qatar.svg"
   },
   {
    "q": "Какой город — столица страны «Оман»?",
@@ -5506,7 +5870,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/oman.png"
   },
   {
    "q": "Столица какой страны — Тбилиси?",
@@ -5518,7 +5883,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/georgia.png"
   },
   {
    "q": "Какой город — столица страны «Армения»?",
@@ -5530,7 +5896,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/armenia.svg"
   },
   {
    "q": "Какой город — столица страны «Азербайджан»?",
@@ -5542,7 +5909,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/azerbaijan.svg"
   },
   {
    "q": "Столица какой страны — Ташкент?",
@@ -5554,7 +5922,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/uzbekistan.png"
   },
   {
    "q": "Какой город — столица страны «Киргизия»?",
@@ -5566,7 +5935,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/kyrgyzstan.png"
   },
   {
    "q": "Какой город — столица страны «Таджикистан»?",
@@ -5578,7 +5948,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/tajikistan.png"
   },
   {
    "q": "Столица какой страны — Ашхабад?",
@@ -5590,7 +5961,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/turkmenistan.png"
   },
   {
    "q": "Какой город — столица страны «Египет»?",
@@ -5602,7 +5974,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/egypt.png"
   },
   {
    "q": "Какой город — столица страны «Марокко»?",
@@ -5614,7 +5987,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/morocco.svg"
   },
   {
    "q": "Столица какой страны — Алжир?",
@@ -5626,7 +6000,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/algeria.svg"
   },
   {
    "q": "Какой город — столица страны «Тунис»?",
@@ -5638,7 +6013,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/tunisia.svg"
   },
   {
    "q": "Какой город — столица страны «Ливия»?",
@@ -5650,7 +6026,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/libya.svg"
   },
   {
    "q": "Столица какой страны — Абуджа?",
@@ -5662,7 +6039,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/nigeria.svg"
   },
   {
    "q": "Какой город — столица страны «Кения»?",
@@ -5674,7 +6052,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/kenya.png"
   },
   {
    "q": "Какой город — столица страны «Эфиопия»?",
@@ -5686,7 +6065,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/ethiopia.png"
   },
   {
    "q": "Столица какой страны — Аккра?",
@@ -5698,7 +6078,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/ghana.svg"
   },
   {
    "q": "Какой город — столица страны «Сенегал»?",
@@ -5710,7 +6091,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/senegal.svg"
   },
   {
    "q": "Какой город — столица страны «Ангола»?",
@@ -5722,7 +6104,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/angola.png"
   },
   {
    "q": "Столица какой страны — Антананариву?",
@@ -5734,7 +6117,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/madagascar.svg"
   },
   {
    "q": "Какой город — столица страны «Танзания»?",
@@ -5746,7 +6130,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/tanzania.svg"
   },
   {
    "q": "Какой город — столица страны «Уганда»?",
@@ -5758,7 +6143,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/uganda.png"
   },
   {
    "q": "Столица какой страны — Хараре?",
@@ -5770,7 +6156,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/zimbabwe.png"
   },
   {
    "q": "Какой город — столица страны «Замбия»?",
@@ -5782,7 +6169,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/zambia.png"
   },
   {
    "q": "Какой город — столица страны «Мали»?",
@@ -5794,7 +6182,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/mali.svg"
   },
   {
    "q": "Столица какой страны — Хартум?",
@@ -5806,7 +6195,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/sudan.svg"
   },
   {
    "q": "Какой город — столица страны «США»?",
@@ -5818,7 +6208,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/usa.svg"
   },
   {
    "q": "Какой город — столица страны «Мексика»?",
@@ -5830,7 +6221,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/mexico.png"
   },
   {
    "q": "Столица какой страны — Гавана?",
@@ -5842,7 +6234,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/flags/cuba.svg"
   },
   {
    "q": "Какой город — столица страны «Аргентина»?",
@@ -5854,7 +6247,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/flags/argentina.png"
   },
   {
    "q": "Какой город — столица страны «Чили»?",
@@ -5866,7 +6260,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/chile.svg"
   },
   {
    "q": "Столица какой страны — Лима?",
@@ -5878,7 +6273,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/peru.svg"
   },
   {
    "q": "Какой город — столица страны «Колумбия»?",
@@ -5890,7 +6286,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/colombia.svg"
   },
   {
    "q": "Какой город — столица страны «Венесуэла»?",
@@ -5902,7 +6299,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/venezuela.png"
   },
   {
    "q": "Столица какой страны — Кито?",
@@ -5914,7 +6312,8 @@
    ],
    "answer": 0,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/ecuador.png"
   },
   {
    "q": "Какой город — столица страны «Уругвай»?",
@@ -5926,7 +6325,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/flags/uruguay.png"
   },
   {
    "q": "Какой город — столица страны «Парагвай»?",
@@ -5938,7 +6338,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/paraguay.png"
   },
   {
    "q": "Столица какой страны — Кингстон?",
@@ -5950,7 +6351,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/jamaica.svg"
   },
   {
    "q": "Какой город — столица страны «Коста-Рика»?",
@@ -5962,7 +6364,8 @@
    ],
    "answer": 1,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/costa-rica.png"
   },
   {
    "q": "Какой город — столица страны «Фиджи»?",
@@ -5974,7 +6377,8 @@
    ],
    "answer": 3,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/flags/fiji.png"
   },
   {
    "q": "Столица какой страны — Порт-Морсби?",
@@ -5986,7 +6390,8 @@
    ],
    "answer": 2,
    "theme": "Столицы",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/flags/papua-new-guinea.png"
   },
   {
    "type": "number",
@@ -6002,7 +6407,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 5895,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-snow-capped-mountain.png"
   },
   {
    "type": "number",
@@ -6010,7 +6416,8 @@
    "theme": "География",
    "level": "normal",
    "answer": 1642,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "type": "number",
@@ -6018,7 +6425,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 4808,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/places/montblanc.jpg"
   },
   {
    "type": "number",
@@ -6026,7 +6434,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 31722,
-   "unit": "км²"
+   "unit": "км²",
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "type": "number",
@@ -6034,7 +6443,8 @@
    "theme": "География",
    "level": "hard",
    "answer": -67.7,
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/pics/ans-thermometer.png"
   },
   {
    "type": "number",
@@ -6042,7 +6452,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 9288,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-locomotive.png"
   },
   {
    "type": "number",
@@ -6050,7 +6461,8 @@
    "theme": "География",
    "level": "normal",
    "answer": 40075,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-globe-showing-europe-africa.png"
   },
   {
    "type": "number",
@@ -6058,7 +6470,8 @@
    "theme": "Страны и города",
    "level": "normal",
    "answer": 54,
-   "unit": "стран"
+   "unit": "стран",
+   "answer_image": "media/pics/ans-globe-showing-europe-africa.png"
   },
   {
    "type": "number",
@@ -6066,7 +6479,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 6371,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/space/earth.jpg"
   },
   {
    "type": "number",
@@ -6074,7 +6488,8 @@
    "theme": "Космос",
    "level": "hard",
    "answer": 687,
-   "unit": "суток"
+   "unit": "суток",
+   "answer_image": "media/space/mars.jpg"
   },
   {
    "type": "number",
@@ -6082,7 +6497,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 150,
-   "unit": "млн км"
+   "unit": "млн км",
+   "answer_image": "media/space/earth.jpg"
   },
   {
    "type": "number",
@@ -6090,7 +6506,8 @@
    "theme": "Космос",
    "level": "hard",
    "answer": 464,
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/space/venus.jpg"
   },
   {
    "type": "number",
@@ -6098,7 +6515,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 27,
-   "unit": "лет"
+   "unit": "лет",
+   "answer_image": "media/pics/ans-rocket.png"
   },
   {
    "type": "number",
@@ -6106,7 +6524,8 @@
    "theme": "Космос",
    "level": "normal",
    "answer": 1957,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-satellite.png"
   },
   {
    "type": "number",
@@ -6114,7 +6533,8 @@
    "theme": "История",
    "level": "normal",
    "answer": 1380,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-crossed-swords.png"
   },
   {
    "type": "number",
@@ -6122,7 +6542,8 @@
    "theme": "История",
    "level": "normal",
    "answer": 1812,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/people/kutuzov.jpg"
   },
   {
    "type": "number",
@@ -6130,7 +6551,8 @@
    "theme": "История",
    "level": "normal",
    "answer": 988,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-church.png"
   },
   {
    "type": "number",
@@ -6138,7 +6560,8 @@
    "theme": "История",
    "level": "hard",
    "answer": 116,
-   "unit": "лет"
+   "unit": "лет",
+   "answer_image": "media/pics/ans-crossed-swords.png"
   },
   {
    "type": "number",
@@ -6146,7 +6569,8 @@
    "theme": "История",
    "level": "hard",
    "answer": 1453,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-castle.png"
   },
   {
    "type": "number",
@@ -6154,7 +6578,8 @@
    "theme": "История",
    "level": "hard",
    "answer": 1632,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-hut.png"
   },
   {
    "type": "number",
@@ -6162,21 +6587,24 @@
    "theme": "История",
    "level": "normal",
    "answer": 1917,
-   "unit": "год"
+   "unit": "год",
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "type": "number",
    "q": "Какой порядковый номер у золота в таблице Менделеева?",
    "theme": "Физика и химия",
    "level": "hard",
-   "answer": 79
+   "answer": 79,
+   "answer_image": "media/pics/ans-coin.png"
   },
   {
    "type": "number",
    "q": "Сколько химических элементов в таблице Менделеева (на 2024 год)?",
    "theme": "Физика и химия",
    "level": "normal",
-   "answer": 118
+   "answer": 118,
+   "answer_image": "media/people/mendeleev.jpg"
   },
   {
    "type": "number",
@@ -6184,7 +6612,8 @@
    "theme": "Физика и химия",
    "level": "hard",
    "answer": -273.15,
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/pics/ans-snowflake.png"
   },
   {
    "type": "number",
@@ -6192,7 +6621,8 @@
    "theme": "Физика и химия",
    "level": "normal",
    "answer": 1000,
-   "unit": "кг/м³"
+   "unit": "кг/м³",
+   "answer_image": "media/pics/ans-droplet.png"
   },
   {
    "type": "number",
@@ -6200,7 +6630,8 @@
    "theme": "Спорт",
    "level": "hard",
    "answer": 147,
-   "unit": "очков"
+   "unit": "очков",
+   "answer_image": "media/pics/ans-pool-8-ball.png"
   },
   {
    "type": "number",
@@ -6208,7 +6639,8 @@
    "theme": "Спорт",
    "level": "normal",
    "answer": 50,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-person-swimming.png"
   },
   {
    "type": "number",
@@ -6216,7 +6648,8 @@
    "theme": "Спорт",
    "level": "normal",
    "answer": 3.05,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-basketball.png"
   },
   {
    "type": "number",
@@ -6224,7 +6657,8 @@
    "theme": "Литература",
    "level": "normal",
    "answer": 4,
-   "unit": "тома"
+   "unit": "тома",
+   "answer_image": "media/people/tolstoy.jpg"
   },
   {
    "type": "number",
@@ -6232,14 +6666,16 @@
    "theme": "Литература",
    "level": "hard",
    "answer": 26,
-   "unit": "лет"
+   "unit": "лет",
+   "answer_image": "media/people/lermontov.jpg"
   },
   {
    "type": "number",
    "q": "Сколько симфоний написал Бетховен?",
    "theme": "Искусство",
    "level": "normal",
-   "answer": 9
+   "answer": 9,
+   "answer_image": "media/people/beethoven.jpg"
   },
   {
    "type": "number",
@@ -6247,7 +6683,8 @@
    "theme": "Разное",
    "level": "normal",
    "answer": 86400,
-   "unit": "с"
+   "unit": "с",
+   "answer_image": "media/pics/ans-stopwatch.png"
   },
   {
    "type": "number",
@@ -6261,7 +6698,8 @@
    "q": "Сколько букв в английском алфавите?",
    "theme": "Разное",
    "level": "normal",
-   "answer": 26
+   "answer": 26,
+   "answer_image": "media/pics/ans-input-latin-letters.png"
   },
   {
    "type": "number",
@@ -6269,7 +6707,8 @@
    "theme": "Разное",
    "level": "normal",
    "answer": 25,
-   "unit": "лет"
+   "unit": "лет",
+   "answer_image": "media/pics/ans-ring.png"
   },
   {
    "type": "number",
@@ -6283,21 +6722,24 @@
    "q": "Сколько карт в колоде без джокеров?",
    "theme": "Разное",
    "level": "normal",
-   "answer": 52
+   "answer": 52,
+   "answer_image": "media/pics/ans-spade-suit.png"
   },
   {
    "type": "number",
    "q": "Чему равна сумма точек на всех гранях игрального кубика?",
    "theme": "Разное",
    "level": "normal",
-   "answer": 21
+   "answer": 21,
+   "answer_image": "media/pics/ans-game-die.png"
   },
   {
    "type": "number",
    "q": "Сколько хромосом в клетке человека?",
    "theme": "Человек",
    "level": "normal",
-   "answer": 46
+   "answer": 46,
+   "answer_image": "media/pics/ans-dna.png"
   },
   {
    "q": "У какой страны больше всего часовых поясов, если считать заморские территории?",
@@ -6309,7 +6751,8 @@
     "США",
     "Великобритания"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/flags/france.svg"
   },
   {
    "q": "Какой город был столицей Японии до Токио?",
@@ -6321,7 +6764,8 @@
     "Хиросима",
     "Киото"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/flags/japan.svg"
   },
   {
    "q": "Кто открыл пенициллин?",
@@ -6333,7 +6777,8 @@
     "Роберт Кох",
     "Илья Мечников"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-microbe.png"
   },
   {
    "q": "Кто открыл радиоактивность в 1896 году?",
@@ -6345,7 +6790,8 @@
     "Вильгельм Рентген",
     "Анри Беккерель"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/becquerel.jpg"
   },
   {
    "q": "Сколько раз Мария Склодовская-Кюри получала Нобелевскую премию?",
@@ -6357,7 +6803,8 @@
     "3",
     "4"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/people/curie.jpg"
   },
   {
    "q": "Какой химический элемент назван в честь России?",
@@ -6369,7 +6816,8 @@
     "Полоний",
     "Рубидий"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/flags/russia.svg"
   },
   {
    "q": "Какой язык — родной для наибольшего числа людей?",
@@ -6381,7 +6829,8 @@
     "Испанский",
     "Хинди"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/flags/china.svg"
   },
   {
    "q": "Какое государство — самое маленькое в мире?",
@@ -6393,7 +6842,8 @@
     "Ватикан",
     "Лихтенштейн"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-church.png"
   },
   {
    "q": "Какой остров — самый большой в мире?",
@@ -6405,7 +6855,8 @@
     "Мадагаскар",
     "Гренландия"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-ice.png"
   },
   {
    "q": "Какой горный хребет — самый длинный на суше?",
@@ -6417,7 +6868,8 @@
     "Скалистые горы",
     "Урал"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-mountain.png"
   },
   {
    "q": "Какой пролив отделяет Сахалин от материка?",
@@ -6429,7 +6881,8 @@
     "Берингов",
     "Кунаширский"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "q": "На какой реке стоит Якутск?",
@@ -6441,7 +6894,8 @@
     "На Лене",
     "На Вилюе"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Какое село в Якутии называют «полюсом холода»?",
@@ -6453,7 +6907,8 @@
     "Хандыга",
     "Оймякон"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-cold-face.png"
   },
   {
    "q": "Как называется знаменитый алмазный карьер в Якутии — один из крупнейших в мире?",
@@ -6465,7 +6920,8 @@
     "«Айхал»",
     "«Юбилейный»"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-gem-stone.png"
   },
   {
    "q": "Как называется летний национальный праздник якутов?",
@@ -6489,7 +6945,8 @@
     "Хомус",
     "Дудук"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-musical-notes.png"
   },
   {
    "q": "Кто написал «Двенадцать стульев»?",
@@ -6501,7 +6958,8 @@
     "Братья Стругацкие",
     "Ильф и Петров"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-chair.png"
   },
   {
    "q": "Кто написал роман «Тихий Дон»?",
@@ -6513,7 +6971,8 @@
     "Алексей Толстой",
     "Борис Пастернак"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-horse.png"
   },
   {
    "q": "Кто автор «Маленького принца»?",
@@ -6525,7 +6984,8 @@
     "Виктор Гюго",
     "Шарль Перро"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-rose.png"
   },
   {
    "q": "Кто написал роман-антиутопию «1984»?",
@@ -6537,7 +6997,8 @@
     "Джордж Оруэлл",
     "Евгений Замятин"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-eye.png"
   },
   {
    "q": "В каком городе родился Моцарт?",
@@ -6549,7 +7010,8 @@
     "Прага",
     "Зальцбург"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/people/mozart.jpg"
   },
   {
    "q": "Кто написал скрипичные концерты «Времена года»?",
@@ -6561,7 +7023,8 @@
     "Георг Фридрих Гендель",
     "Йозеф Гайдн"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/people/vivaldi.jpg"
   },
   {
    "q": "Какой орган вырабатывает желчь?",
@@ -6573,7 +7036,8 @@
     "Поджелудочная железа",
     "Селезёнка"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-anatomical-heart.png"
   },
   {
    "q": "Какая планета вращается, как будто «лёжа на боку»?",
@@ -6585,7 +7049,8 @@
     "Уран",
     "Венера"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/space/uranus.jpg"
   },
   {
    "q": "Какая звезда — ближайшая к Солнцу?",
@@ -6597,7 +7062,8 @@
     "Полярная",
     "Проксима Центавра"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-glowing-star.png"
   },
   {
    "q": "Кто стал первым космическим туристом (2001)?",
@@ -6609,7 +7075,8 @@
     "Илон Маск",
     "Марк Шаттлворт"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-rocket.png"
   },
   {
    "q": "Какая валюта в Швейцарии?",
@@ -6621,7 +7088,8 @@
     "Швейцарская крона",
     "Швейцарская марка"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/flags/switzerland.svg"
   },
   {
    "q": "Какой газ называют «веселящим»?",
@@ -6633,7 +7101,8 @@
     "Закись азота",
     "Углекислый газ"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-face-with-tears-of-joy.png"
   },
   {
    "q": "Сколько игроков одной команды в воде в водном поло (с вратарём)?",
@@ -6645,7 +7114,8 @@
     "7",
     "11"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-person-playing-water-polo.png"
   },
   {
    "q": "В каком городе прошли зимние Олимпийские игры 2014 года?",
@@ -6657,7 +7127,8 @@
     "Турин",
     "Сочи"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-sports-medal.png"
   },
   {
    "q": "Какой вид спорта называют «королевой спорта»?",
@@ -6669,7 +7140,8 @@
     "Плавание",
     "Футбол"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-running-shoe.png"
   },
   {
    "q": "Какой сигнал светофора разрешает движение?",
@@ -6681,7 +7153,8 @@
     "Красный",
     "Красный и жёлтый вместе"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-vertical-traffic-light.png"
   },
   {
    "q": "В каком порядке сверху вниз расположены сигналы обычного вертикального светофора?",
@@ -6694,7 +7167,8 @@
     "Красный, зелёный, жёлтый"
    ],
    "answer": 1,
-   "si": false
+   "si": false,
+   "answer_image": "media/pics/ans-vertical-traffic-light.png"
   },
   {
    "q": "Что означает такой сигнал светофора — жёлтый мигает?",
@@ -6745,7 +7219,8 @@
     "Треугольник",
     "Ромб"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-stop-sign.png"
   },
   {
    "q": "Что означает этот знак?",
@@ -6770,7 +7245,8 @@
     "Восьмиугольник",
     "Треугольник с красной каймой"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/signs/warning.svg"
   },
   {
    "q": "Какой формы запрещающие знаки?",
@@ -6782,7 +7258,8 @@
     "Треугольник вершиной вниз",
     "Жёлтый ромб"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/signs/closed.svg"
   },
   {
    "q": "Как обычно выглядят предписывающие знаки («Движение прямо», «Круговое движение»)?",
@@ -6794,7 +7271,8 @@
     "Жёлтый ромб",
     "Зелёный прямоугольник"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/signs/ahead.svg"
   },
   {
    "q": "Что означает этот знак?",
@@ -6819,7 +7297,8 @@
     "Можно ехать на красный",
     "Машины со второстепенных дорог уступают тебе"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/signs/priority.svg"
   },
   {
    "q": "Что означает этот знак?",
@@ -6922,7 +7401,8 @@
     "Пешеходный переход для детей только днём",
     "Осторожно, рядом могут быть дети"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/signs/warning.svg"
   },
   {
    "q": "Как называют пешеходный переход с белыми полосами на асфальте?",
@@ -6934,7 +7414,8 @@
     "Ёлочка",
     "Шахматка"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-zebra.png"
   },
   {
    "q": "Что означает сплошная линия разметки посередине дороги?",
@@ -6946,7 +7427,8 @@
     "Это граница стоянки",
     "Полоса для велосипедов"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-motorway.png"
   },
   {
    "q": "Какую линию разметки можно пересекать?",
@@ -6958,7 +7440,8 @@
     "Прерывистую",
     "Любую, если нет встречных"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-motorway.png"
   },
   {
    "q": "Где обгон запрещён почти во всех странах?",
@@ -6971,7 +7454,8 @@
     "На пешеходном переходе"
    ],
    "answer": 3,
-   "si": false
+   "si": false,
+   "answer_image": "media/pics/ans-person-walking.png"
   },
   {
    "q": "Перекрёсток равнозначных дорог без знаков, движение правостороннее. Кому уступать?",
@@ -6983,7 +7467,8 @@
     "Тому, у кого машина больше",
     "Никому — кто первый, тот и едет"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-automobile.png"
   },
   {
    "q": "Кто обычно имеет преимущество на круговом перекрёстке со знаком «Уступи дорогу» на въезде?",
@@ -6995,7 +7480,8 @@
     "Тот, кто едет быстрее",
     "Грузовики"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/signs/roundabout.svg"
   },
   {
    "q": "Куда едут машины по кругу на круговом перекрёстке в странах с правосторонним движением?",
@@ -7007,7 +7493,8 @@
     "Против часовой стрелки",
     "Зависит от дня недели"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/signs/roundabout.svg"
   },
   {
    "q": "В какой из этих стран левостороннее движение?",
@@ -7019,7 +7506,8 @@
     "США",
     "Великобритания"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/flags/uk.svg"
   },
   {
    "q": "В какой азиатской стране левостороннее движение?",
@@ -7032,7 +7520,8 @@
     "Турция"
    ],
    "answer": 0,
-   "si": false
+   "si": false,
+   "answer_image": "media/flags/japan.svg"
   },
   {
    "q": "Что должен сделать водитель, если сзади едет скорая с сиреной и мигалками?",
@@ -7044,7 +7533,8 @@
     "Остановиться посреди полосы",
     "Не обращать внимания"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ambulance.png"
   },
   {
    "q": "Кто в машине должен пристёгиваться ремнём безопасности?",
@@ -7056,7 +7546,8 @@
     "Все — и водитель, и пассажиры",
     "Только на трассе"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-automobile.png"
   },
   {
    "q": "Как правильно возить младенца в автокресле?",
@@ -7068,7 +7559,8 @@
     "Лёжа на заднем сиденье без кресла",
     "Лицом против хода движения"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-baby.png"
   },
   {
    "q": "Что первым делом включить при вынужденной остановке на дороге?",
@@ -7080,7 +7572,8 @@
     "Противотуманные фары",
     "Звуковой сигнал"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-warning.png"
   },
   {
    "q": "Какой формы знак аварийной остановки, который ставят позади машины?",
@@ -7092,7 +7585,8 @@
     "Квадрат",
     "Восьмиугольник"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-warning.png"
   },
   {
    "q": "Какой свет фар ослепляет встречных водителей?",
@@ -7104,7 +7598,8 @@
     "Дальний",
     "Дневные ходовые огни"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-flashlight.png"
   },
   {
    "q": "Какого цвета задние габаритные огни машины?",
@@ -7116,7 +7611,8 @@
     "Синего",
     "Красного"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-oncoming-automobile.png"
   },
   {
    "q": "Что значат горящие белые фонари сзади машины?",
@@ -7128,7 +7624,8 @@
     "Машина поворачивает",
     "У машины поломка"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-oncoming-automobile.png"
   },
   {
    "q": "Как называют место вокруг машины, которое водитель не видит в зеркалах?",
@@ -7140,7 +7637,8 @@
     "Красная зона",
     "Зона комфорта"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-eyes.png"
   },
   {
    "q": "Что такое тормозной путь?",
@@ -7152,7 +7650,8 @@
     "Расстояние от начала торможения до полной остановки",
     "Путь от стоянки до выезда"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-stop-sign.png"
   },
   {
    "q": "Скорость машины выросла вдвое. Во сколько раз примерно вырастет тормозной путь?",
@@ -7164,7 +7663,8 @@
     "В 4 раза",
     "В 8 раз"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-stop-sign.png"
   },
   {
    "q": "Почему зимой тормозной путь длиннее?",
@@ -7176,7 +7676,8 @@
     "Холодный воздух мешает ехать",
     "Колёса хуже сцепляются с дорогой"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-snowflake.png"
   },
   {
    "q": "Как называется система, которая не даёт колёсам заблокироваться при резком торможении?",
@@ -7188,7 +7689,8 @@
     "Парктроник",
     "Турбонаддув"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-automobile.png"
   },
   {
    "q": "Нет тротуара и обочины. По какой стороне дороги лучше идти пешеходу?",
@@ -7200,7 +7702,8 @@
     "По середине дороги",
     "Всё равно"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-person-walking.png"
   },
   {
    "q": "Как велосипедисту ехать по дороге без велодорожки?",
@@ -7212,7 +7715,8 @@
     "У края дороги, в одном направлении с машинами",
     "По тротуару, обгоняя пешеходов"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-bicycle.png"
   },
   {
    "q": "Что сделать перед тем, как отъехать от края дороги?",
@@ -7224,7 +7728,8 @@
     "Резко нажать на газ",
     "Включить поворотник и убедиться, что никому не мешаешь"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-automobile.png"
   },
   {
    "type": "map",
@@ -7246,7 +7751,8 @@
    ],
    "place": "Париж, Франция",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/eiffel.jpg"
   },
   {
    "type": "map",
@@ -7257,7 +7763,8 @@
    ],
    "place": "Рим, Италия",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/colosseum.jpg"
   },
   {
    "type": "map",
@@ -7279,7 +7786,8 @@
    ],
    "place": "Анды, Перу",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/machu-picchu.jpg"
   },
   {
    "type": "map",
@@ -7290,7 +7798,8 @@
    ],
    "place": "Агра, Индия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/taj-mahal.jpg"
   },
   {
    "type": "map",
@@ -7301,7 +7810,8 @@
    ],
    "place": "Гиза у Каира, Египет",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/giza.jpg"
   },
   {
    "type": "map",
@@ -7356,7 +7866,8 @@
    ],
    "place": "остров Пасхи, Чили",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/moai-easter.jpg"
   },
   {
    "type": "map",
@@ -7367,7 +7878,8 @@
    ],
    "place": "юг Англии, Великобритания",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/stonehenge.jpg"
   },
   {
    "type": "map",
@@ -7378,7 +7890,8 @@
    ],
    "place": "Афины, Греция",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/acropolis.jpg"
   },
   {
    "type": "map",
@@ -7389,7 +7902,8 @@
    ],
    "place": "Дубай, ОАЭ",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/burj-khalifa.jpg"
   },
   {
    "type": "map",
@@ -7411,7 +7925,8 @@
    ],
    "place": "Пиза, Италия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/pisa.jpg"
   },
   {
    "type": "map",
@@ -7422,7 +7937,8 @@
    ],
    "place": "Сан-Франциско, США",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/golden-gate.jpg"
   },
   {
    "type": "map",
@@ -7433,7 +7949,8 @@
    ],
    "place": "Лондон, Великобритания",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/big-ben.jpg"
   },
   {
    "type": "map",
@@ -7466,7 +7983,8 @@
    ],
    "place": "Бавария, Германия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/neuschwanstein.jpg"
   },
   {
    "type": "map",
@@ -7477,7 +7995,8 @@
    ],
    "place": "Гранада, Испания",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/alhambra.jpg"
   },
   {
    "type": "map",
@@ -7488,7 +8007,8 @@
    ],
    "place": "Лхаса, Тибет (Китай)",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/potala.jpg"
   },
   {
    "type": "map",
@@ -7499,7 +8019,8 @@
    ],
    "place": "остров Ява, Индонезия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/borobudur.jpg"
   },
   {
    "type": "map",
@@ -7587,7 +8108,8 @@
    ],
    "place": "Гималаи, граница Непала и Китая",
    "theme": "Где на карте",
-   "level": "easy"
+   "level": "easy",
+   "image": "media/places/everest.jpg"
   },
   {
    "type": "map",
@@ -7598,7 +8120,8 @@
    ],
    "place": "Кавказ, Россия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/elbrus.jpg"
   },
   {
    "type": "map",
@@ -7609,7 +8132,8 @@
    ],
    "place": "Альпы, граница Франции и Италии",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/montblanc.jpg"
   },
   {
    "type": "map",
@@ -7642,7 +8166,8 @@
    ],
    "place": "Аризона, США",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/grand-canyon.jpg"
   },
   {
    "type": "map",
@@ -7653,7 +8178,8 @@
    ],
    "place": "центр Австралии",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/uluru.jpg"
   },
   {
    "type": "map",
@@ -7708,7 +8234,8 @@
    ],
    "place": "Камчатка, Россия",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/klyuchevskaya.jpg"
   },
   {
    "type": "map",
@@ -7730,7 +8257,8 @@
    ],
    "place": "Йеллоустон, США",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/old-faithful.jpg"
   },
   {
    "type": "map",
@@ -7752,7 +8280,8 @@
    ],
    "place": "юг Африки, ЮАР",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/cape-good-hope.jpg"
   },
   {
    "type": "map",
@@ -7829,7 +8358,8 @@
    ],
    "place": "Мали, Африка",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/timbuktu.jpg"
   },
   {
    "type": "map",
@@ -8038,7 +8568,8 @@
    ],
    "place": "Монако",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/monaco.jpg"
   },
   {
    "type": "map",
@@ -8104,7 +8635,8 @@
    ],
    "place": "Гавайи, США",
    "theme": "Где на карте",
-   "level": "hard"
+   "level": "hard",
+   "image": "media/places/pearl-harbor.jpg"
   },
   {
    "type": "map",
@@ -8115,7 +8647,8 @@
    ],
    "place": "у Неаполя, Италия",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/pompeii.jpg"
   },
   {
    "type": "map",
@@ -8192,7 +8725,8 @@
    ],
    "place": "Казахстан",
    "theme": "Где на карте",
-   "level": "normal"
+   "level": "normal",
+   "image": "media/places/baikonur.jpg"
   },
   {
    "type": "map",
@@ -8370,7 +8904,8 @@
    "answer": 0,
    "image": "media/pics/kiwi-fruit.png",
    "theme": "Животные и растения",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/new-zealand.svg"
   },
   {
    "q": "Как называется этот музыкальный инструмент?",
@@ -8786,7 +9321,8 @@
    "answer": 0,
    "image": "media/pics/locomotive.png",
    "theme": "Изобретения и техника",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/uk.svg"
   },
   {
    "q": "В какой стране в 1964 году запустили первые скоростные поезда «Синкансэн»?",
@@ -8799,7 +9335,8 @@
    "answer": 1,
    "image": "media/pics/bullet-train.png",
    "theme": "Изобретения и техника",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/flags/japan.svg"
   },
   {
    "q": "Как называется эта молекула — «двойная спираль»?",
@@ -9033,6 +9570,1020 @@
    "answer": 0,
    "image": "media/pics/yin-yang.png",
    "theme": "Разное",
+   "level": "easy"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Илья Репин",
+    "Виктор Васнецов",
+    "Василий Суриков",
+    "Иван Билибин"
+   ],
+   "answer": 1,
+   "image": "media/art/bogatyrs.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Иван Шишкин",
+    "Архип Куинджи",
+    "Василий Поленов",
+    "Исаак Левитан"
+   ],
+   "answer": 3,
+   "image": "media/art/golden-autumn.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Исаак Левитан",
+    "Алексей Саврасов",
+    "Фёдор Васильев",
+    "Иван Шишкин"
+   ],
+   "answer": 1,
+   "image": "media/art/rooks.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Иван Айвазовский",
+    "Исаак Левитан",
+    "Архип Куинджи",
+    "Алексей Саврасов"
+   ],
+   "answer": 2,
+   "image": "media/art/moonlit-dnieper.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Василий Суриков",
+    "Илья Репин",
+    "Виктор Васнецов",
+    "Василий Перов"
+   ],
+   "answer": 0,
+   "image": "media/art/morozova.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Василий Суриков",
+    "Виктор Васнецов",
+    "Василий Верещагин",
+    "Илья Репин"
+   ],
+   "answer": 3,
+   "image": "media/art/cossacks.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Алексей Саврасов",
+    "Иван Крамской",
+    "Иван Шишкин",
+    "Василий Перов"
+   ],
+   "answer": 3,
+   "image": "media/art/hunters-at-rest.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Иван Крамской",
+    "Илья Репин",
+    "Валентин Серов",
+    "Карл Брюллов"
+   ],
+   "answer": 0,
+   "image": "media/art/unknown-woman.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Илья Репин",
+    "Валентин Серов",
+    "Иван Крамской",
+    "Борис Кустодиев"
+   ],
+   "answer": 1,
+   "image": "media/art/girl-with-peaches.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Валентин Серов",
+    "Илья Репин",
+    "Борис Кустодиев",
+    "Филипп Малявин"
+   ],
+   "answer": 2,
+   "image": "media/art/merchant-wife.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Клод Моне",
+    "Пьер Огюст Ренуар",
+    "Эдуар Мане",
+    "Эдгар Дега"
+   ],
+   "answer": 0,
+   "image": "media/art/impression-sunrise.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Рафаэль",
+    "Тициан",
+    "Леонардо да Винчи",
+    "Сандро Боттичелли"
+   ],
+   "answer": 3,
+   "image": "media/art/birth-of-venus.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Рембрандт",
+    "Питер Пауль Рубенс",
+    "Ян Вермеер",
+    "Ян ван Эйк"
+   ],
+   "answer": 2,
+   "image": "media/art/pearl-earring.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Винсент ван Гог",
+    "Эдвард Мунк",
+    "Густав Климт",
+    "Эгон Шиле"
+   ],
+   "answer": 1,
+   "image": "media/art/scream.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Эдвард Мунк",
+    "Густав Климт",
+    "Альфонс Муха",
+    "Эгон Шиле"
+   ],
+   "answer": 1,
+   "image": "media/art/kiss.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Утагава Хиросигэ",
+    "Китагава Утамаро",
+    "Сэссю Тоё",
+    "Кацусика Хокусай"
+   ],
+   "answer": 3,
+   "image": "media/art/great-wave.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Ян Вермеер",
+    "Питер Пауль Рубенс",
+    "Рембрандт",
+    "Франс Хальс"
+   ],
+   "answer": 2,
+   "image": "media/art/night-watch.jpg",
+   "theme": "Искусство",
+   "level": "normal"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Питер Брейгель Старший",
+    "Иероним Босх",
+    "Ян ван Эйк",
+    "Альбрехт Дюрер"
+   ],
+   "answer": 0,
+   "image": "media/art/hunters-in-snow.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Клод Моне",
+    "Поль Синьяк",
+    "Жорж Сёра",
+    "Пьер Огюст Ренуар"
+   ],
+   "answer": 2,
+   "image": "media/art/grande-jatte.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Клод Моне",
+    "Эдгар Дега",
+    "Анри де Тулуз-Лотрек",
+    "Пьер Огюст Ренуар"
+   ],
+   "answer": 3,
+   "image": "media/art/moulin-galette.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Кто написал эту картину?",
+   "options": [
+    "Диего Веласкес",
+    "Франсиско Гойя",
+    "Эль Греко",
+    "Бартоломе Мурильо"
+   ],
+   "answer": 0,
+   "image": "media/art/las-meninas.jpg",
+   "theme": "Искусство",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Ирландия",
+    "Испания",
+    "Украина",
+    "Финляндия"
+   ],
+   "answer": 1,
+   "image": "media/flags/spain.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Нидерланды",
+    "Северная Македония",
+    "Исландия",
+    "Португалия"
+   ],
+   "answer": 3,
+   "image": "media/flags/portugal.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Бельгия",
+    "Словакия",
+    "Латвия",
+    "Италия"
+   ],
+   "answer": 1,
+   "image": "media/flags/slovakia.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Германия",
+    "Черногория",
+    "Сербия",
+    "Украина"
+   ],
+   "answer": 2,
+   "image": "media/flags/serbia.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Хорватия",
+    "Босния и Герцеговина",
+    "Испания",
+    "Ирландия"
+   ],
+   "answer": 0,
+   "image": "media/flags/croatia.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Словения",
+    "Швейцария",
+    "Россия",
+    "Германия"
+   ],
+   "answer": 0,
+   "image": "media/flags/slovenia.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Босния и Герцеговина",
+    "Бельгия",
+    "Белоруссия",
+    "Латвия"
+   ],
+   "answer": 2,
+   "image": "media/flags/belarus.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Мальта",
+    "Северная Македония",
+    "Ирландия",
+    "Молдавия"
+   ],
+   "answer": 3,
+   "image": "media/flags/moldova.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Германия",
+    "Албания",
+    "Австрия",
+    "Литва"
+   ],
+   "answer": 1,
+   "image": "media/flags/albania.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Белоруссия",
+    "Испания",
+    "Мальта",
+    "Португалия"
+   ],
+   "answer": 2,
+   "image": "media/flags/malta.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Северная Македония",
+    "Кипр",
+    "Словакия",
+    "Великобритания"
+   ],
+   "answer": 1,
+   "image": "media/flags/cyprus.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Черногория",
+    "Латвия",
+    "Люксембург",
+    "Кипр"
+   ],
+   "answer": 0,
+   "image": "media/flags/montenegro.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Турция",
+    "Йемен",
+    "Оман",
+    "Монголия"
+   ],
+   "answer": 3,
+   "image": "media/flags/mongolia.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Камбоджа",
+    "Пакистан",
+    "Вьетнам",
+    "Непал"
+   ],
+   "answer": 0,
+   "image": "media/flags/cambodia.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Индонезия",
+    "Азербайджан",
+    "Филиппины",
+    "Непал"
+   ],
+   "answer": 2,
+   "image": "media/flags/philippines.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Ирак",
+    "Непал",
+    "Турция",
+    "Израиль"
+   ],
+   "answer": 1,
+   "image": "media/flags/nepal.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Лаос",
+    "ОАЭ",
+    "Таджикистан",
+    "Иран"
+   ],
+   "answer": 3,
+   "image": "media/flags/iran.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Пакистан",
+    "Мьянма",
+    "Ирак",
+    "Таджикистан"
+   ],
+   "answer": 2,
+   "image": "media/flags/iraq.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Таиланд",
+    "Иран",
+    "ОАЭ",
+    "Иордания"
+   ],
+   "answer": 3,
+   "image": "media/flags/jordan.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Ливан",
+    "Узбекистан",
+    "Киргизия",
+    "Израиль"
+   ],
+   "answer": 0,
+   "image": "media/flags/lebanon.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Индия",
+    "Саудовская Аравия",
+    "Пакистан",
+    "Казахстан"
+   ],
+   "answer": 1,
+   "image": "media/flags/saudi-arabia.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Оман",
+    "Индия",
+    "Малайзия",
+    "Иран"
+   ],
+   "answer": 0,
+   "image": "media/flags/oman.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Филиппины",
+    "Йемен",
+    "Катар",
+    "Грузия"
+   ],
+   "answer": 3,
+   "image": "media/flags/georgia.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Туркменистан",
+    "Таиланд",
+    "Узбекистан",
+    "ОАЭ"
+   ],
+   "answer": 2,
+   "image": "media/flags/uzbekistan.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Китай",
+    "Киргизия",
+    "Филиппины",
+    "Япония"
+   ],
+   "answer": 1,
+   "image": "media/flags/kyrgyzstan.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Малайзия",
+    "Иордания",
+    "Таджикистан",
+    "Япония"
+   ],
+   "answer": 2,
+   "image": "media/flags/tajikistan.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Туркменистан",
+    "Казахстан",
+    "Китай",
+    "Индия"
+   ],
+   "answer": 0,
+   "image": "media/flags/turkmenistan.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Зимбабве",
+    "Египет",
+    "Бенин",
+    "Сомали"
+   ],
+   "answer": 1,
+   "image": "media/flags/egypt.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Марокко",
+    "Ботсвана",
+    "Уганда",
+    "Кения"
+   ],
+   "answer": 3,
+   "image": "media/flags/kenya.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Эфиопия",
+    "Тунис",
+    "Сенегал",
+    "Того"
+   ],
+   "answer": 0,
+   "image": "media/flags/ethiopia.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Алжир",
+    "Мадагаскар",
+    "Ангола",
+    "Уганда"
+   ],
+   "answer": 2,
+   "image": "media/flags/angola.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Замбия",
+    "Уганда",
+    "ЮАР",
+    "Ливия"
+   ],
+   "answer": 1,
+   "image": "media/flags/uganda.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Маврикий",
+    "Того",
+    "Республика Конго",
+    "Зимбабве"
+   ],
+   "answer": 3,
+   "image": "media/flags/zimbabwe.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Камерун",
+    "Замбия",
+    "Буркина-Фасо",
+    "Тунис"
+   ],
+   "answer": 1,
+   "image": "media/flags/zambia.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Багамы",
+    "Канада",
+    "Мексика",
+    "Коста-Рика"
+   ],
+   "answer": 2,
+   "image": "media/flags/mexico.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Коста-Рика",
+    "Эквадор",
+    "Панама",
+    "Аргентина"
+   ],
+   "answer": 3,
+   "image": "media/flags/argentina.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Венесуэла",
+    "Чили",
+    "Бразилия",
+    "США"
+   ],
+   "answer": 0,
+   "image": "media/flags/venezuela.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Уругвай",
+    "Эквадор",
+    "Перу",
+    "Колумбия"
+   ],
+   "answer": 1,
+   "image": "media/flags/ecuador.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Уругвай",
+    "Коста-Рика",
+    "Багамы",
+    "Перу"
+   ],
+   "answer": 0,
+   "image": "media/flags/uruguay.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "США",
+    "Перу",
+    "Эквадор",
+    "Парагвай"
+   ],
+   "answer": 3,
+   "image": "media/flags/paraguay.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Чили",
+    "Колумбия",
+    "Коста-Рика",
+    "Парагвай"
+   ],
+   "answer": 2,
+   "image": "media/flags/costa-rica.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Папуа — Новая Гвинея",
+    "Австралия",
+    "Новая Зеландия",
+    "Фиджи"
+   ],
+   "answer": 3,
+   "image": "media/flags/fiji.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Папуа — Новая Гвинея",
+    "Фиджи",
+    "Новая Зеландия",
+    "Австралия"
+   ],
+   "answer": 0,
+   "image": "media/flags/papua-new-guinea.png",
+   "theme": "Флаги",
+   "level": "hard"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Аргентина",
+    "Чили",
+    "Бразилия",
+    "Парагвай"
+   ],
+   "answer": 2,
+   "image": "media/flags/brazil.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Эквадор",
+    "Канада",
+    "Венесуэла",
+    "Парагвай"
+   ],
+   "answer": 1,
+   "image": "media/flags/canada.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Казахстан",
+    "Грузия",
+    "Филиппины",
+    "Пакистан"
+   ],
+   "answer": 0,
+   "image": "media/flags/kazakhstan.png",
+   "theme": "Флаги",
+   "level": "easy"
+  },
+  {
+   "q": "Флаг какой страны на картинке?",
+   "options": [
+    "Марокко",
+    "Тунис",
+    "Республика Конго",
+    "ЮАР"
+   ],
+   "answer": 3,
+   "image": "media/flags/south-africa.png",
+   "theme": "Флаги",
+   "level": "normal"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Луна",
+    "Меркурий",
+    "Марс",
+    "Уран"
+   ],
+   "answer": 1,
+   "image": "media/space/mercury.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Меркурий",
+    "Юпитер",
+    "Венера",
+    "Уран"
+   ],
+   "answer": 2,
+   "image": "media/space/venus.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Марс",
+    "Нептун",
+    "Юпитер"
+   ],
+   "answer": 0,
+   "image": "media/space/earth.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Юпитер",
+    "Марс",
+    "Меркурий"
+   ],
+   "answer": 2,
+   "image": "media/space/mars.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Венера",
+    "Юпитер"
+   ],
+   "answer": 3,
+   "image": "media/space/jupiter.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Земля",
+    "Сатурн",
+    "Меркурий",
+    "Юпитер"
+   ],
+   "answer": 1,
+   "image": "media/space/saturn.jpg",
+   "theme": "Космос",
+   "level": "easy"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Меркурий",
+    "Сатурн"
+   ],
+   "answer": 0,
+   "image": "media/space/uranus.jpg",
+   "theme": "Космос",
+   "level": "normal"
+  },
+  {
+   "q": "Какая планета на снимке?",
+   "options": [
+    "Уран",
+    "Нептун",
+    "Венера",
+    "Марс"
+   ],
+   "answer": 1,
+   "image": "media/space/neptune.jpg",
+   "theme": "Космос",
+   "level": "normal"
+  },
+  {
+   "q": "Как называют этот знаменитый снимок телескопа «Хаббл»?",
+   "options": [
+    "Глаз Бога",
+    "Крабовидная туманность",
+    "Столпы творения",
+    "Конская Голова"
+   ],
+   "answer": 2,
+   "image": "media/space/pillars.jpg",
+   "theme": "Космос",
+   "level": "hard"
+  },
+  {
+   "q": "Как называется эта станция на орбите Земли?",
+   "options": [
+    "«Мир»",
+    "«Салют-7»",
+    "«Тяньгун»",
+    "МКС"
+   ],
+   "answer": 3,
+   "image": "media/space/iss.jpg",
+   "theme": "Космос",
    "level": "easy"
   }
  ]

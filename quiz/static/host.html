@@ -107,9 +107,12 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .opt .shape { font-size: 1.1em; flex: none; position: relative; }
 .opt .label { min-width: 0; flex: 1; position: relative; }
+.opt .who { position: relative; display: flex; flex: none; font-size: .8em; }
+.opt .who .ava { margin-left: -.4em; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
+.opt .who .more { position: relative; margin-left: .3em; align-self: center; font-size: .9em; }
 .opt .count { position: relative; font-family: var(--display); font-variant-numeric: tabular-nums; }
 .opt .fill { position: absolute; inset: 0 auto 0 0; width: var(--w, 0%); background: rgba(255, 255, 255, .18); transition: width .9s cubic-bezier(.2, .8, .2, 1); }
-.opt.dim { opacity: .3; transform: scale(.97); }
+.opt.dim { opacity: .45; transform: scale(.97); }
 .opt.right { outline: 4px solid #fff; outline-offset: 4px; animation: glow 1.2s ease-in-out 2; }
 @keyframes glow { 50% { transform: scale(1.03); } }
 
@@ -200,6 +203,7 @@ a.btn { text-decoration: none; display: inline-block; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 
 /* картинка и аудио в вопросе */
+.qimg.answer-pic { max-height: min(34vh, 320px); }
 .qmedia { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .qimg { max-width: 100%; max-height: 36vh; border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); background: #fff; }
 .qimg.small { max-height: 18vh; }
@@ -512,6 +516,7 @@ function questionBody(s) {
 function revealBody(s) {
   if (s.qtype === "map") {
     return `${s.place ? `<div class="place rise">📍 ${esc(s.place)}</div>` : ""}
+      ${s.answer_image ? `<div class="qmedia pop"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>` : ""}
       <div class="map-reveal"><div class="host-map" id="host-map"></div>
       ${s.map_answers.length ? `<ol class="num-list">${s.map_answers.map((a, i) => `
         <li class="${a.best ? "best" : ""}" style="--i:${i}"><span class="pos">${i + 1}</span>${avaP(a)}<span class="nm">${esc(a.name)}${a.best ? " 🎯" : ""}</span>
@@ -526,7 +531,10 @@ function revealBody(s) {
         : `<p class="muted">Никто не ответил</p>`}`;
   }
   if (s.qtype === "order") {
-    return `<ol class="order-list">${s.correct_order.map((o, i) => `<li class="rise" style="--i:${i}"><span class="num">${i + 1}</span>${esc(o)}</li>`).join("")}</ol>`;
+    const mark = { right: "✓", partial: "½" };
+    return `<ol class="order-list">${s.correct_order.map((o, i) => `<li class="rise" style="--i:${i}"><span class="num">${i + 1}</span>${esc(o)}</li>`).join("")}</ol>
+      ${(s.player_answers || []).length ? `<div class="chips">${s.player_answers.map((a) =>
+        `<span class="chip said ${a.result === "right" ? "ok" : a.result === "partial" ? "" : "no"}">${mark[a.result] || "✗"} ${esc(a.name)}</span>`).join("")}</div>` : ""}`;
   }
   if (s.qtype === "text") {
     return `<div class="text-answer rise">${esc(s.correct_text)}</div>
@@ -543,7 +551,9 @@ function options(s, reveal) {
     const cls = reveal ? (right ? "right" : "dim") : "rise";
     const fill = reveal ? `<span class="fill" style="--w:0%" data-w="${(s.counts[i] / total) * 100}%"></span>` : "";
     const count = reveal ? `<span class="count">${s.counts[i]}</span>` : "";
-    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span><span class="label">${esc(o)}</span>${count}</div>`;
+    const who = reveal ? (s.player_answers || []).filter((a) => (Array.isArray(a.pick) ? a.pick : [a.pick]).includes(i)) : [];
+    const faces = who.length ? `<span class="who">${who.slice(0, 6).map(avaP).join("")}${who.length > 6 ? `<span class="more">+${who.length - 6}</span>` : ""}</span>` : "";
+    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span><span class="label">${esc(o)}</span>${faces}${count}</div>`;
   }).join("")}</div>`;
 }
 
@@ -684,7 +694,8 @@ function render(s) {
     const partial = s.partial_count ? `, частично: <b style="color:var(--ink)">${s.partial_count}</b>` : "";
     $main.innerHTML = `
       <div><div class="eyebrow">Правильный ответ</div><h2>${esc(s.question)}</h2></div>
-      ${s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
+      ${s.answer_image && s.qtype !== "map" ? `<div class="qmedia pop"><img class="qimg answer-pic" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>`
+        : s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
       ${revealBody(s)}
       <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>`;
     mountMap(s);

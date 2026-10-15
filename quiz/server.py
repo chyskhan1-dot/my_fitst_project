@@ -291,6 +291,7 @@ def clean_pack(data, store=None, scope="_"):
                 "options": options,
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
+                "answer_image": media_ref(q.get("answer_image"), "image", store, scope),  # показывается после ответа
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
@@ -1602,9 +1603,16 @@ class Game:
             s["right_total"] = len(right)
             s["answers_total"] = len(self.answers)
         if self.phase == "reveal":
+            s["answer_image"] = q.get("answer_image")
             results = [a.get("result") for a in self.answers.values()]
             s["right_count"] = results.count("right")
             s["partial_count"] = results.count("partial")
+            if q["type"] in ("choice", "multi", "order"):  # кто что ответил: сначала верные, потом по времени
+                rank = {"right": 0, "partial": 1}
+                rows = sorted(((rank.get(a.get("result"), 2), a["time"], pid, a) for pid, a in self.answers.items()
+                               if pid in self.players and a["value"] is not None), key=lambda r: r[:2])
+                s["player_answers"] = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"),
+                                        "pick": a["value"], "result": a.get("result")} for _, _, pid, a in rows]
             if q["type"] in ("choice", "multi"):
                 s["correct"] = q["answer"]
                 counts = [0] * len(q["options"])
@@ -1630,8 +1638,10 @@ class Game:
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [
-                    {"name": self.players[pid]["name"], "text": a["value"], "ok": a.get("result") == "right"}
-                    for pid, a in self.answers.items() if pid in self.players and a["value"] is not None
+                    {"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "text": a["value"],
+                     "ok": a.get("result") == "right"}
+                    for pid, a in sorted(self.answers.items(), key=lambda x: (x[1].get("result") != "right", x[1]["time"]))
+                    if pid in self.players and a["value"] is not None
                 ]
         if self.owns(pid, device):
             me = self.players[pid]

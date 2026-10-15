@@ -27,6 +27,8 @@
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return false;
+      // iPhone глушит звук страниц беззвучным переключателем; режим «playback» — как у плеера, звук идёт всегда
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
       ctx = new AC();
       master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
       const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
@@ -421,6 +423,12 @@
     try { localStorage.setItem(KEY, v ? "off" : "on"); } catch {}
     if (ctx) master.gain.setTargetAtTime(v ? 0 : 1, ctx.currentTime, 0.05);
   }
+
+  // вкладка скрыта (соседняя вкладка, телефон заблокирован) — музыка на паузе, вернулись — играет дальше
+  document.addEventListener("visibilitychange", () => {
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend().catch(() => {}); else ctx.resume().catch(() => {});
+  });
 
   window.QuizMusic = {
     unlock, play, stop, sting, setTension, melody, stopMelody, MELODY_INSTRUMENTS,

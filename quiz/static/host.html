@@ -105,8 +105,8 @@ a.btn { text-decoration: none; display: inline-block; }
   background: var(--c); box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .18);
   transition: opacity .5s, transform .5s;
 }
-.opt .shape { font-size: 1.1em; flex: none; position: relative; }
 .opt .label { min-width: 0; flex: 1; position: relative; }
+.opt .opt-img { position: relative; height: 2.2em; width: 3.3em; object-fit: contain; flex: none; border-radius: 8px; }
 .opt .who { position: relative; display: flex; flex: none; font-size: .8em; }
 .opt .who .ava { margin-left: -.4em; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
 .opt .who .more { position: relative; margin-left: .3em; align-self: center; font-size: .9em; }
@@ -204,6 +204,7 @@ a.btn { text-decoration: none; display: inline-block; }
 
 /* картинка и аудио в вопросе */
 .qimg.answer-pic { max-height: min(34vh, 320px); }
+.qimg.answer-pic.photo { max-height: min(44vh, 420px); max-width: 70vw; background: none; } /* фото, портрет, флаг — крупно */
 .qmedia { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .qimg { max-width: 100%; max-height: 36vh; border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, .35); background: #fff; }
 .qimg.small { max-height: 18vh; }
@@ -409,7 +410,6 @@ button.fd-slot:hover { background: #2a3bb0; }
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const room = new URLSearchParams(location.search).get("room") || "";
 const token = (() => { try { return localStorage.getItem("quiz-host-" + room) || ""; } catch { return ""; } })();
@@ -553,7 +553,7 @@ function options(s, reveal) {
     const count = reveal ? `<span class="count">${s.counts[i]}</span>` : "";
     const who = reveal ? (s.player_answers || []).filter((a) => (Array.isArray(a.pick) ? a.pick : [a.pick]).includes(i)) : [];
     const faces = who.length ? `<span class="who">${who.slice(0, 6).map(avaP).join("")}${who.length > 6 ? `<span class="more">+${who.length - 6}</span>` : ""}</span>` : "";
-    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span><span class="label">${esc(o)}</span>${faces}${count}</div>`;
+    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}${s.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(s.option_images[i]))}" alt="">` : ""}<span class="label">${esc(o)}</span>${faces}${count}</div>`;
   }).join("")}</div>`;
 }
 
@@ -694,7 +694,7 @@ function render(s) {
     const partial = s.partial_count ? `, частично: <b style="color:var(--ink)">${s.partial_count}</b>` : "";
     $main.innerHTML = `
       <div><div class="eyebrow">Правильный ответ</div><h2>${esc(s.question)}</h2></div>
-      ${s.answer_image && s.qtype !== "map" ? `<div class="qmedia pop"><img class="qimg answer-pic" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>`
+      ${s.answer_image && s.qtype !== "map" ? `<div class="qmedia pop"><img class="qimg answer-pic ${/media\/pics\/ans-/.test(s.answer_image) ? "" : "photo"}" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>`
         : s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
       ${revealBody(s)}
       <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>`;
@@ -968,23 +968,23 @@ let rulesOpen = false;
 
 function packCards(s, d) {
   if (d.mode === "100to1") {
-    const list = s.fd_packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.count} вопросов` }));
-    if (s.fd_custom) list.push({ id: "custom", title: s.fd_custom.title, sub: `Свой пакет · ${s.fd_custom.count} вопросов` });
+    const list = s.fd_packs.map((p) => ({ id: p.id, title: p.title, sub: "" }));
+    if (s.fd_custom) list.push({ id: "custom", title: s.fd_custom.title, sub: "Свой пакет" });
     return `<div class="pack-grid">${list.map((p) => `
-      <button class="mode pack ${d.fd_pack === p.id ? "on" : ""}" data-fdpack="${esc(p.id)}"><span><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></span></button>`).join("")}</div>
+      <button class="mode pack ${d.fd_pack === p.id ? "on" : ""}" data-fdpack="${esc(p.id)}"><span><b>${esc(p.title)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ""}</span></button>`).join("")}</div>
       <div class="pack-tools"><label class="btn ghost small" for="fd-file">Загрузить свой (.json, .csv)</label>
         <span class="muted" style="font-size:.8em">Таблица: Вопрос; Ответ 1; Очки 1; Ответ 2; Очки 2… Другие написания — через «/»</span></div>
       <p class="error" id="pack-err" role="alert"></p>`;
   }
   const si = d.mode === "jeopardy";
   const list = si
-    ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: p.auto ? "Каждую игру — новые темы · 2 раунда + финал" : `${p.rounds} раунд. · ${p.count} вопр.${p.final ? " · финал" : ""}` }))
-    : s.packs.map((p) => ({ id: p.id, title: p.title, sub: `${p.count} вопросов` }));
+    ? s.si_packs.map((p) => ({ id: p.id, title: p.title, sub: p.auto ? "Каждую игру — новые темы · 2 раунда + финал" : `${p.rounds} раунд.${p.final ? " · финал" : ""}` }))
+    : s.packs.map((p) => ({ id: p.id, title: p.title, sub: "" }));
   const custom = si ? s.si_custom : s.custom;
-  if (custom) list.push({ id: "custom", title: custom.title, sub: "Свой пакет · " + (si ? `${custom.rounds} раунд. · ${custom.count} вопр.` : `${custom.count} вопросов`) });
+  if (custom) list.push({ id: "custom", title: custom.title, sub: "Свой пакет" + (si ? ` · ${custom.rounds} раунд.` : "") });
   const cur = si ? d.si_pack : d.pack, attr = si ? "data-sipack" : "data-pack";
   return `<div class="pack-grid">${list.map((p) => `
-    <button class="mode pack ${cur === p.id ? "on" : ""}" ${attr}="${esc(p.id)}"><span><b>${esc(p.title)}</b><small>${esc(p.sub)}</small></span></button>`).join("")}</div>
+    <button class="mode pack ${cur === p.id ? "on" : ""}" ${attr}="${esc(p.id)}"><span><b>${esc(p.title)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ""}</span></button>`).join("")}</div>
     ${si ? "" : themePicker(s, d)}
     <div class="pack-tools">
       ${si ? `<label class="btn ghost small" for="siq-file">📦 Загрузить пакет SIGame (.siq)</label>`
@@ -1006,10 +1006,10 @@ function themePicker(s, d) {
   const levels = new Set(meta.map((m) => m[1]).filter(Boolean));
   const label = !d.themes || !d.themes.length ? `все ${themes.length}` : d.themes.length <= 2 ? d.themes.join(", ") : `${d.themes.length} из ${themes.length}`;
   return `${themes.length > 1 ? `<div class="picker-line"><button type="button" class="btn ghost small" data-themes-open aria-expanded="${themesOpen}">🏷 Темы: ${esc(label)} ${themesOpen ? "▴" : "▾"}</button></div>` : ""}
-    ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}<small>${meta.filter((m) => m[0] === t).length}</small></button>`).join("")}
+    ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}</button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
     <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="seg">${LEVELS.map(([v, n]) => `<button type="button" class="${d.level === v ? "on" : ""}" data-level="${v}">${n}</button>`).join("")}</span>` : ""}
-      <span class="muted">Подходит вопросов: <b style="color:${fits ? "var(--ink)" : "var(--bad)"}">${fits || "0 — будет весь пакет"}</b></span></div>`;
+      ${fits ? "" : `<span class="muted" style="color:var(--bad)">Таких вопросов нет — будет весь пакет</span>`}</div>`;
 }
 
 function rulesSummary(d) {

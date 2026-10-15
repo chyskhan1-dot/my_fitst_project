@@ -4,7 +4,7 @@
   const MAX_IMAGE_SIDE = 1280; // картинки больше уменьшаем, чтобы пакет грузился быстро
   const MAX_AUDIO_MB = 8;
 
-  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)", "Картинка к ответу"];
+  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)", "Картинка к ответу", "Картинки к вариантам"];
   // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
   // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа;
   // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший;
@@ -94,6 +94,7 @@
       if (levelOf(r[10])) q.level = levelOf(r[10]);
       if (Number(r[11]) > 0) q.seconds = Math.round(Number(r[11]));
       if ((r[12] || "").trim()) q.answer_image = r[12].trim();
+      const pics = String(r[13] || "").split("|").map((v) => v.trim()); // картинки к вариантам: «a.png | b.png | …»
       if (type === "number") {
         q.answer = toNumber(options[0]);
         if (options[1]) q.unit = options[1];
@@ -114,6 +115,7 @@
         q.options = filled;
         q.answer = options[answer] ? filled.indexOf(options[answer]) : -1;
       }
+      if (q.options && pics.some(Boolean)) q.option_images = options.map((o, k) => (o ? pics[k] || "" : null)).filter((v) => v !== null);
       questions.push(q);
     });
     return { title, questions };
@@ -128,7 +130,8 @@
       const opts = [0, 1, 2, 3].map((i) => (src || [])[i] ?? "");
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
       const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";
-      rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || "", q.seconds || "", media(q.answer_image)]);
+      rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || "", q.seconds || "", media(q.answer_image),
+        (q.option_images || []).map(media).join(" | ")]);
     }
     return rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
   }

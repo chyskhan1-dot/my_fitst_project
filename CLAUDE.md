@@ -23,7 +23,8 @@
     может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`, `number` (кто ближе, `best_err`), `map` (точка [широта, долгота],
-    `place`, очки по `distance_km`, `MAP_RADIUS`; карта — `static/map.js` + `media/map/world.jpg` из `tools/make_map.py`,
+    `place`, очки по `distance_km`, `MAP_RADIUS`; карта — глобус `static/map.js` (canvas, ортографическая проекция,
+    рисуется в браузере, сервер не нагружает) из текстуры `media/map/world-2k.jpg`/`world.jpg` (`tools/make_map.py`,
     данные Natural Earth); правила в `DEFAULTS`,
     фильтр вопросов по `themes` и `level` — `Game.pool()`. Ответ можно пропустить (`skip`, value `None` —
     в списках ответов не считать); правило «Ставка ×2» (`doubles`): `DOUBLES` раза за игру, ошибка — `-DOUBLE_LOSS`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,
@@ -47,7 +48,10 @@
 - `siq.py` — чтение пакетов SIGame (`.siq`, zip с `content.xml`, обе версии разметки).
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
-  `static/music.js` — синтезированная музыка (Web Audio, без файлов).
+  `static/music.js` — синтезированная музыка (Web Audio, без файлов). Звук на телефонах (`play.html`): телефон
+  ведущего-игрока (`speaker()` = есть host_token) играет как экран ведущего (`soundtrack()`), остальные молчат —
+  мелодию вопроса можно включить кнопкой «Послушать здесь» (`listen()`). iPhone: `navigator.audioSession.type =
+  "playback"`, иначе беззвучный переключатель глушит звук; скрытая вкладка — музыка на паузе.
 - `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
   темы внутри `general.json`; простые флаги рисует `tools/make_flags.py` (SVG), флаги с гербами — PNG с Wikimedia Commons
   (владелец разрешил; источники — `media/flags/CREDITS.md`). Нет флагов Афганистана и Сирии (спорные/сменились).
@@ -56,7 +60,11 @@
   брать с GitHub `microsoft/fluentui-emoji`, папки `3D`). Картинка не должна подсказывать ответ — она сама вопрос.
   Поле `answer_image` — картинка к ответу (после ответа: host/play/learn, редактор, колонка CSV `Картинка к ответу`):
   флаг, если ответ — страна; портрет, если человек (`media/people/`, только общественное достояние);
-  иначе Fluent Emoji (`media/pics/ans-*.png`).
+  иначе Fluent Emoji (`media/pics/ans-*.png`). Поле `option_images` — картинки к вариантам (CSV-колонка
+  «Картинки к вариантам» через « | ») — только для своих пакетов: владелец решил в общих вопросах картинки на кнопки
+  не ставить (картинка — в самом вопросе). Фигурок ▲◆●■ у вариантов нет — различаются цветом. На карточках пакетов
+  число вопросов не показываем (владелец решил). Картинка к ответу: фото/портрет/флаг — крупно (`.photo`), смайлик — меньше. `media/chem/` — таблица Менделеева и клетки элементов
+  (`tools/make_chem.py`; в таблице без номеров — иначе подсказка к «Сколько элементов?»).
   `media/art/` — картины (общественное достояние, Wikimedia Commons; источники — `media/art/CREDITS.md`),
   `media/space/` — снимки NASA (общественное достояние; `media/space/CREDITS.md`), `media/places/` — фото мест
   к вопросам «Где на карте» (только PD/CC0; `media/places/CREDITS.md`).
@@ -64,7 +72,8 @@
   закрыт — файлы брать напрямую с `upload.wikimedia.org/wikipedia/commons/thumb/<md5[0]>/<md5[:2]>/<Имя>/960px-<Имя>`
   (md5 от имени файла с «_» вместо пробелов; размеры только стандартные: 500, 960, 1280).
   Смайлики (аватарки, ребусы, метки на карте) рисуются картинками: `QuizEmoji.html()` из `static/emoji.js`, файлы —
-  `media/emoji/<коды>.png`; новые смайлики в `AVATARS` или ребусах — докачать `tools/fetch_emoji.py`.
+  `media/emoji/<коды>.webp` (WebP — в 5 раз легче PNG); новые смайлики в `AVATARS` или ребусах — докачать `tools/fetch_emoji.py`.
+  Телефон перерисовывает экран целиком; если этап тот же (`lastScene`), анимации появления отключены (`#main.calm`).
   Кнопки форм на телефоне срабатывают по касанию (`pointerdown` в play.html) — иначе клавиатура сдвигает экран и нажатие теряется.
 - `static/learn.html` — тренировка (`/learn`): один игрок, свой ответ проверяет `POST /api/learn/text`,
   прогресс — в localStorage (`quiz-learn`). Владелец решил: тренировка только по странам — в меню лишь

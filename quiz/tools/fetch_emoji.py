@@ -1,10 +1,10 @@
 # Скачивает картинки Microsoft Fluent Emoji (MIT) для смайликов игры: аватарки (AVATARS в server.py)
-# и ребусы (поле "emoji" в packs/*.json) → media/emoji/<коды>.png, и обновляет список в static/emoji.js.
+# и ребусы (поле "emoji" в packs/*.json) → media/emoji/<коды>.webp, и обновляет список в static/emoji.js.
 # Нужна копия репозитория с описаниями картинок:
 #   git clone --depth 1 --filter=blob:none --sparse https://github.com/microsoft/fluentui-emoji.git fluent
 #   cd fluent && git sparse-checkout set --no-cone '/assets/*/metadata.json'
 # Запуск из папки quiz: python3 tools/fetch_emoji.py <путь к fluent>
-# Потом уменьшить картинки (ImageMagick): for f in media/emoji/*.png; do convert "$f" -resize 160x160 -strip "$f"; done
+# Каждую картинку ужимает ImageMagick до 160×160 в WebP (в 5 раз легче PNG — аватарки быстрее грузятся на телефоне).
 import glob, json, os, re, subprocess, sys, urllib.parse, urllib.request
 
 QUIZ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -54,8 +54,12 @@ for g in sorted(need):
         missing.append("".join(map(chr, g)))
         continue
     url = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/" + urllib.parse.quote(p)
+    png = os.path.join(OUT, k + ".png")
     with urllib.request.urlopen(url, timeout=30) as r:
-        open(os.path.join(OUT, k + ".png"), "wb").write(r.read())
+        open(png, "wb").write(r.read())
+    subprocess.run(["convert", png, "-resize", "160x160", "-strip", "-quality", "88", "-define", "webp:method=6",
+                    os.path.join(OUT, k + ".webp")], check=True)
+    os.remove(png)
     have.append(k)
 js = os.path.join(QUIZ, "static", "emoji.js")
 src = open(js, encoding="utf-8").read()

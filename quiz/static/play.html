@@ -51,6 +51,7 @@ p { margin: 0; line-height: 1.5; }
 .rise { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 .pop { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+#main.calm .rise, #main.calm .pop { animation: none; } /* тот же экран обновился — без повторной анимации */
 @keyframes pop { from { opacity: 0; transform: scale(.4); } }
 
 .ava {
@@ -82,7 +83,6 @@ input {
   font: 800 16px var(--body); min-height: 120px; min-width: 0; overflow-wrap: anywhere;
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .2); transition: transform .1s;
 }
-.ans .shape { font-size: 36px; line-height: 1; }
 .ans:active { transform: scale(.95); }
 .ans:disabled { opacity: .5; }
 .ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -105,6 +105,8 @@ input {
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
+.sound-btn { border: 0; background: none; font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.ans .opt-img { height: 60px; width: 90px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
 .mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
 .others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .pill.minus { background: var(--bad); color: #2b0606; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
@@ -136,7 +138,8 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .role:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .code-input { font-family: var(--display); font-size: 40px; letter-spacing: .3em; padding: 14px 10px 14px calc(10px + .3em); }
 .qimg { display: block; max-width: 100%; max-height: 28vh; margin: 0 auto; border-radius: 12px; background: #fff; }
-.qimg.answer-pic { max-height: 22vh; }
+.qimg.answer-pic { max-height: 26vh; }
+.qimg.answer-pic.photo { width: 100%; max-height: 44vh; object-fit: contain; background: none; } /* фото, портрет, флаг — во всю ширину */
 /* эффект картинки: размыта и проясняется / виден кусочек и отдаляется */
 .fx { display: block; width: fit-content; max-width: 100%; margin: 0 auto; overflow: hidden; border-radius: 16px; line-height: 0; }
 .fx .qimg { box-shadow: none; }
@@ -230,8 +233,8 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/music.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
 let room = (new URLSearchParams(location.search).get("room") || "").replace(/\D/g, "").slice(0, 4);
@@ -254,6 +257,7 @@ function save(v) {
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
 const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
+const isEmojiPic = (v) => /media\/pics\/ans-/.test(v || ""); // объёмный смайлик к ответу — не растягивать
 const mediaSrc = (v) => (/^(data:|https?:|\/)/.test(v) ? v : "/" + v);
 const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 const mood = (m) => { document.body.dataset.mood = m || ""; };
@@ -357,7 +361,7 @@ function codeForm() {
 
 const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
-let pickAva = recall("quiz-avatar") || null;
+let pickAva = recall("quiz-avatar") || null, avaOpen = false, lastScene = "";
 const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
 
 function avatarPicker(list, selected) {
@@ -433,8 +437,9 @@ function fxImg(s, alt) {
 }
 
 function answerControls(s) {
+  const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
   const btn = (i, attr, extra = "") => `<button class="ans rise ${extra}" style="--c:var(--a${i});--i:${i}" ${attr}="${i}">
-    <span class="shape">${SHAPES[i]}</span>${esc(s.options[i])}<span class="badge-num"></span></button>`;
+    ${pic(i)}${esc(s.options[i])}<span class="badge-num"></span></button>`;
   if (s.qtype === "multi") {
     return `<p class="hint">Отметь все верные варианты</p>
       <div class="answers">${s.options.map((_, i) => btn(i, "data-pick", picks.includes(i) ? "sel" : "")).join("")}</div>
@@ -477,7 +482,7 @@ function paintOrder() {
 }
 
 function answerSummary(s, answer) {
-  const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : SHAPES[i] + " "}${esc(s.options[i])}</span>`;
+  const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : ""}${esc(s.options[i])}</span>`;
   if (s.qtype === "text") return `<span class="pill pop">«${esc(answer)}»</span>`;
   if (s.qtype === "number") return `<span class="pill pop">${Number(answer).toLocaleString("ru-RU")}${s.unit ? " " + esc(s.unit) : ""}</span>`;
   if (s.qtype === "map") return `<span class="pill pop">📍 Точка поставлена</span>`;
@@ -491,8 +496,8 @@ function correctAnswer(s) {
   if (s.qtype === "number") return b(Number(s.correct_number).toLocaleString("ru-RU") + (s.unit ? " " + s.unit : ""));
   if (s.qtype === "map") return s.place ? b("📍 " + s.place) : "";
   if (s.qtype === "order") return s.correct_order.map((o, i) => b(`${i + 1}. ${o}`)).join("");
-  if (Array.isArray(s.correct)) return s.correct.map((i) => b(`${SHAPES[i]} ${s.options[i]}`)).join("");
-  return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
+  if (Array.isArray(s.correct)) return s.correct.map((i) => b(s.options[i])).join("");
+  return b(s.options[s.correct]);
 }
 
 // ---------- «Своя игра» ----------
@@ -734,6 +739,37 @@ const HOST_NEXT = {
   fd_round: "Начать раунд", fd_play: "Время вышло", fd_steal: "Не угадали", fd_reveal: "Дальше",
   fd_big_intro: "Начать", fd_big_q: "Пропустить вопрос", fd_big_result: "Итоги",
 };
+// Звук. Телефон ведущего (играет без ТВ — экран ведущего у него не открыт) звучит как большой экран:
+// фоновая музыка, сигналы, мелодии. Остальные телефоны молчат, чтобы не было какофонии, — мелодию вопроса
+// можно послушать у себя кнопкой «🔊 Послушать здесь».
+const speaker = (s) => !!(s && s.me && hostToken());
+const instrumentFor = (s) => s.instrument || QuizMusic.MELODY_INSTRUMENTS[s.index % QuizMusic.MELODY_INSTRUMENTS.length];
+let musicKey = "", hereSound = null;
+function stopHere() { if (hereSound) { hereSound.pause(); hereSound = null; } if (window.QuizMusic) QuizMusic.stopMelody(); }
+function listen(s) { // проиграть звук вопроса на этом телефоне
+  if (!window.QuizMusic) return;
+  stopHere(); QuizMusic.unlock();
+  if (s.melody) QuizMusic.melody(s.melody, s.tempo, instrumentFor(s));
+  else if (s.audio) { hereSound = new Audio(mediaSrc(s.audio)); hereSound.play().catch(() => {}); }
+}
+function soundtrack(s) {
+  const M = window.QuizMusic, key = s.phase + ":" + s.index;
+  if (!M || key === musicKey) return;
+  musicKey = key;
+  if (s.phase !== "question") stopHere();
+  if (!speaker(s) || s.phase.startsWith("si_") || s.phase.startsWith("fd_")) { if (M.styleName) M.stop(0.3); return; }
+  if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
+  else if (s.phase === "question") {
+    if (s.audio || s.melody) M.stop(0.3); else M.play("question");
+    if (s.melody || s.audio) setTimeout(() => { if (musicKey === key) listen(s); }, 600);
+    else M.sting("start");
+  } else if (s.phase === "reveal") { M.stop(0.3); M.sting("reveal"); }
+  else if (s.phase === "leaders") M.play("leaders");
+  else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
+}
+// браузер включает звук только после нажатия — открываем его при первом касании
+["pointerdown", "touchend", "click"].forEach((t) => document.addEventListener(t, () => { if (window.QuizMusic) QuizMusic.unlock(); }, true));
+
 function hostBar(s) {
   let bar = document.getElementById("hostbar");
   const token = s.me ? hostToken() : "";
@@ -790,7 +826,7 @@ function othersAnswers(s, me) {
   else if (s.qtype === "text") rows = (s.text_answers || []).map((a, i) => row(a, i, "«" + esc(a.text) + "»", mark(a.ok ? "right" : "wrong")));
   else rows = (s.player_answers || []).map((a, i) => {
     const picks = Array.isArray(a.pick) ? a.pick : [a.pick];
-    const said = s.qtype === "order" ? picks.map((k, n) => `${n + 1}. ${esc(s.options[k])}`).join(" · ") : picks.map((k) => `${SHAPES[k]} ${esc(s.options[k])}`).join(", ");
+    const said = s.qtype === "order" ? picks.map((k, n) => `${n + 1}. ${esc(s.options[k])}`).join(" · ") : picks.map((k) => esc(s.options[k])).join(", ");
     return row(a, i, said, mark(a.result));
   });
   if (!rows.length || (rows.length === 1 && rows[0].includes('class="rise me"'))) return "";
@@ -808,10 +844,13 @@ function moveText(me) {
 function render(s) {
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span><span class="sc">${me.score}</span>`;
+  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc">${me.score}</span>`;
+  soundtrack(s);
   mood("");
   confetti(false);
 
+  const scene = s.phase + ":" + s.index;
+  $main.classList.toggle("calm", scene === lastScene); lastScene = scene;
   if (s.phase.startsWith("si_")) return renderSi(s, me);
   if (s.phase.startsWith("fd_")) return renderFd(s, me);
   const myTeam = me.team != null ? s.team_names[me.team] : null;
@@ -836,11 +875,12 @@ function render(s) {
         <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
         <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
         <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
-        <details class="ava-change"><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
+        <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
     document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
+    document.querySelector(".ava-change").ontoggle = (e) => { avaOpen = e.target.open; };
   } else if (s.phase === "question" && !me.answered) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
     $main.innerHTML = `
@@ -849,7 +889,8 @@ function render(s) {
       <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
-      ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
+      ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
+        : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${answerControls(s)}
       <div class="extra">${me.doubles > 0 ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
         <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`;
@@ -906,7 +947,7 @@ function render(s) {
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
-        ${s.answer_image ? `<img class="qimg answer-pic pop" src="${esc(mediaSrc(s.answer_image))}" alt="Картинка к ответу">` : ""}
+        ${s.answer_image ? `<img class="qimg answer-pic pop ${isEmojiPic(s.answer_image) ? "" : "photo"}" src="${esc(mediaSrc(s.answer_image))}" alt="Картинка к ответу">` : ""}
         ${s.qtype === "map" ? `<div class="phone-map small" id="reveal-map"></div>` : ""}
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
@@ -1003,6 +1044,7 @@ async function pollOnce() {
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
+    if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     hostBar(s);
   } catch {
     if (++fails >= 3 && !document.getElementById("join")) {
@@ -1084,8 +1126,11 @@ document.addEventListener("click", async (e) => {
   if (av) {
     pickAva = av.dataset.ava; remember("quiz-avatar", pickAva);
     document.querySelectorAll("[data-ava]").forEach((x) => x.classList.toggle("on", x === av));
-    if (pid) { await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll(); }
     buzz(10);
+    if (pid) {
+      document.querySelectorAll("#top .ava, #main .ava.xl").forEach((x) => { x.outerHTML = avaP({ avatar: pickAva }, x.classList.contains("xl") ? "xl" : ""); });
+      await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll();
+    }
     return;
   }
   const t = e.target.closest("[data-team]");
@@ -1096,6 +1141,9 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (e.target.closest("#skip")) return send(SKIP);
+  if (e.target.closest("[data-listen]") && lastState) { listen(lastState); return; }
+  const snd = e.target.closest("#phone-sound");
+  if (snd && window.QuizMusic) { snd.textContent = QuizMusic.toggle() ? "🔇" : "🔊"; return; }
   const here = e.target.closest("[data-play-here]");
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const db = e.target.closest("#double");

@@ -147,7 +147,6 @@ textarea { resize: vertical; min-height: 54px; }
 <script src="/static/music.js"></script>
 <script src="/static/map.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const DRAFT = "quiz-editor-draft";
 const $list = document.getElementById("list");
 let pack = loadDraft();
@@ -196,7 +195,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text" || type === "number" || type === "map") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null, option_images: q.option_images || null };
     }),
   };
 }
@@ -219,6 +218,8 @@ function toPack() {
       if (q.image && q.image_fx) { q2.image_fx = q.image_fx; if (q.image_fx === "zoom" && q.focus) q2.focus = q.focus; }
       if (q.audio) q2.audio = q.audio;
       if (q.answer_image) q2.answer_image = q.answer_image;
+      const pics = q.option_images && q2.options ? kept.map((o) => q.option_images[o.i]) : [];
+      if (pics.length && pics.every(Boolean)) q2.option_images = pics; // картинки к вариантам (пока только из файла пакета)
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
       if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();
@@ -299,7 +300,7 @@ function optionRow(q, i, o, k) {
   const mark = q.type === "order" ? `<span class="mark num" style="--c:var(--a${k})">${k + 1}</span>`
     : q.type === "map" ? `<span class="mark num" style="--c:var(--good)">${["ш", "д", "📍"][k]}</span>`
     : q.type === "text" || q.type === "number" ? `<span class="mark num" style="--c:var(--good)">${q.type === "number" && k ? "ед" : "✓"}</span>`
-    : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>`;
+    : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${k + 1}</span></button>`;
   return `<div class="opt ${right ? "right" : ""}">${mark}
     <input type="text" data-opt="${k}" data-i="${i}" maxlength="${q.type === "text" ? 60 : 100}" value="${esc(o)}" placeholder="${placeholder}" aria-label="${placeholder}"></div>`;
 }

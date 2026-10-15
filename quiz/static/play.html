@@ -83,7 +83,6 @@ input {
   font: 800 16px var(--body); min-height: 120px; min-width: 0; overflow-wrap: anywhere;
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .2); transition: transform .1s;
 }
-.ans .shape { font-size: 36px; line-height: 1; }
 .ans:active { transform: scale(.95); }
 .ans:disabled { opacity: .5; }
 .ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -106,7 +105,7 @@ input {
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
-.ans .opt-img { height: 46px; width: 70px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
+.ans .opt-img { height: 60px; width: 90px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
 .mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
 .others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .pill.minus { background: var(--bad); color: #2b0606; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
@@ -233,7 +232,6 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
 let room = (new URLSearchParams(location.search).get("room") || "").replace(/\D/g, "").slice(0, 4);
@@ -437,7 +435,7 @@ function fxImg(s, alt) {
 function answerControls(s) {
   const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
   const btn = (i, attr, extra = "") => `<button class="ans rise ${extra}" style="--c:var(--a${i});--i:${i}" ${attr}="${i}">
-    <span class="shape">${SHAPES[i]}</span>${pic(i)}${esc(s.options[i])}<span class="badge-num"></span></button>`;
+    ${pic(i)}${esc(s.options[i])}<span class="badge-num"></span></button>`;
   if (s.qtype === "multi") {
     return `<p class="hint">Отметь все верные варианты</p>
       <div class="answers">${s.options.map((_, i) => btn(i, "data-pick", picks.includes(i) ? "sel" : "")).join("")}</div>
@@ -480,7 +478,7 @@ function paintOrder() {
 }
 
 function answerSummary(s, answer) {
-  const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : SHAPES[i] + " "}${esc(s.options[i])}</span>`;
+  const chip = (i, n) => `<span class="picked pop" style="--c:var(--a${i})">${n ? n + ". " : ""}${esc(s.options[i])}</span>`;
   if (s.qtype === "text") return `<span class="pill pop">«${esc(answer)}»</span>`;
   if (s.qtype === "number") return `<span class="pill pop">${Number(answer).toLocaleString("ru-RU")}${s.unit ? " " + esc(s.unit) : ""}</span>`;
   if (s.qtype === "map") return `<span class="pill pop">📍 Точка поставлена</span>`;
@@ -494,8 +492,8 @@ function correctAnswer(s) {
   if (s.qtype === "number") return b(Number(s.correct_number).toLocaleString("ru-RU") + (s.unit ? " " + s.unit : ""));
   if (s.qtype === "map") return s.place ? b("📍 " + s.place) : "";
   if (s.qtype === "order") return s.correct_order.map((o, i) => b(`${i + 1}. ${o}`)).join("");
-  if (Array.isArray(s.correct)) return s.correct.map((i) => b(`${SHAPES[i]} ${s.options[i]}`)).join("");
-  return b(`${SHAPES[s.correct]} ${s.options[s.correct]}`);
+  if (Array.isArray(s.correct)) return s.correct.map((i) => b(s.options[i])).join("");
+  return b(s.options[s.correct]);
 }
 
 // ---------- «Своя игра» ----------
@@ -793,7 +791,7 @@ function othersAnswers(s, me) {
   else if (s.qtype === "text") rows = (s.text_answers || []).map((a, i) => row(a, i, "«" + esc(a.text) + "»", mark(a.ok ? "right" : "wrong")));
   else rows = (s.player_answers || []).map((a, i) => {
     const picks = Array.isArray(a.pick) ? a.pick : [a.pick];
-    const said = s.qtype === "order" ? picks.map((k, n) => `${n + 1}. ${esc(s.options[k])}`).join(" · ") : picks.map((k) => `${SHAPES[k]} ${esc(s.options[k])}`).join(", ");
+    const said = s.qtype === "order" ? picks.map((k, n) => `${n + 1}. ${esc(s.options[k])}`).join(" · ") : picks.map((k) => esc(s.options[k])).join(", ");
     return row(a, i, said, mark(a.result));
   });
   if (!rows.length || (rows.length === 1 && rows[0].includes('class="rise me"'))) return "";

@@ -147,7 +147,6 @@ textarea { resize: vertical; min-height: 54px; }
 <script src="/static/music.js"></script>
 <script src="/static/map.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const DRAFT = "quiz-editor-draft";
 const $list = document.getElementById("list");
 let pack = loadDraft();
@@ -301,7 +300,7 @@ function optionRow(q, i, o, k) {
   const mark = q.type === "order" ? `<span class="mark num" style="--c:var(--a${k})">${k + 1}</span>`
     : q.type === "map" ? `<span class="mark num" style="--c:var(--good)">${["ш", "д", "📍"][k]}</span>`
     : q.type === "text" || q.type === "number" ? `<span class="mark num" style="--c:var(--good)">${q.type === "number" && k ? "ед" : "✓"}</span>`
-    : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${SHAPES[k]}</span></button>`;
+    : `<button class="mark" style="--c:var(--a${k})" data-right="${k}" data-i="${i}" title="Отметить правильным" aria-label="Вариант ${k + 1} правильный"><span>${k + 1}</span></button>`;
   return `<div class="opt ${right ? "right" : ""}">${mark}
     <input type="text" data-opt="${k}" data-i="${i}" maxlength="${q.type === "text" ? 60 : 100}" value="${esc(o)}" placeholder="${placeholder}" aria-label="${placeholder}"></div>`;
 }

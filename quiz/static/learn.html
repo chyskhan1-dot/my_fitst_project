@@ -93,7 +93,6 @@ input.answer { font: 700 22px var(--body); padding: 16px; border-radius: 16px; b
 <script src="/static/music.js"></script>
 <script src="/static/emoji.js"></script>
 <script>
-const SHAPES = ["▲", "◆", "●", "■"];
 const LEVELS = [["any", "Любая"], ["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const $main = document.getElementById("main"), $counter = document.getElementById("counter");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -195,7 +194,7 @@ function next() {
     if (type === "order") order.sort(() => Math.random() - .5);
     s.order = order;
     controls = `<p class="muted">${type === "multi" ? "Отметь все верные варианты" : type === "order" ? "Нажимай варианты по порядку" : ""}</p>
-      <div class="answers">${order.map((i, k) => `<button class="ans" style="--c:var(--a${k})" data-opt="${i}"><span>${SHAPES[k]}</span> ${q.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(q.option_images[i]))}" alt="">` : ""}${esc(q.options[i])}<span class="num" hidden></span></button>`).join("")}</div>
+      <div class="answers">${order.map((i, k) => `<button class="ans" style="--c:var(--a${k})" data-opt="${i}">${q.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(q.option_images[i]))}" alt="">` : ""}${esc(q.options[i])}<span class="num" hidden></span></button>`).join("")}</div>
       ${type === "choice" ? "" : `<button class="btn" id="submit" disabled>Ответить</button>`}`;
   } else {
     controls = `<form id="text-form" class="section"><input class="answer" id="answer" autocomplete="off" ${type === "number" ? `inputmode="decimal" placeholder="Число${q.unit ? ", " + esc(q.unit) : ""}"` : `placeholder="Твой ответ"`}>

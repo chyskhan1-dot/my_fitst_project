@@ -63,6 +63,7 @@ LEVELS = ("easy", "normal", "hard")  # сложность вопроса
 TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25, "map": 1.5}
 MAP_RADIUS = 2500  # «Где на карте?»: промах дальше, чем на столько км, — без очков (кроме ближайшего)  # на сложные типы — больше времени
 
+mimetypes.add_type("image/webp", ".webp")  # старые Python не знают WebP (смайлики — media/emoji/*.webp)
 IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/aac", "audio/webm"}
 
@@ -134,6 +135,15 @@ def text_matches(given, accepted):
         if any(close(w, parts[-1]) for w in words):
             return True
     return False
+
+
+def clean_option_images(value, options, store, scope):
+    """Картинки к вариантам ответа (флаги, планеты…) — по одной на вариант; только если есть у всех,
+    иначе картинка подскажет ответ."""
+    if not options or not isinstance(value, list):
+        return None
+    refs = [media_ref(v, "image", store, scope) for v in (value + [None] * len(options))[:len(options)]]
+    return refs if all(refs) else None
 
 
 def media_ref(value, kind, store, scope):
@@ -292,6 +302,7 @@ def clean_pack(data, store=None, scope="_"):
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
                 "answer_image": media_ref(q.get("answer_image"), "image", store, scope),  # показывается после ответа
+                "option_images": clean_option_images(q.get("option_images"), options, store, scope),
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
@@ -1587,6 +1598,7 @@ class Game:
             s["image_fx"] = q.get("image_fx") if q["image"] else None
             s["focus"] = q.get("focus") or [50, 50]
             s["options"] = [q["options"][i] for i in self.display]
+            s["option_images"] = [q["option_images"][i] for i in self.display] if q.get("option_images") else None
             s["image"] = q["image"]
             s["audio"] = q["audio"]
             s["melody"] = q.get("melody")

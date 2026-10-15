@@ -12,7 +12,13 @@
    "answer": 1,
    "theme": "Космос",
    "level": "easy",
-   "answer_image": "media/space/jupiter.jpg"
+   "answer_image": "media/space/jupiter.jpg",
+   "option_images": [
+    "media/space/saturn.jpg",
+    "media/space/jupiter.jpg",
+    "media/space/neptune.jpg",
+    "media/space/earth.jpg"
+   ]
   },
   {
    "q": "Сколько струн у классической гитары?",
@@ -77,7 +83,8 @@
    "answer": 2,
    "theme": "Физика и химия",
    "level": "normal",
-   "answer_image": "media/pics/ans-lungs.png"
+   "answer_image": "media/pics/ans-lungs.png",
+   "image": "media/chem/o.svg"
   },
   {
    "q": "В какой стране придумали пиццу «Маргарита»?",
@@ -90,7 +97,13 @@
    "answer": 3,
    "theme": "Еда",
    "level": "easy",
-   "answer_image": "media/flags/italy.svg"
+   "answer_image": "media/flags/italy.svg",
+   "option_images": [
+    "media/flags/spain.png",
+    "media/flags/france.svg",
+    "media/flags/greece.svg",
+    "media/flags/italy.svg"
+   ]
   },
   {
    "q": "Какое животное самое быстрое на суше?",
@@ -577,7 +590,13 @@
    ],
    "theme": "История",
    "level": "normal",
-   "answer_image": "media/pics/ans-handshake.png"
+   "answer_image": "media/pics/ans-handshake.png",
+   "option_images": [
+    "media/flags/usa.svg",
+    "media/flags/uk.svg",
+    "media/flags/italy.svg",
+    "media/flags/japan.svg"
+   ]
   },
   {
    "q": "Как назывались правители Древнего Египта?",
@@ -683,7 +702,13 @@
    ],
    "theme": "География",
    "level": "normal",
-   "answer_image": "media/pics/ans-world-map.png"
+   "answer_image": "media/pics/ans-world-map.png",
+   "option_images": [
+    "media/flags/turkey.svg",
+    "media/flags/china.svg",
+    "media/flags/kazakhstan.png",
+    "media/flags/india.svg"
+   ]
   },
   {
    "q": "Какая река — самая длинная в Европе?",
@@ -838,7 +863,13 @@
    ],
    "theme": "Космос",
    "level": "normal",
-   "answer_image": "media/pics/ans-sun.png"
+   "answer_image": "media/pics/ans-sun.png",
+   "option_images": [
+    "media/space/mercury.jpg",
+    "media/space/venus.jpg",
+    "media/space/earth.jpg",
+    "media/space/mars.jpg"
+   ]
   },
   {
    "q": "Какая формула у воды?",
@@ -861,7 +892,8 @@
    ],
    "theme": "Физика и химия",
    "level": "normal",
-   "answer_image": "media/pics/ans-magnet.png"
+   "answer_image": "media/pics/ans-magnet.png",
+   "image": "media/chem/fe.svg"
   },
   {
    "q": "Кто создал периодическую таблицу химических элементов?",
@@ -874,7 +906,8 @@
    "answer": 2,
    "theme": "Физика и химия",
    "level": "hard",
-   "answer_image": "media/people/mendeleev.jpg"
+   "answer_image": "media/people/mendeleev.jpg",
+   "image": "media/chem/table.svg"
   },
   {
    "q": "Какого газа больше всего в воздухе?",
@@ -1084,7 +1117,13 @@
    "answer": 0,
    "theme": "Страны и города",
    "level": "normal",
-   "answer_image": "media/flags/peru.svg"
+   "answer_image": "media/flags/peru.svg",
+   "option_images": [
+    "media/flags/peru.svg",
+    "media/flags/mexico.png",
+    "media/flags/chile.svg",
+    "media/flags/brazil.png"
+   ]
   },
   {
    "q": "Какая страна — самая большая по площади?",
@@ -1097,7 +1136,13 @@
    "answer": 0,
    "theme": "Страны и города",
    "level": "normal",
-   "answer_image": "media/flags/russia.svg"
+   "answer_image": "media/flags/russia.svg",
+   "option_images": [
+    "media/flags/russia.svg",
+    "media/flags/canada.png",
+    "media/flags/china.svg",
+    "media/flags/usa.svg"
+   ]
   },
   {
    "type": "text",
@@ -1151,7 +1196,13 @@
    ],
    "theme": "Страны и города",
    "level": "hard",
-   "answer_image": "media/pics/ans-busts-in-silhouette.png"
+   "answer_image": "media/pics/ans-busts-in-silhouette.png",
+   "option_images": [
+    "media/flags/india.svg",
+    "media/flags/china.svg",
+    "media/flags/usa.svg",
+    "media/flags/russia.svg"
+   ]
   },
   {
    "q": "Какой водопад — самый высокий в мире?",
@@ -1213,7 +1264,13 @@
    "answer": 1,
    "theme": "Страны и города",
    "level": "easy",
-   "answer_image": "media/flags/uk.svg"
+   "answer_image": "media/flags/uk.svg",
+   "option_images": [
+    "media/flags/france.svg",
+    "media/flags/uk.svg",
+    "media/flags/usa.svg",
+    "media/flags/germany.svg"
+   ]
   },
   {
    "q": "Кто написал эту картину?",
@@ -1573,7 +1630,13 @@
    "answer": 1,
    "theme": "Космос",
    "level": "normal",
-   "answer_image": "media/space/venus.jpg"
+   "answer_image": "media/space/venus.jpg",
+   "option_images": [
+    "media/space/mercury.jpg",
+    "media/space/venus.jpg",
+    "media/space/mars.jpg",
+    "media/space/jupiter.jpg"
+   ]
   },
   {
    "q": "Сколько планет в Солнечной системе?",
@@ -1703,7 +1766,8 @@
    "answer": 1,
    "theme": "Физика и химия",
    "level": "hard",
-   "answer_image": "media/pics/ans-milky-way.png"
+   "answer_image": "media/pics/ans-milky-way.png",
+   "image": "media/chem/table.svg"
   },
   {
    "type": "text",
@@ -1758,7 +1822,13 @@
    ],
    "theme": "Космос",
    "level": "hard",
-   "answer_image": "media/space/jupiter.jpg"
+   "answer_image": "media/space/jupiter.jpg",
+   "option_images": [
+    "media/space/mercury.jpg",
+    "media/space/mars.jpg",
+    "media/space/earth.jpg",
+    "media/space/jupiter.jpg"
+   ]
   },
   {
    "q": "Какого цвета «чёрный ящик» самолёта на самом деле?",
@@ -2496,7 +2566,13 @@
     "Испания"
    ],
    "answer": 3,
-   "answer_image": "media/flags/spain.png"
+   "answer_image": "media/flags/spain.png",
+   "option_images": [
+    "media/flags/italy.svg",
+    "media/flags/mexico.png",
+    "media/flags/portugal.png",
+    "media/flags/spain.png"
+   ]
   },
   {
    "q": "Какой овощ даёт борщу красный цвет?",
@@ -2548,7 +2624,13 @@
     "Япония"
    ],
    "answer": 2,
-   "answer_image": "media/flags/vietnam.svg"
+   "answer_image": "media/flags/vietnam.svg",
+   "option_images": [
+    "media/flags/thailand.svg",
+    "media/flags/china.svg",
+    "media/flags/vietnam.svg",
+    "media/flags/japan.svg"
+   ]
   },
   {
    "q": "Какую самую дорогую специю получают из рылец цветков крокуса?",
@@ -3125,7 +3207,13 @@
     "Бангладеш"
    ],
    "answer": 0,
-   "answer_image": "media/flags/india.svg"
+   "answer_image": "media/flags/india.svg",
+   "option_images": [
+    "media/flags/india.svg",
+    "media/flags/pakistan.svg",
+    "media/flags/iran.png",
+    "media/flags/bangladesh.svg"
+   ]
   },
   {
    "type": "multi",
@@ -3142,7 +3230,13 @@
     0,
     2
    ],
-   "answer_image": "media/pics/ans-globe-showing-americas.png"
+   "answer_image": "media/pics/ans-globe-showing-americas.png",
+   "option_images": [
+    "media/flags/chile.svg",
+    "media/flags/mexico.png",
+    "media/flags/peru.svg",
+    "media/flags/cuba.svg"
+   ]
   },
   {
    "q": "Какой большой город стоит сразу на двух частях света — в Европе и Азии?",
@@ -3220,7 +3314,13 @@
     "Уран"
    ],
    "answer": 2,
-   "answer_image": "media/space/jupiter.jpg"
+   "answer_image": "media/space/jupiter.jpg",
+   "option_images": [
+    "media/space/saturn.jpg",
+    "media/space/neptune.jpg",
+    "media/space/jupiter.jpg",
+    "media/space/uranus.jpg"
+   ]
   },
   {
    "q": "Сколько спутников у Марса?",
@@ -5067,7 +5167,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/italy.svg"
+   "answer_image": "media/flags/italy.svg",
+   "option_images": [
+    "media/flags/portugal.png",
+    "media/flags/czechia.svg",
+    "media/flags/italy.svg",
+    "media/flags/uk.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Испания»?",
@@ -5106,7 +5212,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/uk.svg"
+   "answer_image": "media/flags/uk.svg",
+   "option_images": [
+    "media/flags/uk.svg",
+    "media/flags/poland.svg",
+    "media/flags/denmark.svg",
+    "media/flags/finland.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Ирландия»?",
@@ -5145,7 +5257,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/belgium.svg"
+   "answer_image": "media/flags/belgium.svg",
+   "option_images": [
+    "media/flags/belgium.svg",
+    "media/flags/netherlands.svg",
+    "media/flags/belarus.png",
+    "media/flags/ukraine.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Швейцария»?",
@@ -5184,7 +5302,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/poland.svg"
+   "answer_image": "media/flags/poland.svg",
+   "option_images": [
+    "media/flags/portugal.png",
+    "media/flags/poland.svg",
+    "media/flags/spain.png",
+    "media/flags/switzerland.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Чехия»?",
@@ -5223,7 +5347,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/hungary.svg"
+   "answer_image": "media/flags/hungary.svg",
+   "option_images": [
+    "media/flags/hungary.svg",
+    "media/flags/moldova.png",
+    "media/flags/bosnia.svg",
+    "media/flags/uk.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Румыния»?",
@@ -5262,7 +5392,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/greece.svg"
+   "answer_image": "media/flags/greece.svg",
+   "option_images": [
+    "media/flags/cyprus.png",
+    "media/flags/lithuania.svg",
+    "media/flags/greece.svg",
+    "media/flags/serbia.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Сербия»?",
@@ -5301,7 +5437,13 @@
    "answer": 3,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/slovenia.png"
+   "answer_image": "media/flags/slovenia.png",
+   "option_images": [
+    "media/flags/bosnia.svg",
+    "media/flags/moldova.png",
+    "media/flags/uk.svg",
+    "media/flags/slovenia.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Норвегия»?",
@@ -5340,7 +5482,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/finland.svg"
+   "answer_image": "media/flags/finland.svg",
+   "option_images": [
+    "media/flags/slovakia.png",
+    "media/flags/denmark.svg",
+    "media/flags/finland.svg",
+    "media/flags/switzerland.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Дания»?",
@@ -5379,7 +5527,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/estonia.svg"
+   "answer_image": "media/flags/estonia.svg",
+   "option_images": [
+    "media/flags/uk.svg",
+    "media/flags/poland.svg",
+    "media/flags/estonia.svg",
+    "media/flags/portugal.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Латвия»?",
@@ -5418,7 +5572,13 @@
    "answer": 3,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/belarus.png"
+   "answer_image": "media/flags/belarus.png",
+   "option_images": [
+    "media/flags/poland.svg",
+    "media/flags/malta.png",
+    "media/flags/cyprus.png",
+    "media/flags/belarus.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Украина»?",
@@ -5457,7 +5617,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/albania.png"
+   "answer_image": "media/flags/albania.png",
+   "option_images": [
+    "media/flags/italy.svg",
+    "media/flags/greece.svg",
+    "media/flags/albania.png",
+    "media/flags/romania.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Мальта»?",
@@ -5496,7 +5662,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/montenegro.png"
+   "answer_image": "media/flags/montenegro.png",
+   "option_images": [
+    "media/flags/montenegro.png",
+    "media/flags/romania.svg",
+    "media/flags/slovakia.png",
+    "media/flags/germany.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Северная Македония»?",
@@ -5535,7 +5707,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/luxembourg.svg"
+   "answer_image": "media/flags/luxembourg.svg",
+   "option_images": [
+    "media/flags/luxembourg.svg",
+    "media/flags/switzerland.svg",
+    "media/flags/norway.svg",
+    "media/flags/croatia.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Япония»?",
@@ -5574,7 +5752,13 @@
    "answer": 3,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/south-korea.svg"
+   "answer_image": "media/flags/south-korea.svg",
+   "option_images": [
+    "media/flags/oman.png",
+    "media/flags/china.svg",
+    "media/flags/jordan.png",
+    "media/flags/south-korea.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «КНДР»?",
@@ -5613,7 +5797,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/india.svg"
+   "answer_image": "media/flags/india.svg",
+   "option_images": [
+    "media/flags/tajikistan.png",
+    "media/flags/iraq.png",
+    "media/flags/india.svg",
+    "media/flags/lebanon.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Пакистан»?",
@@ -5652,7 +5842,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/thailand.svg"
+   "answer_image": "media/flags/thailand.svg",
+   "option_images": [
+    "media/flags/thailand.svg",
+    "media/flags/nepal.png",
+    "media/flags/turkmenistan.png",
+    "media/flags/armenia.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Вьетнам»?",
@@ -5691,7 +5887,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/cambodia.png"
+   "answer_image": "media/flags/cambodia.png",
+   "option_images": [
+    "media/flags/cambodia.png",
+    "media/flags/bangladesh.svg",
+    "media/flags/jordan.png",
+    "media/flags/nepal.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Мьянма»?",
@@ -5730,7 +5932,13 @@
    "answer": 3,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/philippines.png"
+   "answer_image": "media/flags/philippines.png",
+   "option_images": [
+    "media/flags/thailand.svg",
+    "media/flags/laos.svg",
+    "media/flags/malaysia.svg",
+    "media/flags/philippines.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Непал»?",
@@ -5768,7 +5976,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/iran.png"
+   "answer_image": "media/flags/iran.png",
+   "option_images": [
+    "media/flags/bangladesh.svg",
+    "media/flags/iran.png",
+    "media/flags/myanmar.svg",
+    "media/flags/kyrgyzstan.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Ирак»?",
@@ -5806,7 +6020,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/jordan.png"
+   "answer_image": "media/flags/jordan.png",
+   "option_images": [
+    "media/flags/saudi-arabia.png",
+    "media/flags/jordan.png",
+    "media/flags/uzbekistan.png",
+    "media/flags/georgia.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Ливан»?",
@@ -5845,7 +6065,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/uae.svg"
+   "answer_image": "media/flags/uae.svg",
+   "option_images": [
+    "media/flags/india.svg",
+    "media/flags/uae.svg",
+    "media/flags/bangladesh.svg",
+    "media/flags/oman.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Катар»?",
@@ -5884,7 +6110,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/georgia.png"
+   "answer_image": "media/flags/georgia.png",
+   "option_images": [
+    "media/flags/iraq.png",
+    "media/flags/cambodia.png",
+    "media/flags/georgia.png",
+    "media/flags/myanmar.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Армения»?",
@@ -5923,7 +6155,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/uzbekistan.png"
+   "answer_image": "media/flags/uzbekistan.png",
+   "option_images": [
+    "media/flags/iran.png",
+    "media/flags/uzbekistan.png",
+    "media/flags/laos.svg",
+    "media/flags/azerbaijan.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Киргизия»?",
@@ -6001,7 +6239,13 @@
    "answer": 3,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/algeria.svg"
+   "answer_image": "media/flags/algeria.svg",
+   "option_images": [
+    "media/flags/tanzania.svg",
+    "media/flags/angola.png",
+    "media/flags/zambia.png",
+    "media/flags/algeria.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Тунис»?",
@@ -6040,7 +6284,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/nigeria.svg"
+   "answer_image": "media/flags/nigeria.svg",
+   "option_images": [
+    "media/flags/nigeria.svg",
+    "media/flags/uganda.png",
+    "media/flags/kenya.png",
+    "media/flags/sudan.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Кения»?",
@@ -6079,7 +6329,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/ghana.svg"
+   "answer_image": "media/flags/ghana.svg",
+   "option_images": [
+    "media/flags/uganda.png",
+    "media/flags/ghana.svg",
+    "media/flags/libya.svg",
+    "media/flags/senegal.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Сенегал»?",
@@ -6118,7 +6374,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/madagascar.svg"
+   "answer_image": "media/flags/madagascar.svg",
+   "option_images": [
+    "media/flags/egypt.png",
+    "media/flags/libya.svg",
+    "media/flags/madagascar.svg",
+    "media/flags/mali.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Танзания»?",
@@ -6157,7 +6419,13 @@
    "answer": 1,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/zimbabwe.png"
+   "answer_image": "media/flags/zimbabwe.png",
+   "option_images": [
+    "media/flags/ethiopia.png",
+    "media/flags/zimbabwe.png",
+    "media/flags/nigeria.svg",
+    "media/flags/kenya.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Замбия»?",
@@ -6196,7 +6464,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/sudan.svg"
+   "answer_image": "media/flags/sudan.svg",
+   "option_images": [
+    "media/flags/sudan.svg",
+    "media/flags/ghana.svg",
+    "media/flags/angola.png",
+    "media/flags/tunisia.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «США»?",
@@ -6235,7 +6509,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "easy",
-   "answer_image": "media/flags/cuba.svg"
+   "answer_image": "media/flags/cuba.svg",
+   "option_images": [
+    "media/flags/argentina.png",
+    "media/flags/chile.svg",
+    "media/flags/cuba.svg",
+    "media/flags/ecuador.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Аргентина»?",
@@ -6274,7 +6554,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "normal",
-   "answer_image": "media/flags/peru.svg"
+   "answer_image": "media/flags/peru.svg",
+   "option_images": [
+    "media/flags/peru.svg",
+    "media/flags/venezuela.png",
+    "media/flags/paraguay.png",
+    "media/flags/argentina.png"
+   ]
   },
   {
    "q": "Какой город — столица страны «Колумбия»?",
@@ -6313,7 +6599,13 @@
    "answer": 0,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/ecuador.png"
+   "answer_image": "media/flags/ecuador.png",
+   "option_images": [
+    "media/flags/ecuador.png",
+    "media/flags/costa-rica.png",
+    "media/flags/usa.svg",
+    "media/flags/cuba.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Уругвай»?",
@@ -6352,7 +6644,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/jamaica.svg"
+   "answer_image": "media/flags/jamaica.svg",
+   "option_images": [
+    "media/flags/chile.svg",
+    "media/flags/argentina.png",
+    "media/flags/jamaica.svg",
+    "media/flags/cuba.svg"
+   ]
   },
   {
    "q": "Какой город — столица страны «Коста-Рика»?",
@@ -6391,7 +6689,13 @@
    "answer": 2,
    "theme": "Столицы",
    "level": "hard",
-   "answer_image": "media/flags/papua-new-guinea.png"
+   "answer_image": "media/flags/papua-new-guinea.png",
+   "option_images": [
+    "media/flags/bangladesh.svg",
+    "media/flags/luxembourg.svg",
+    "media/flags/papua-new-guinea.png",
+    "media/flags/ghana.svg"
+   ]
   },
   {
    "type": "number",
@@ -6596,7 +6900,8 @@
    "theme": "Физика и химия",
    "level": "hard",
    "answer": 79,
-   "answer_image": "media/pics/ans-coin.png"
+   "answer_image": "media/pics/ans-coin.png",
+   "image": "media/chem/au.svg"
   },
   {
    "type": "number",
@@ -6604,7 +6909,8 @@
    "theme": "Физика и химия",
    "level": "normal",
    "answer": 118,
-   "answer_image": "media/people/mendeleev.jpg"
+   "answer_image": "media/people/mendeleev.jpg",
+   "image": "media/chem/table.svg"
   },
   {
    "type": "number",
@@ -6752,7 +7058,13 @@
     "Великобритания"
    ],
    "answer": 0,
-   "answer_image": "media/flags/france.svg"
+   "answer_image": "media/flags/france.svg",
+   "option_images": [
+    "media/flags/france.svg",
+    "media/flags/russia.svg",
+    "media/flags/usa.svg",
+    "media/flags/uk.svg"
+   ]
   },
   {
    "q": "Какой город был столицей Японии до Токио?",
@@ -6817,7 +7129,8 @@
     "Рубидий"
    ],
    "answer": 0,
-   "answer_image": "media/flags/russia.svg"
+   "answer_image": "media/flags/russia.svg",
+   "image": "media/chem/table.svg"
   },
   {
    "q": "Какой язык — родной для наибольшего числа людей?",
@@ -7050,7 +7363,13 @@
     "Венера"
    ],
    "answer": 2,
-   "answer_image": "media/space/uranus.jpg"
+   "answer_image": "media/space/uranus.jpg",
+   "option_images": [
+    "media/space/neptune.jpg",
+    "media/space/saturn.jpg",
+    "media/space/uranus.jpg",
+    "media/space/venus.jpg"
+   ]
   },
   {
    "q": "Какая звезда — ближайшая к Солнцу?",
@@ -7507,7 +7826,13 @@
     "Великобритания"
    ],
    "answer": 3,
-   "answer_image": "media/flags/uk.svg"
+   "answer_image": "media/flags/uk.svg",
+   "option_images": [
+    "media/flags/france.svg",
+    "media/flags/germany.svg",
+    "media/flags/usa.svg",
+    "media/flags/uk.svg"
+   ]
   },
   {
    "q": "В какой азиатской стране левостороннее движение?",
@@ -7521,7 +7846,13 @@
    ],
    "answer": 0,
    "si": false,
-   "answer_image": "media/flags/japan.svg"
+   "answer_image": "media/flags/japan.svg",
+   "option_images": [
+    "media/flags/japan.svg",
+    "media/flags/china.svg",
+    "media/flags/south-korea.svg",
+    "media/flags/turkey.svg"
+   ]
   },
   {
    "q": "Что должен сделать водитель, если сзади едет скорая с сиреной и мигалками?",

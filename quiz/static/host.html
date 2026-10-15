@@ -107,6 +107,7 @@ a.btn { text-decoration: none; display: inline-block; }
 }
 .opt .shape { font-size: 1.1em; flex: none; position: relative; }
 .opt .label { min-width: 0; flex: 1; position: relative; }
+.opt .opt-img { position: relative; height: 2.2em; width: 3.3em; object-fit: contain; flex: none; border-radius: 8px; }
 .opt .who { position: relative; display: flex; flex: none; font-size: .8em; }
 .opt .who .ava { margin-left: -.4em; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
 .opt .who .more { position: relative; margin-left: .3em; align-self: center; font-size: .9em; }
@@ -553,7 +554,7 @@ function options(s, reveal) {
     const count = reveal ? `<span class="count">${s.counts[i]}</span>` : "";
     const who = reveal ? (s.player_answers || []).filter((a) => (Array.isArray(a.pick) ? a.pick : [a.pick]).includes(i)) : [];
     const faces = who.length ? `<span class="who">${who.slice(0, 6).map(avaP).join("")}${who.length > 6 ? `<span class="more">+${who.length - 6}</span>` : ""}</span>` : "";
-    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span><span class="label">${esc(o)}</span>${faces}${count}</div>`;
+    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}<span class="shape">${SHAPES[i]}</span>${s.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(s.option_images[i]))}" alt="">` : ""}<span class="label">${esc(o)}</span>${faces}${count}</div>`;
   }).join("")}</div>`;
 }
 

@@ -196,7 +196,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text" || type === "number" || type === "map") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null, option_images: q.option_images || null };
     }),
   };
 }
@@ -219,6 +219,8 @@ function toPack() {
       if (q.image && q.image_fx) { q2.image_fx = q.image_fx; if (q.image_fx === "zoom" && q.focus) q2.focus = q.focus; }
       if (q.audio) q2.audio = q.audio;
       if (q.answer_image) q2.answer_image = q.answer_image;
+      const pics = q.option_images && q2.options ? kept.map((o) => q.option_images[o.i]) : [];
+      if (pics.length && pics.every(Boolean)) q2.option_images = pics; // картинки к вариантам (пока только из файла пакета)
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
       if (q.emoji && q.emoji.trim()) q2.emoji = q.emoji.trim();
       if (q.theme && q.theme.trim()) q2.theme = q.theme.trim();

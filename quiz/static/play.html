@@ -51,6 +51,7 @@ p { margin: 0; line-height: 1.5; }
 .rise { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 .pop { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+#main.calm .rise, #main.calm .pop { animation: none; } /* тот же экран обновился — без повторной анимации */
 @keyframes pop { from { opacity: 0; transform: scale(.4); } }
 
 .ava {
@@ -105,6 +106,7 @@ input {
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
+.ans .opt-img { height: 46px; width: 70px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
 .mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
 .others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .pill.minus { background: var(--bad); color: #2b0606; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
@@ -357,7 +359,7 @@ function codeForm() {
 
 const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
-let pickAva = recall("quiz-avatar") || null;
+let pickAva = recall("quiz-avatar") || null, avaOpen = false, lastScene = "";
 const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
 
 function avatarPicker(list, selected) {
@@ -433,8 +435,9 @@ function fxImg(s, alt) {
 }
 
 function answerControls(s) {
+  const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
   const btn = (i, attr, extra = "") => `<button class="ans rise ${extra}" style="--c:var(--a${i});--i:${i}" ${attr}="${i}">
-    <span class="shape">${SHAPES[i]}</span>${esc(s.options[i])}<span class="badge-num"></span></button>`;
+    <span class="shape">${SHAPES[i]}</span>${pic(i)}${esc(s.options[i])}<span class="badge-num"></span></button>`;
   if (s.qtype === "multi") {
     return `<p class="hint">Отметь все верные варианты</p>
       <div class="answers">${s.options.map((_, i) => btn(i, "data-pick", picks.includes(i) ? "sel" : "")).join("")}</div>
@@ -812,6 +815,8 @@ function render(s) {
   mood("");
   confetti(false);
 
+  const scene = s.phase + ":" + s.index;
+  $main.classList.toggle("calm", scene === lastScene); lastScene = scene;
   if (s.phase.startsWith("si_")) return renderSi(s, me);
   if (s.phase.startsWith("fd_")) return renderFd(s, me);
   const myTeam = me.team != null ? s.team_names[me.team] : null;
@@ -836,11 +841,12 @@ function render(s) {
         <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
         <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
         <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
-        <details class="ava-change"><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
+        <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
     document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
+    document.querySelector(".ava-change").ontoggle = (e) => { avaOpen = e.target.open; };
   } else if (s.phase === "question" && !me.answered) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
     $main.innerHTML = `
@@ -1084,8 +1090,11 @@ document.addEventListener("click", async (e) => {
   if (av) {
     pickAva = av.dataset.ava; remember("quiz-avatar", pickAva);
     document.querySelectorAll("[data-ava]").forEach((x) => x.classList.toggle("on", x === av));
-    if (pid) { await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll(); }
     buzz(10);
+    if (pid) {
+      document.querySelectorAll("#top .ava, #main .ava.xl").forEach((x) => { x.outerHTML = avaP({ avatar: pickAva }, x.classList.contains("xl") ? "xl" : ""); });
+      await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll();
+    }
     return;
   }
   const t = e.target.closest("[data-team]");

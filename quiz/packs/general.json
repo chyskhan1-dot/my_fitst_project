@@ -5697,25 +5697,6 @@
    "image": "media/flags/bosnia.svg"
   },
   {
-   "q": "Столица какой страны — Люксембург?",
-   "options": [
-    "Люксембург",
-    "Швейцария",
-    "Норвегия",
-    "Хорватия"
-   ],
-   "answer": 0,
-   "theme": "Столицы",
-   "level": "hard",
-   "answer_image": "media/flags/luxembourg.svg",
-   "option_images": [
-    "media/flags/luxembourg.svg",
-    "media/flags/switzerland.svg",
-    "media/flags/norway.svg",
-    "media/flags/croatia.png"
-   ]
-  },
-  {
    "q": "Какой город — столица страны «Япония»?",
    "options": [
     "Осака",
@@ -6227,38 +6208,6 @@
    "theme": "Столицы",
    "level": "hard",
    "image": "media/flags/morocco.svg"
-  },
-  {
-   "q": "Столица какой страны — Алжир?",
-   "options": [
-    "Танзания",
-    "Ангола",
-    "Замбия",
-    "Алжир"
-   ],
-   "answer": 3,
-   "theme": "Столицы",
-   "level": "hard",
-   "answer_image": "media/flags/algeria.svg",
-   "option_images": [
-    "media/flags/tanzania.svg",
-    "media/flags/angola.png",
-    "media/flags/zambia.png",
-    "media/flags/algeria.svg"
-   ]
-  },
-  {
-   "q": "Какой город — столица страны «Тунис»?",
-   "options": [
-    "Аддис-Абеба",
-    "Тунис",
-    "Антананариву",
-    "Хартум"
-   ],
-   "answer": 1,
-   "theme": "Столицы",
-   "level": "normal",
-   "image": "media/flags/tunisia.svg"
   },
   {
    "q": "Какой город — столица страны «Ливия»?",
@@ -10916,6 +10865,702 @@
    "image": "media/space/iss.jpg",
    "theme": "Космос",
    "level": "easy"
+  },
+  {
+   "q": "Какая река традиционно считается самой длинной в мире?",
+   "options": [
+    "Амазонка",
+    "Янцзы",
+    "Миссисипи",
+    "Нил"
+   ],
+   "answer": 3,
+   "theme": "География",
+   "level": "normal",
+   "answer_image": "media/pics/ans-national-park.png"
+  },
+  {
+   "q": "Какая пустыня — самая большая жаркая пустыня мира?",
+   "options": [
+    "Сахара",
+    "Гоби",
+    "Калахари",
+    "Атакама"
+   ],
+   "answer": 0,
+   "theme": "География",
+   "level": "easy",
+   "answer_image": "media/pics/ans-desert.png"
+  },
+  {
+   "q": "В какой стране больше всего озёр?",
+   "options": [
+    "Россия",
+    "Канада",
+    "Финляндия",
+    "США"
+   ],
+   "answer": 1,
+   "theme": "География",
+   "level": "hard",
+   "answer_image": "media/flags/canada.png",
+   "option_images": [
+    "media/flags/russia.svg",
+    "media/flags/canada.png",
+    "media/flags/finland.svg",
+    "media/flags/usa.svg"
+   ]
+  },
+  {
+   "q": "Какой океан — самый маленький?",
+   "options": [
+    "Индийский",
+    "Северный Ледовитый",
+    "Атлантический",
+    "Южный"
+   ],
+   "answer": 1,
+   "theme": "География",
+   "level": "normal",
+   "answer_image": "media/pics/ans-polar-bear.png"
+  },
+  {
+   "q": "Какая страна — самая большая в Африке по площади?",
+   "options": [
+    "Алжир",
+    "Судан",
+    "Ливия",
+    "Египет"
+   ],
+   "answer": 0,
+   "theme": "География",
+   "level": "hard",
+   "answer_image": "media/flags/algeria.svg",
+   "option_images": [
+    "media/flags/algeria.svg",
+    "media/flags/sudan.svg",
+    "media/flags/libya.svg",
+    "media/flags/egypt.png"
+   ]
+  },
+  {
+   "q": "Какой пролив отделяет Европу от Африки?",
+   "options": [
+    "Босфор",
+    "Ла-Манш",
+    "Дарданеллы",
+    "Гибралтарский"
+   ],
+   "answer": 3,
+   "theme": "География",
+   "level": "normal",
+   "answer_image": "media/pics/ans-ship.png"
+  },
+  {
+   "q": "Какая страна по форме похожа на сапог?",
+   "options": [
+    "Греция",
+    "Испания",
+    "Италия",
+    "Португалия"
+   ],
+   "answer": 2,
+   "theme": "Страны и города",
+   "level": "easy",
+   "answer_image": "media/flags/italy.svg",
+   "option_images": [
+    "media/flags/greece.svg",
+    "media/flags/spain.png",
+    "media/flags/italy.svg",
+    "media/flags/portugal.png"
+   ]
+  },
+  {
+   "q": "В каком городе стоит статуя Свободы?",
+   "options": [
+    "Вашингтон",
+    "Бостон",
+    "Филадельфия",
+    "Нью-Йорк"
+   ],
+   "answer": 3,
+   "theme": "Страны и города",
+   "level": "easy",
+   "answer_image": "media/pics/ans-statue-of-liberty.png"
+  },
+  {
+   "q": "Какая страна подарила США статую Свободы?",
+   "options": [
+    "Франция",
+    "Великобритания",
+    "Испания",
+    "Нидерланды"
+   ],
+   "answer": 0,
+   "theme": "Страны и города",
+   "level": "normal",
+   "answer_image": "media/flags/france.svg",
+   "option_images": [
+    "media/flags/france.svg",
+    "media/flags/uk.svg",
+    "media/flags/spain.png",
+    "media/flags/netherlands.svg"
+   ]
+  },
+  {
+   "q": "Кто был первым римским императором?",
+   "options": [
+    "Юлий Цезарь",
+    "Октавиан Август",
+    "Нерон",
+    "Калигула"
+   ],
+   "answer": 1,
+   "theme": "История",
+   "level": "normal",
+   "answer_image": "media/pics/ans-crown.png"
+  },
+  {
+   "q": "Кто первым из русских правителей венчался на царство?",
+   "options": [
+    "Иван III",
+    "Михаил Романов",
+    "Иван Грозный",
+    "Пётр I"
+   ],
+   "answer": 2,
+   "theme": "История",
+   "level": "normal",
+   "answer_image": "media/pics/ans-crown.png"
+  },
+  {
+   "q": "В каком году пала Берлинская стена?",
+   "options": [
+    "1991",
+    "1985",
+    "1990",
+    "1989"
+   ],
+   "answer": 3,
+   "theme": "История",
+   "level": "normal",
+   "answer_image": "media/flags/germany.svg"
+  },
+  {
+   "q": "Как называется древнейшая русская летопись, дошедшая до наших дней?",
+   "options": [
+    "«Слово о полку Игореве»",
+    "«Повесть временных лет»",
+    "«Русская правда»",
+    "«Домострой»"
+   ],
+   "answer": 1,
+   "theme": "История",
+   "level": "hard",
+   "answer_image": "media/pics/ans-scroll.png"
+  },
+  {
+   "q": "Как зовут сыщика-бельгийца из романов Агаты Кристи?",
+   "options": [
+    "Шерлок Холмс",
+    "Мисс Марпл",
+    "Эркюль Пуаро",
+    "Комиссар Мегрэ"
+   ],
+   "answer": 2,
+   "theme": "Литература",
+   "level": "normal",
+   "answer_image": "media/pics/ans-detective.png"
+  },
+  {
+   "q": "Кто написал «Ромео и Джульетту»?",
+   "options": [
+    "Уильям Шекспир",
+    "Иоганн Гёте",
+    "Данте Алигьери",
+    "Мигель де Сервантес"
+   ],
+   "answer": 0,
+   "theme": "Литература",
+   "level": "easy",
+   "answer_image": "media/pics/ans-performing-arts.png"
+  },
+  {
+   "q": "Как зовут мальчика, который не хотел взрослеть и жил в Нетландии?",
+   "options": [
+    "Пиноккио",
+    "Том Сойер",
+    "Малыш",
+    "Питер Пэн"
+   ],
+   "answer": 3,
+   "theme": "Литература",
+   "level": "easy",
+   "answer_image": "media/pics/ans-woman-fairy.png"
+  },
+  {
+   "q": "Как зовут грустного ослика — друга Винни-Пуха?",
+   "options": [
+    "Иа-Иа",
+    "Тигра",
+    "Кролик",
+    "Сова"
+   ],
+   "answer": 0,
+   "theme": "Кино и мультфильмы",
+   "level": "easy",
+   "answer_image": "media/pics/ans-donkey.png"
+  },
+  {
+   "q": "В каком мультфильме живут Крош, Ёжик и Нюша?",
+   "options": [
+    "«Фиксики»",
+    "«Лунтик»",
+    "«Смешарики»",
+    "«Маша и Медведь»"
+   ],
+   "answer": 2,
+   "theme": "Кино и мультфильмы",
+   "level": "easy",
+   "answer_image": "media/pics/ans-hedgehog.png"
+  },
+  {
+   "q": "Кто сыграл Джека в фильме «Титаник» (1997)?",
+   "options": [
+    "Брэд Питт",
+    "Леонардо Ди Каприо",
+    "Мэтт Деймон",
+    "Джонни Депп"
+   ],
+   "answer": 1,
+   "theme": "Кино и мультфильмы",
+   "level": "easy",
+   "answer_image": "media/pics/ans-ship.png"
+  },
+  {
+   "q": "Какого цвета Шрек?",
+   "options": [
+    "Синий",
+    "Зелёный",
+    "Жёлтый",
+    "Коричневый"
+   ],
+   "answer": 1,
+   "theme": "Кино и мультфильмы",
+   "level": "easy",
+   "answer_image": "media/pics/ans-green-heart.png"
+  },
+  {
+   "q": "Какая сборная чаще всех выигрывала чемпионат мира по футболу (на 2024 год)?",
+   "options": [
+    "Германия",
+    "Италия",
+    "Бразилия",
+    "Аргентина"
+   ],
+   "answer": 2,
+   "theme": "Спорт",
+   "level": "normal",
+   "answer_image": "media/flags/brazil.png",
+   "option_images": [
+    "media/flags/germany.svg",
+    "media/flags/italy.svg",
+    "media/flags/brazil.png",
+    "media/flags/argentina.png"
+   ]
+  },
+  {
+   "q": "Сколько минут чистого времени длится матч НБА?",
+   "options": [
+    "40",
+    "60",
+    "90",
+    "48"
+   ],
+   "answer": 3,
+   "theme": "Спорт",
+   "level": "hard",
+   "answer_image": "media/pics/ans-basketball.png"
+  },
+  {
+   "q": "Из чего делают попкорн?",
+   "options": [
+    "Из кукурузы",
+    "Из риса",
+    "Из пшеницы",
+    "Из гороха"
+   ],
+   "answer": 0,
+   "theme": "Еда",
+   "level": "easy",
+   "answer_image": "media/pics/ans-popcorn.png"
+  },
+  {
+   "q": "Какой сыр кладут в настоящий греческий салат?",
+   "options": [
+    "Моцареллу",
+    "Фету",
+    "Пармезан",
+    "Камамбер"
+   ],
+   "answer": 1,
+   "theme": "Еда",
+   "level": "normal",
+   "answer_image": "media/pics/ans-cheese-wedge.png"
+  },
+  {
+   "q": "Какой фрукт называют «королём фруктов» в Юго-Восточной Азии?",
+   "options": [
+    "Манго",
+    "Ананас",
+    "Личи",
+    "Дуриан"
+   ],
+   "answer": 3,
+   "theme": "Еда",
+   "level": "hard",
+   "answer_image": "media/pics/ans-crown.png"
+  },
+  {
+   "q": "Какое животное — самое большое на суше?",
+   "options": [
+    "Жираф",
+    "Бегемот",
+    "Африканский слон",
+    "Носорог"
+   ],
+   "answer": 2,
+   "theme": "Животные и растения",
+   "level": "easy",
+   "answer_image": "media/pics/ans-elephant.png"
+  },
+  {
+   "q": "Как называется детёныш овцы?",
+   "options": [
+    "Ягнёнок",
+    "Телёнок",
+    "Козлёнок",
+    "Жеребёнок"
+   ],
+   "answer": 0,
+   "theme": "Животные и растения",
+   "level": "easy",
+   "answer_image": "media/pics/ans-ewe.png"
+  },
+  {
+   "q": "Лист какого дерева изображён на флаге Канады?",
+   "options": [
+    "Дуба",
+    "Берёзы",
+    "Липы",
+    "Клёна"
+   ],
+   "answer": 3,
+   "theme": "Животные и растения",
+   "level": "easy",
+   "answer_image": "media/pics/ans-maple-leaf.png"
+  },
+  {
+   "q": "Кровь какой группы считается «универсальной» — её можно перелить почти любому?",
+   "options": [
+    "Четвёртой положительной",
+    "Второй положительной",
+    "Первой отрицательной",
+    "Третьей отрицательной"
+   ],
+   "answer": 2,
+   "theme": "Человек",
+   "level": "hard",
+   "answer_image": "media/pics/ans-drop-of-blood.png"
+  },
+  {
+   "q": "Какая планета ближе всех к Солнцу?",
+   "options": [
+    "Венера",
+    "Меркурий",
+    "Марс",
+    "Земля"
+   ],
+   "answer": 1,
+   "theme": "Космос",
+   "level": "easy",
+   "answer_image": "media/space/mercury.jpg",
+   "option_images": [
+    "media/space/venus.jpg",
+    "media/space/mercury.jpg",
+    "media/space/mars.jpg",
+    "media/space/earth.jpg"
+   ]
+  },
+  {
+   "q": "Как звали первую собаку, которая полетела на орбиту Земли?",
+   "options": [
+    "Лайка",
+    "Белка",
+    "Стрелка",
+    "Жучка"
+   ],
+   "answer": 0,
+   "theme": "Космос",
+   "level": "normal",
+   "answer_image": "media/pics/ans-dog-face.png"
+  },
+  {
+   "q": "В чём измеряют силу электрического тока?",
+   "options": [
+    "В амперах",
+    "В вольтах",
+    "В омах",
+    "В ваттах"
+   ],
+   "answer": 0,
+   "theme": "Физика и химия",
+   "level": "normal",
+   "answer_image": "media/pics/ans-high-voltage.png"
+  },
+  {
+   "q": "Что тяжелее: килограмм ваты или килограмм железа?",
+   "options": [
+    "Железо",
+    "Вата",
+    "Зависит от погоды",
+    "Одинаково"
+   ],
+   "answer": 3,
+   "theme": "Физика и химия",
+   "level": "easy",
+   "answer_image": "media/pics/ans-balance-scale.png"
+  },
+  {
+   "q": "При какой температуре по Фаренгейту замерзает вода?",
+   "options": [
+    "0 °F",
+    "100 °F",
+    "32 °F",
+    "212 °F"
+   ],
+   "answer": 2,
+   "theme": "Физика и химия",
+   "level": "hard",
+   "answer_image": "media/pics/ans-thermometer.png"
+  },
+  {
+   "q": "Кого в России считают изобретателем радио?",
+   "options": [
+    "Николу Теслу",
+    "Александра Попова",
+    "Михаила Ломоносова",
+    "Ивана Кулибина"
+   ],
+   "answer": 1,
+   "theme": "Изобретения и техника",
+   "level": "normal",
+   "answer_image": "media/pics/ans-radio.png"
+  },
+  {
+   "q": "Что изобрёл Томас Эдисон?",
+   "options": [
+    "Телефон",
+    "Радио",
+    "Фонограф",
+    "Телевизор"
+   ],
+   "answer": 2,
+   "theme": "Изобретения и техника",
+   "level": "normal",
+   "answer_image": "media/pics/ans-musical-notes.png"
+  },
+  {
+   "q": "Как расшифровывается WWW?",
+   "options": [
+    "World Web Window",
+    "Wide World Web",
+    "Web World Wide",
+    "World Wide Web"
+   ],
+   "answer": 3,
+   "theme": "Изобретения и техника",
+   "level": "normal",
+   "answer_image": "media/pics/ans-globe-with-meridians.png"
+  },
+  {
+   "q": "Как звали крылатого коня из древнегреческих мифов?",
+   "options": [
+    "Буцефал",
+    "Пегас",
+    "Кентавр",
+    "Минотавр"
+   ],
+   "answer": 1,
+   "theme": "Мифология",
+   "level": "easy",
+   "answer_image": "media/pics/ans-horse.png"
+  },
+  {
+   "q": "Кто в скандинавских мифах — верховный бог и отец Тора?",
+   "options": [
+    "Один",
+    "Локи",
+    "Бальдр",
+    "Фрейр"
+   ],
+   "answer": 0,
+   "theme": "Мифология",
+   "level": "normal",
+   "answer_image": "media/pics/ans-crown.png"
+  },
+  {
+   "q": "Как звали древнегреческую богиню мудрости?",
+   "options": [
+    "Афродита",
+    "Гера",
+    "Афина",
+    "Артемида"
+   ],
+   "answer": 2,
+   "theme": "Мифология",
+   "level": "easy",
+   "answer_image": "media/pics/ans-owl.png"
+  },
+  {
+   "q": "Как называется боязнь пауков?",
+   "options": [
+    "Арахнофобия",
+    "Клаустрофобия",
+    "Акрофобия",
+    "Агорафобия"
+   ],
+   "answer": 0,
+   "theme": "Разное",
+   "level": "normal",
+   "answer_image": "media/pics/ans-spider.png"
+  },
+  {
+   "q": "На каком языке говорят в Мексике?",
+   "options": [
+    "На португальском",
+    "На испанском",
+    "На английском",
+    "На мексиканском"
+   ],
+   "answer": 1,
+   "theme": "Разное",
+   "level": "easy",
+   "answer_image": "media/flags/mexico.png"
+  },
+  {
+   "q": "В каком городе находится музей Прадо?",
+   "options": [
+    "Барселона",
+    "Лиссабон",
+    "Рим",
+    "Мадрид"
+   ],
+   "answer": 3,
+   "theme": "Искусство",
+   "level": "normal",
+   "answer_image": "media/art/las-meninas.jpg"
+  },
+  {
+   "q": "Сколько согласных букв в русском алфавите?",
+   "options": [
+    "21",
+    "20",
+    "23",
+    "19"
+   ],
+   "answer": 0,
+   "theme": "Русский язык",
+   "level": "normal",
+   "answer_image": "media/pics/ans-open-book.png"
+  },
+  {
+   "q": "Сколько градусов в прямом угле?",
+   "options": [
+    "180",
+    "45",
+    "360",
+    "90"
+   ],
+   "answer": 3,
+   "theme": "Математика",
+   "level": "easy",
+   "answer_image": "media/pics/ans-triangular-ruler.png"
+  },
+  {
+   "q": "Как называется отрезок, соединяющий две несоседние вершины многоугольника?",
+   "options": [
+    "Медиана",
+    "Диагональ",
+    "Хорда",
+    "Биссектриса"
+   ],
+   "answer": 1,
+   "theme": "Математика",
+   "level": "normal",
+   "answer_image": "media/pics/ans-straight-ruler.png"
+  },
+  {
+   "q": "Сколько процентов составляет половина?",
+   "options": [
+    "5%",
+    "25%",
+    "50%",
+    "500%"
+   ],
+   "answer": 2,
+   "theme": "Математика",
+   "level": "easy",
+   "answer_image": "media/pics/ans-hundred-points.png"
+  },
+  {
+   "q": "Сколько будет 12 × 12?",
+   "options": [
+    "144",
+    "124",
+    "142",
+    "164"
+   ],
+   "answer": 0,
+   "theme": "Математика",
+   "level": "easy",
+   "answer_image": "media/pics/ans-multiply.png"
+  },
+  {
+   "type": "number",
+   "q": "В каком году основан Санкт-Петербург?",
+   "answer": 1703,
+   "unit": "год",
+   "theme": "История",
+   "level": "normal",
+   "answer_image": "media/people/peter1.jpg"
+  },
+  {
+   "type": "number",
+   "q": "Какова высота Эйфелевой башни вместе с антеннами (на 2024 год)?",
+   "answer": 330,
+   "unit": "м",
+   "theme": "Страны и города",
+   "level": "hard",
+   "answer_image": "media/places/eiffel.jpg"
+  },
+  {
+   "type": "number",
+   "q": "Сколько лет Земле (примерно)?",
+   "answer": 4.5,
+   "unit": "млрд лет",
+   "theme": "Космос",
+   "level": "normal",
+   "answer_image": "media/space/earth.jpg"
+  },
+  {
+   "type": "number",
+   "q": "Сколько метров в одной сухопутной миле (примерно)?",
+   "answer": 1609,
+   "unit": "м",
+   "theme": "Разное",
+   "level": "hard",
+   "answer_image": "media/pics/ans-straight-ruler.png"
   }
  ]
 }

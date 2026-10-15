@@ -1,7 +1,7 @@
 # Рисует дорожные знаки и сигналы светофора для вопросов «ПДД» в media/signs/*.svg.
 # Знаки — как в Венской конвенции о дорожном движении (официальные символы, рисуем сами).
 # Запуск из папки quiz: python3 tools/make_signs.py
-import os
+import math, os
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "media", "signs")
 RED, BLUE, YELLOW, BLACK, WHITE = "#d21f26", "#1f5fb4", "#ffcc00", "#1b1b1b", "#ffffff"
@@ -48,6 +48,19 @@ def lights(top, mid, bottom, blink=False, arrow=False):
     return card(defs + body, w)
 
 
+def roundabout_arrow(a0, r=64, span=78):
+    """Дуга от угла a0 (градусы, против часовой) на span градусов и наконечник по ходу движения."""
+    pt = lambda a, rr=r: (150 + rr * math.cos(math.radians(a)), 150 - rr * math.sin(math.radians(a)))
+    (x0, y0), (x1, y1) = pt(a0), pt(a0 + span)
+    t = math.radians(a0 + span)
+    tx, ty = -math.sin(t), -math.cos(t)  # направление движения в конце дуги
+    nx, ny = math.cos(t), -math.sin(t)   # от центра наружу
+    tip = (x1 + tx * 26, y1 + ty * 26)
+    b1, b2 = (x1 + nx * 20, y1 + ny * 20), (x1 - nx * 20, y1 - ny * 20)
+    return (f'<path d="M{x0:.1f} {y0:.1f} A{r} {r} 0 0 0 {x1:.1f} {y1:.1f}" fill="none" stroke="#fff" stroke-width="18"/>'
+            f'<path d="M{tip[0]:.1f} {tip[1]:.1f} L{b1[0]:.1f} {b1[1]:.1f} L{b2[0]:.1f} {b2[1]:.1f} Z" fill="#fff"/>')
+
+
 SIGNS = {
     # «Уступи дорогу»: треугольник вершиной вниз
     "yield": card('<path d="M30 52 H270 L150 262 Z" fill="#fff" stroke="#9aa5b1" stroke-width="2" stroke-linejoin="round"/>'
@@ -76,6 +89,16 @@ SIGNS = {
     "parking": card('<rect x="40" y="40" width="220" height="220" rx="20" fill="#fff" stroke="#9aa5b1" stroke-width="2"/>'
                     f'<rect x="52" y="52" width="196" height="196" rx="14" fill="{BLUE}"/>'
                     '<path d="M112 222 V78 h46 a40 40 0 0 1 0 80 h-18 v64 z M140 102 v32 h16 a16 16 0 0 0 0 -32 z" fill="#fff" fill-rule="evenodd"/>'),
+    # «Прочие опасности»: треугольник вершиной вверх с красной каймой и «!»
+    "warning": card('<path d="M150 38 L270 248 H30 Z" fill="#fff" stroke="#9aa5b1" stroke-width="2" stroke-linejoin="round"/>'
+                    '<path d="M150 66 L246 234 H54 Z" fill="#fff" stroke="' + RED + '" stroke-width="22" stroke-linejoin="round"/>'
+                    f'<rect x="141" y="118" width="18" height="62" rx="6" fill="{BLACK}"/><circle cx="150" cy="202" r="11" fill="{BLACK}"/>'),
+    # «Движение прямо»: синий круг с белой стрелкой вверх
+    "ahead": card(f'<circle cx="150" cy="150" r="128" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><circle cx="150" cy="150" r="116" fill="{BLUE}"/>'
+                  '<path d="M150 62 L208 128 H170 V236 H130 V128 H92 Z" fill="#fff"/>'),
+    # «Круговое движение»: синий круг с тремя белыми стрелками против часовой стрелки
+    "roundabout": card(f'<circle cx="150" cy="150" r="128" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><circle cx="150" cy="150" r="116" fill="{BLUE}"/>'
+                       + "".join(roundabout_arrow(a) for a in (100, 220, 340))),
     # светофоры
     "lights-yellow-blink": lights(False, True, False, blink=True),
     "lights-red-yellow": lights(True, True, False),

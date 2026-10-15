@@ -105,6 +105,8 @@ input {
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
+.mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
+.others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .pill.minus { background: var(--bad); color: #2b0606; font-family: var(--display); font-size: 20px; padding: 10px 20px; }
 .teampick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
 .teampick button {
@@ -775,6 +777,26 @@ function standings(s, me) {
       <span class="sc">${p.score}</span></li>`).join("")}</ol>`;
 }
 
+// ответы всех игроков после вопроса: «кто ближе» — по точности, остальные — сначала верные
+function othersAnswers(s, me) {
+  const mark = (r) => `<span class="gain ${r === "right" ? "up" : r === "partial" ? "" : "down"}">${r === "right" ? "✓" : r === "partial" ? "½" : "✗"}</span>`;
+  const row = (a, i, mid, end) => `<li class="rise ${a.name === me.name ? "me" : ""}" style="--i:${Math.min(i + 3, 12)}">
+    <span class="pos">${i + 1}</span>${avaP(a)}<span class="n">${esc(a.name)}${mid ? `<small>${mid}</small>` : ""}</span>${end}</li>`;
+  const num = (n) => Number(n).toLocaleString("ru-RU");
+  let rows = [];
+  if (s.qtype === "number") rows = (s.number_answers || []).map((a, i) => row(a, i, "",
+    `<span class="sc">${num(a.value)}</span><span class="gain ${a.best ? "up" : ""}">${a.diff === 0 ? "🎯" : (a.diff > 0 ? "+" : "−") + num(Math.abs(a.diff))}</span>`));
+  else if (s.qtype === "map") rows = (s.map_answers || []).map((a, i) => row(a, i, "", `<span class="sc">${a.best ? "🎯 " : ""}${QuizMap.km(a.km)}</span>`));
+  else if (s.qtype === "text") rows = (s.text_answers || []).map((a, i) => row(a, i, "«" + esc(a.text) + "»", mark(a.ok ? "right" : "wrong")));
+  else rows = (s.player_answers || []).map((a, i) => {
+    const picks = Array.isArray(a.pick) ? a.pick : [a.pick];
+    const said = s.qtype === "order" ? picks.map((k, n) => `${n + 1}. ${esc(s.options[k])}`).join(" · ") : picks.map((k) => `${SHAPES[k]} ${esc(s.options[k])}`).join(", ");
+    return row(a, i, said, mark(a.result));
+  });
+  if (!rows.length || (rows.length === 1 && rows[0].includes('class="rise me"'))) return "";
+  return `<div class="others"><div class="eyebrow">${s.qtype === "number" || s.qtype === "map" ? "Кто ближе" : "Кто что ответил"}</div><ol class="mini">${rows.join("")}</ol></div>`;
+}
+
 function moveText(me) {
   if (!me.prev || me.prev === me.place) return "";
   const d = me.prev - me.place, n = Math.abs(d);
@@ -889,13 +911,16 @@ function render(s) {
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
-        ${s.settings.leaders ? "" : standings(s, me)}
+        ${othersAnswers(s, me)}
+        ${s.settings.leaders ? "" : `<div class="others"><div class="eyebrow">Счёт</div>${standings(s, me)}</div>`}
       </div>`;
     if (s.qtype === "map") {
       const m = QuizMap.create(document.getElementById("reveal-map"));
       const mine = Array.isArray(me.answer) ? [me.answer] : [];
       m.setLines(mine.map((p) => [p, s.correct_point]));
-      m.setPins([...mine.map((p) => ({ point: p, kind: "me", icon: "📍", label: "Ты" })), { point: s.correct_point, kind: "right", icon: "✓", label: s.place || "Здесь" }]);
+      const rest = (s.map_answers || []).filter((a) => a.name !== me.name);
+      m.setPins([...rest.map((a) => ({ point: a.point, icon: a.avatar || "", label: rest.length <= 8 ? a.name : "" })),
+        ...mine.map((p) => ({ point: p, kind: "me", icon: "📍", label: "Ты" })), { point: s.correct_point, kind: "right", icon: "✓", label: s.place || "Здесь" }]);
       requestAnimationFrame(() => m.view([s.correct_point, ...mine]));
     }
   } else if (s.phase === "leaders" && myTeam) {

@@ -23,7 +23,8 @@
     может быть и игроком: тогда в `play.html` внизу панель управления (`hostBar`, токен из localStorage).
   - `Game` — викторина: этапы `setup → lobby → question → reveal → leaders → … → final`;
     типы вопросов `choice`, `multi`, `order`, `text`, `number` (кто ближе, `best_err`), `map` (точка [широта, долгота],
-    `place`, очки по `distance_km`, `MAP_RADIUS`; карта — `static/map.js` + `media/map/world.jpg` из `tools/make_map.py`,
+    `place`, очки по `distance_km`, `MAP_RADIUS`; карта — глобус `static/map.js` (canvas, ортографическая проекция,
+    рисуется в браузере, сервер не нагружает) из текстуры `media/map/world-2k.jpg`/`world.jpg` (`tools/make_map.py`,
     данные Natural Earth); правила в `DEFAULTS`,
     фильтр вопросов по `themes` и `level` — `Game.pool()`. Ответ можно пропустить (`skip`, value `None` —
     в списках ответов не считать); правило «Ставка ×2» (`doubles`): `DOUBLES` раза за игру, ошибка — `-DOUBLE_LOSS`. Время на вопрос — `Game.seconds` (`TYPE_TIME`,

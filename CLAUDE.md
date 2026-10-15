@@ -48,7 +48,10 @@
 - `siq.py` — чтение пакетов SIGame (`.siq`, zip с `content.xml`, обе версии разметки).
 - `static/host.html` — экран ведущего (ТВ), `static/play.html` — главная/телефон игрока,
   `static/editor.html` — редактор пакетов, `static/pack.js` — чтение CSV/JSON и картинок,
-  `static/music.js` — синтезированная музыка (Web Audio, без файлов).
+  `static/music.js` — синтезированная музыка (Web Audio, без файлов). Звук на телефонах (`play.html`): телефон
+  ведущего-игрока (`speaker()` = есть host_token) играет как экран ведущего (`soundtrack()`), остальные молчат —
+  мелодию вопроса можно включить кнопкой «Послушать здесь» (`listen()`). iPhone: `navigator.audioSession.type =
+  "playback"`, иначе беззвучный переключатель глушит звук; скрытая вкладка — музыка на паузе.
 - `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
   темы внутри `general.json`; простые флаги рисует `tools/make_flags.py` (SVG), флаги с гербами — PNG с Wikimedia Commons
   (владелец разрешил; источники — `media/flags/CREDITS.md`). Нет флагов Афганистана и Сирии (спорные/сменились).

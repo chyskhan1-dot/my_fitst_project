@@ -105,6 +105,7 @@ input {
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
+.sound-btn { border: 0; background: none; font-size: 20px; cursor: pointer; padding: 4px 8px; }
 .ans .opt-img { height: 60px; width: 90px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
 .mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
 .others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
@@ -232,6 +233,7 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/music.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
@@ -737,6 +739,37 @@ const HOST_NEXT = {
   fd_round: "Начать раунд", fd_play: "Время вышло", fd_steal: "Не угадали", fd_reveal: "Дальше",
   fd_big_intro: "Начать", fd_big_q: "Пропустить вопрос", fd_big_result: "Итоги",
 };
+// Звук. Телефон ведущего (играет без ТВ — экран ведущего у него не открыт) звучит как большой экран:
+// фоновая музыка, сигналы, мелодии. Остальные телефоны молчат, чтобы не было какофонии, — мелодию вопроса
+// можно послушать у себя кнопкой «🔊 Послушать здесь».
+const speaker = (s) => !!(s && s.me && hostToken());
+const instrumentFor = (s) => s.instrument || QuizMusic.MELODY_INSTRUMENTS[s.index % QuizMusic.MELODY_INSTRUMENTS.length];
+let musicKey = "", hereSound = null;
+function stopHere() { if (hereSound) { hereSound.pause(); hereSound = null; } if (window.QuizMusic) QuizMusic.stopMelody(); }
+function listen(s) { // проиграть звук вопроса на этом телефоне
+  if (!window.QuizMusic) return;
+  stopHere(); QuizMusic.unlock();
+  if (s.melody) QuizMusic.melody(s.melody, s.tempo, instrumentFor(s));
+  else if (s.audio) { hereSound = new Audio(mediaSrc(s.audio)); hereSound.play().catch(() => {}); }
+}
+function soundtrack(s) {
+  const M = window.QuizMusic, key = s.phase + ":" + s.index;
+  if (!M || key === musicKey) return;
+  musicKey = key;
+  if (s.phase !== "question") stopHere();
+  if (!speaker(s) || s.phase.startsWith("si_") || s.phase.startsWith("fd_")) { if (M.styleName) M.stop(0.3); return; }
+  if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
+  else if (s.phase === "question") {
+    if (s.audio || s.melody) M.stop(0.3); else M.play("question");
+    if (s.melody || s.audio) setTimeout(() => { if (musicKey === key) listen(s); }, 600);
+    else M.sting("start");
+  } else if (s.phase === "reveal") { M.stop(0.3); M.sting("reveal"); }
+  else if (s.phase === "leaders") M.play("leaders");
+  else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
+}
+// браузер включает звук только после нажатия — открываем его при первом касании
+["pointerdown", "touchend", "click"].forEach((t) => document.addEventListener(t, () => { if (window.QuizMusic) QuizMusic.unlock(); }, true));
+
 function hostBar(s) {
   let bar = document.getElementById("hostbar");
   const token = s.me ? hostToken() : "";
@@ -811,7 +844,8 @@ function moveText(me) {
 function render(s) {
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span><span class="sc">${me.score}</span>`;
+  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc">${me.score}</span>`;
+  soundtrack(s);
   mood("");
   confetti(false);
 
@@ -855,7 +889,8 @@ function render(s) {
       <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
-      ${s.melody || s.audio ? `<p class="hint">🎵 Слушай на большом экране</p>` : ""}
+      ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
+        : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${answerControls(s)}
       <div class="extra">${me.doubles > 0 ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
         <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`;
@@ -1009,6 +1044,7 @@ async function pollOnce() {
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
+    if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     hostBar(s);
   } catch {
     if (++fails >= 3 && !document.getElementById("join")) {
@@ -1105,6 +1141,9 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (e.target.closest("#skip")) return send(SKIP);
+  if (e.target.closest("[data-listen]") && lastState) { listen(lastState); return; }
+  const snd = e.target.closest("#phone-sound");
+  if (snd && window.QuizMusic) { snd.textContent = QuizMusic.toggle() ? "🔇" : "🔊"; return; }
   const here = e.target.closest("[data-play-here]");
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const db = e.target.closest("#double");

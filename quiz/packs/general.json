@@ -37,7 +37,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Кто написал роман «Мастер и Маргарита»?",
@@ -61,7 +62,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-alarm-clock.png"
   },
   {
    "q": "Какой химический элемент обозначается символом «O»?",
@@ -123,7 +125,8 @@
    ],
    "answer": 0,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-hollow-red-circle.png"
   },
   {
    "q": "Сколько будет 7 × 8?",
@@ -135,7 +138,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-multiply.png"
   },
   {
    "q": "Какое из этих чисел НЕ простое?",
@@ -147,7 +151,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Чему равен квадратный корень из 144?",
@@ -159,7 +164,8 @@
    ],
    "answer": 1,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Чему равна площадь прямоугольника со сторонами 6 и 4 см (в см²)?",
@@ -171,7 +177,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-straight-ruler.png"
   },
   {
    "type": "text",
@@ -181,7 +188,8 @@
     "Правильный"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-triangular-ruler.png"
   },
   {
    "type": "multi",
@@ -197,7 +205,8 @@
     3
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-divide.png"
   },
   {
    "type": "order",
@@ -209,7 +218,8 @@
     "3/4"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-input-numbers.png"
   },
   {
    "q": "Как называется результат деления?",
@@ -221,7 +231,8 @@
    ],
    "answer": 3,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-divide.png"
   },
   {
    "q": "Сколько букв в русском алфавите?",
@@ -233,7 +244,8 @@
    ],
    "answer": 2,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-open-book.png"
   },
   {
    "q": "Какая часть речи обозначает действие предмета?",
@@ -245,7 +257,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-person-running.png"
   },
   {
    "q": "В каком слове ударение падает на последний слог?",
@@ -258,7 +271,8 @@
    "answer": 0,
    "theme": "Русский язык",
    "level": "hard",
-   "si": false
+   "si": false,
+   "answer_image": "media/pics/ans-telephone-receiver.png"
   },
   {
    "q": "Как называется член предложения, который отвечает на вопрос «кто?» или «что?»?",
@@ -270,7 +284,8 @@
    ],
    "answer": 0,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-memo.png"
   },
   {
    "type": "text",
@@ -280,7 +295,8 @@
     "Синоним"
    ],
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-lion.png"
   },
   {
    "type": "multi",
@@ -296,7 +312,8 @@
     3
    ],
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-writing-hand.png"
   },
   {
    "q": "Сколько падежей в русском языке?",
@@ -308,7 +325,8 @@
    ],
    "answer": 1,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-books.png"
   },
   {
    "q": "Как называются слова с противоположным значением?",
@@ -320,7 +338,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-yin-yang.png"
   },
   {
    "q": "Кто написал роман в стихах «Евгений Онегин»?",
@@ -571,7 +590,8 @@
    ],
    "answer": 0,
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "q": "Какой океан — самый большой?",
@@ -606,7 +626,8 @@
     "В Африке"
    ],
    "theme": "География",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/pics/ans-desert.png"
   },
   {
    "q": "Какая гора — самая высокая в мире?",
@@ -618,7 +639,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "easy"
+   "level": "easy",
+   "answer_image": "media/places/everest.jpg"
   },
   {
    "type": "order",
@@ -630,7 +652,8 @@
     "Австралия"
    ],
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "type": "multi",
@@ -646,7 +669,8 @@
     2
    ],
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "q": "Какая река — самая длинная в Европе?",
@@ -658,7 +682,8 @@
    ],
    "answer": 0,
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Какой орган человека — самый большой по площади и весу?",
@@ -1069,7 +1094,8 @@
    ],
    "answer": 3,
    "theme": "География",
-   "level": "hard"
+   "level": "hard",
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "type": "multi",
@@ -1131,7 +1157,8 @@
     "Атлантический океан"
    ],
    "theme": "География",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-globe-showing-europe-africa.png"
   },
   {
    "q": "В каком городе стоит статуя Христа-Искупителя с раскинутыми руками?",
@@ -1727,7 +1754,8 @@
    ],
    "answer": 3,
    "theme": "Русский язык",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-hut.png"
   },
   {
    "q": "Сколько часов в неделе?",
@@ -1739,7 +1767,8 @@
    ],
    "answer": 2,
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-spiral-calendar.png"
   },
   {
    "q": "Какой цвет получится, если смешать синюю и жёлтую краску?",
@@ -1818,7 +1847,8 @@
     "Метр"
    ],
    "theme": "Математика",
-   "level": "normal"
+   "level": "normal",
+   "answer_image": "media/pics/ans-straight-ruler.png"
   },
   {
    "q": "Сколько клавиш у стандартного фортепиано?",
@@ -1887,7 +1917,8 @@
    "answer": 5642,
    "theme": "География",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/places/elbrus.jpg"
   },
   {
    "type": "number",
@@ -1895,7 +1926,8 @@
    "answer": 3530,
    "theme": "География",
    "level": "hard",
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "type": "number",
@@ -1903,7 +1935,8 @@
    "answer": 17.1,
    "theme": "География",
    "level": "hard",
-   "unit": "млн км²"
+   "unit": "млн км²",
+   "answer_image": "media/pics/ans-world-map.png"
   },
   {
    "type": "number",
@@ -1911,7 +1944,8 @@
    "answer": 10994,
    "theme": "География",
    "level": "hard",
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "type": "number",
@@ -2052,7 +2086,8 @@
     "10",
     "12"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-musical-notes.png"
   },
   {
    "q": "Какая из этих букв не обозначает звука?",
@@ -2064,7 +2099,8 @@
     "Э",
     "Ь"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-writing-hand.png"
   },
   {
    "q": "Как называется часть слова перед корнем?",
@@ -2076,7 +2112,8 @@
     "Основа",
     "Приставка"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-puzzle-piece.png"
   },
   {
    "type": "text",
@@ -2085,7 +2122,8 @@
    "level": "hard",
    "answer": [
     "Спряжение"
-   ]
+   ],
+   "answer_image": "media/pics/ans-pencil.png"
   },
   {
    "q": "Сколько склонений у существительных в школьной программе?",
@@ -2097,7 +2135,8 @@
     "4",
     "5"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-books.png"
   },
   {
    "q": "Какое из этих слов — существительное?",
@@ -2109,7 +2148,8 @@
     "Беглый",
     "Бегом"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/pics/ans-person-running.png"
   },
   {
    "q": "Как называется часть речи, которая обозначает признак действия: «быстро», «громко»?",
@@ -2121,7 +2161,8 @@
     "Глагол",
     "Наречие"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-bullet-train.png"
   },
   {
    "type": "order",
@@ -2133,7 +2174,8 @@
     "Корень",
     "Суффикс",
     "Окончание"
-   ]
+   ],
+   "answer_image": "media/pics/ans-puzzle-piece.png"
   },
   {
    "q": "Сколько зубов у взрослого человека вместе с зубами мудрости?",
@@ -3127,7 +3169,8 @@
     "30",
     "45"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-hundred-points.png"
   },
   {
    "q": "Как называется прямоугольник, у которого все стороны равны?",
@@ -3139,7 +3182,8 @@
     "Параллелограмм",
     "Квадрат"
    ],
-   "answer": 3
+   "answer": 3,
+   "answer_image": "media/pics/ans-blue-square.png"
   },
   {
    "q": "Сколько сторон у шестиугольника?",
@@ -3151,14 +3195,16 @@
     "7",
     "8"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-honeybee.png"
   },
   {
    "type": "number",
    "q": "Чему равно число π с точностью до сотых?",
    "theme": "Математика",
    "level": "normal",
-   "answer": 3.14
+   "answer": 3.14,
+   "answer_image": "media/pics/ans-pie.png"
   },
   {
    "q": "Сколько нулей в записи миллиона?",
@@ -3170,7 +3216,8 @@
     "7",
     "9"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-money-bag.png"
   },
   {
    "q": "Чему равно 2 в десятой степени?",
@@ -3182,7 +3229,8 @@
     "1024",
     "2048"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-computer-disk.png"
   },
   {
    "q": "Какая птица — самая большая в мире?",
@@ -3333,7 +3381,8 @@
     "Чёрное",
     "Средиземное"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Какой материк самый холодный?",
@@ -3358,7 +3407,8 @@
     "Африка",
     "Азия"
    ],
-   "answer": 0
+   "answer": 0,
+   "answer_image": "media/places/machu-picchu.jpg"
   },
   {
    "q": "Какое озеро — самое большое по площади в мире?",
@@ -3370,7 +3420,8 @@
     "Верхнее",
     "Виктория"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "q": "Сколько часовых поясов в России?",
@@ -3382,7 +3433,8 @@
     "11",
     "13"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-mantelpiece-clock.png"
   },
   {
    "q": "Сколько дней в феврале високосного года?",
@@ -6266,7 +6318,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 5895,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-snow-capped-mountain.png"
   },
   {
    "type": "number",
@@ -6274,7 +6327,8 @@
    "theme": "География",
    "level": "normal",
    "answer": 1642,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/pics/ans-diving-mask.png"
   },
   {
    "type": "number",
@@ -6282,7 +6336,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 4808,
-   "unit": "м"
+   "unit": "м",
+   "answer_image": "media/places/montblanc.jpg"
   },
   {
    "type": "number",
@@ -6290,7 +6345,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 31722,
-   "unit": "км²"
+   "unit": "км²",
+   "answer_image": "media/pics/ans-water-wave.png"
   },
   {
    "type": "number",
@@ -6298,7 +6354,8 @@
    "theme": "География",
    "level": "hard",
    "answer": -67.7,
-   "unit": "°C"
+   "unit": "°C",
+   "answer_image": "media/pics/ans-thermometer.png"
   },
   {
    "type": "number",
@@ -6306,7 +6363,8 @@
    "theme": "География",
    "level": "hard",
    "answer": 9288,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-locomotive.png"
   },
   {
    "type": "number",
@@ -6314,7 +6372,8 @@
    "theme": "География",
    "level": "normal",
    "answer": 40075,
-   "unit": "км"
+   "unit": "км",
+   "answer_image": "media/pics/ans-globe-showing-europe-africa.png"
   },
   {
    "type": "number",
@@ -6707,7 +6766,8 @@
     "Берингов",
     "Кунаширский"
    ],
-   "answer": 1
+   "answer": 1,
+   "answer_image": "media/pics/ans-ship.png"
   },
   {
    "q": "На какой реке стоит Якутск?",
@@ -6719,7 +6779,8 @@
     "На Лене",
     "На Вилюе"
    ],
-   "answer": 2
+   "answer": 2,
+   "answer_image": "media/pics/ans-national-park.png"
   },
   {
    "q": "Какое село в Якутии называют «полюсом холода»?",

@@ -47,6 +47,11 @@ VERSION = hashlib.md5(
 REVEAL_PAUSE = 0.8  # пауза перед показом ответа, когда все уже ответили
 REVEAL_SECONDS = 4  # автопереход: сколько показываем правильный ответ
 LEADERS_SECONDS = 5  # автопереход: сколько показываем таблицу лидеров
+# «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему, рулетка и ставка ×2 на весь раунд
+ROUND_SIZE = 3
+VOTE_SECONDS = 10  # голосование за тему
+SPIN_SECONDS = 4.5  # колесо крутится
+BET_SECONDS = 8  # решить, ставить ли ×2 на раунд
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
@@ -527,7 +532,8 @@ DEFAULTS = {
     "seconds": 20,
     "count": 10,  # сколько случайных вопросов из пакета (0 — все по порядку)
     "themes": [],  # какие темы пакета играть (пусто — все)
-    "level": "any",  # сложность: any, easy, normal, hard
+    "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
+    "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
@@ -1236,8 +1242,9 @@ class Game:
             s["seconds"] = data["seconds"]
         if isinstance(data.get("themes"), list):
             s["themes"] = [str(t)[:40] for t in data["themes"] if isinstance(t, str)][:60]
-        if data.get("level") in ("any", *LEVELS):
-            s["level"] = data["level"]
+        levels = data.get("levels")
+        if isinstance(levels, list) and set(levels) <= set(LEVELS) and levels:
+            s["levels"] = [lv for lv in LEVELS if lv in levels]
         if data.get("si_round_min") in (0, 5, 10, 15):
             s["si_round_min"] = data["si_round_min"]
         if data.get("count") in (0, 10, 20, 30):
@@ -1287,6 +1294,10 @@ class Game:
         self.answers = {}  # id -> {"value", "time"}
         self.all_answered_at = None
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
+        self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
+        self.votes = {}  # id -> тема, за которую голос
+        self.round_bets = {}  # id -> поставил ли ×2 на текущий раунд
+        self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
         self.si = None
         self.fd = None
         if phase == "lobby":
@@ -1304,9 +1315,9 @@ class Game:
         """Номера вопросов пакета, подходящих под выбранные темы и сложность."""
         allq, st = self.pack["questions"], self.settings
         themes = set(st.get("themes") or []) & {q.get("theme") for q in allq}
-        level = st.get("level", "any")
+        levels = set(st.get("levels") or LEVELS)
         ok = [i for i, q in enumerate(allq)
-              if (not themes or q.get("theme") in themes) and (level == "any" or q.get("level") == level)]
+              if (not themes or q.get("theme") in themes) and (not q.get("level") or q["level"] in levels)]
         return ok or list(range(len(allq)))  # ничего не подошло — играем весь пакет
 
     def pick_questions(self):
@@ -1314,6 +1325,10 @@ class Game:
         allq = self.pack["questions"]
         pool = self.pool()
         n = self.settings["count"]
+        if self.settings.get("rounds"):  # раунды по темам: вопросы выбираются после голосования
+            self.selected = []
+            self.target = min(n or 30, len(pool))
+            return
         if not n or n >= len(pool):
             self.selected = [allq[i] for i in (pool if not n else random.sample(pool, len(pool)))]
             return
@@ -1325,6 +1340,75 @@ class Game:
         chosen = balanced_sample(fresh, n, allq)
         used.update(chosen)
         self.selected = [allq[i] for i in chosen]
+
+    @property
+    def total(self):
+        return self.target if self.settings.get("rounds") else len(self.selected)
+
+    def round_themes(self):
+        """Темы, в которых ещё есть несыгранные в этой игре вопросы: тема → номера вопросов."""
+        allq, taken = self.pack["questions"], {id(q) for q in self.selected}
+        out = collections.defaultdict(list)
+        for i in self.pool():
+            if id(allq[i]) not in taken:
+                out[allq[i].get("theme") or "Разное"].append(i)
+        return out
+
+    def start_vote(self):
+        """Новый раунд: три темы на выбор — голосование с телефонов."""
+        themes = self.round_themes()
+        if not themes:
+            self.target = len(self.selected)
+            return self.set_phase("final")
+        played = [q.get("theme") for q in self.selected]
+        last = played[-1] if played else None
+        fresh = [t for t in themes if t not in played]
+        rest = [t for t in themes if t in played and t != last]
+        random.shuffle(fresh); random.shuffle(rest)
+        options = (fresh + rest + ([last] if last in themes else []))[:3]
+        self.topic = {"options": options, "winner": None, "counts": [0] * len(options),
+                      "round": len(self.selected) // ROUND_SIZE + 1, "rounds": -(-self.target // ROUND_SIZE)}
+        self.votes = {}
+        self.set_phase("topic_vote")
+        if len(options) == 1:
+            self.finish_vote()
+
+    def finish_vote(self):
+        """Рулетка: сектор темы = 3 × голоса + 1 (голоса решают, но шанс есть у всех), победителя решает сервер."""
+        opts = self.topic["options"]
+        counts = [sum(1 for v in self.votes.values() if v == t) for t in opts]
+        weights = [3 * c + 1 for c in counts]
+        winner = random.choices(range(len(opts)), weights=weights)[0]
+        self.topic.update(counts=counts, weights=weights, winner=winner)
+        allq, used = self.pack["questions"], self.used.setdefault(self.settings["pack"], set())
+        avail = self.round_themes()[opts[winner]]
+        fresh = [i for i in avail if i not in used] or avail
+        k = min(ROUND_SIZE, self.target - len(self.selected), len(avail))
+        chosen = random.sample(fresh, min(k, len(fresh)))
+        chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
+        used.update(chosen)
+        self.selected += [allq[i] for i in chosen]
+        self.round_bets = {}
+        self.set_phase("topic_bet")
+
+    def topic_state(self, pid):
+        t = self.topic or {}
+        el = time.time() - self.phase_at
+        out = {"options": t.get("options", []), "round": t.get("round"), "rounds": t.get("rounds")}
+        if self.phase == "topic_vote":
+            out["left"] = max(0, round(VOTE_SECONDS - el, 1))
+            out["voted"] = len(self.votes)
+            out["voters"] = [[{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
+                              for v, th in self.votes.items() if th == o and v in self.players] for o in out["options"]]
+        else:
+            out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(SPIN_SECONDS - el, 1)),
+                       left=max(0, round(SPIN_SECONDS + BET_SECONDS - el, 1)))
+            out["bets"] = [{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
+                           for v, b in self.round_bets.items() if b and v in self.players]
+        if pid:
+            out["my_vote"] = self.votes.get(pid)
+            out["my_bet"] = self.round_bets.get(pid)
+        return out
 
     def set_phase(self, phase):
         self.phase = phase
@@ -1422,6 +1506,17 @@ class Game:
         if self.fd and self.phase.startswith("fd_"):
             return self.fd.tick()
         now = time.time()
+        if self.phase == "topic_vote":
+            online = self.online()
+            if now - self.phase_at >= VOTE_SECONDS or (online and all(p in self.votes for p in online)):
+                self.finish_vote()
+            return
+        if self.phase == "topic_bet":
+            el, online = now - self.phase_at, self.online()
+            decided = not self.settings.get("doubles") or (online and all(p in self.round_bets for p in online))
+            if el >= SPIN_SECONDS + BET_SECONDS or (el >= SPIN_SECONDS + 1.5 and decided):
+                self.start_question()
+            return
         if self.phase == "question":
             online = self.online()
             everyone = online and all(pid in self.answers for pid in online)
@@ -1455,7 +1550,8 @@ class Game:
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
-            p["doubled"] = bool(a and a.get("double"))
+            rounds = self.settings.get("rounds")
+            p["doubled"] = bool(self.round_bets.get(pid)) if rounds else bool(a and a.get("double"))
             points = 0
             if frac > 0:
                 if rules["speed"]:
@@ -1472,7 +1568,7 @@ class Game:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
-            if p["doubled"]:  # ставка ×2: выигрыш удваивается, а промах стоит 1000
+            if p["doubled"]:  # ставка ×2: выигрыш удваивается, а промах (в раундах — и пропуск) стоит 1000
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
             a = a or {}
@@ -1484,13 +1580,22 @@ class Game:
         self.set_phase("reveal")
 
     def next(self):
-        last = self.index + 1 >= len(self.selected)
+        if self.phase == "topic_vote":
+            return self.finish_vote()
+        if self.phase == "topic_bet":
+            return self.start_question()
+        last = self.index + 1 >= self.total
         if self.phase == "reveal" and not last and self.settings["leaders"]:
             self.set_phase("leaders")
             return
         if last and self.phase in ("reveal", "leaders"):
             self.set_phase("final")
             return
+        if self.settings.get("rounds") and self.index + 1 >= len(self.selected):
+            return self.start_vote()  # вопросы раунда кончились — выбираем следующую тему
+        self.start_question()
+
+    def start_question(self):
         self.index += 1
         n = len(self.question()["options"])
         self.display = list(range(n))
@@ -1558,7 +1663,7 @@ class Game:
             "title": self.pack["title"] if self.phase != "setup" else "Квиз",
             "phase": self.phase,
             "index": self.index,
-            "total": len(self.selected) if self.phase != "setup" else len(self.pack["questions"]),
+            "total": self.total if self.phase != "setup" else len(self.pack["questions"]),
             "seconds": self.seconds,
             "settings": self.settings,
             "team_names": TEAMS,
@@ -1588,6 +1693,12 @@ class Game:
             s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
             if self.custom:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
+        if self.phase in ("topic_vote", "topic_bet"):
+            s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
+        if self.settings.get("rounds") and self.topic and self.topic.get("winner") is not None:
+            s["round_theme"] = self.topic["options"][self.topic["winner"]]
+            s["round_bets"] = [self.players[v]["name"] for v, b in self.round_bets.items() if b and v in self.players]
+            s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
         if self.phase in ("question", "reveal") and not self.si and not self.fd:
             q = self.question()
             s["qtype"] = q["type"]
@@ -1667,7 +1778,8 @@ class Game:
                 "prev": me["prev_place"],
                 "streak": me["streak"],
                 "doubles": me.get("doubles", DOUBLES) if self.settings.get("doubles") else 0,
-                "doubled": self.answers.get(pid, {}).get("double", False),
+                "doubled": bool(self.round_bets.get(pid)) if self.settings.get("rounds") else self.answers.get(pid, {}).get("double", False),
+                "round_bet": self.round_bets.get(pid),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
                 "result": self.answers.get(pid, {}).get("result"),
@@ -2041,11 +2153,34 @@ class Handler(BaseHTTPRequestHandler):
                     STATS.counts["answers"] += 1
                     me = game.players[pid]
                     double = (not skip and data.get("double") is True and game.settings.get("doubles")
-                              and me.get("doubles", DOUBLES) > 0)
+                              and not game.settings.get("rounds") and me.get("doubles", DOUBLES) > 0)
                     if double:
                         me["doubles"] = me.get("doubles", DOUBLES) - 1
                     game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
+                return self.send_json({"ok": ok})
+
+            if path == "/api/vote":  # голос за тему раунда (можно передумать)
+                pid, theme = data.get("pid"), data.get("theme")
+                game.tick()
+                ok = game.phase == "topic_vote" and game.owns(pid, device) and theme in game.topic["options"]
+                if ok:
+                    game.votes[pid] = theme
+                    game.tick()
+                return self.send_json({"ok": ok})
+
+            if path == "/api/bet":  # ставка ×2 на весь раунд — да или нет, один раз
+                pid = data.get("pid")
+                game.tick()
+                ok = (game.phase == "topic_bet" and game.owns(pid, device) and pid not in game.round_bets
+                      and time.time() - game.phase_at >= SPIN_SECONDS - 0.3)
+                if ok:
+                    me = game.players[pid]
+                    bet = data.get("double") is True and game.settings.get("doubles") and me.get("doubles", DOUBLES) > 0
+                    if bet:
+                        me["doubles"] = me.get("doubles", DOUBLES) - 1
+                    game.round_bets[pid] = bool(bet)
+                    game.tick()
                 return self.send_json({"ok": ok})
 
             if path.startswith("/api/host/"):

@@ -644,7 +644,7 @@ function render(s) {
   soundtrack(s);
 
   if (s.phase === "setup") {
-    if (!draft) draft = { ...s.settings };
+    if (!draft) draft = { ...s.settings, ...savedRules() };
     renderSetup(s);
   } else if (s.phase === "lobby") {
     draft = null;
@@ -1036,6 +1036,10 @@ function packCards(s, d) {
 
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
+// правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
+const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
+function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify(Object.fromEntries(RULE_KEYS.filter((k) => k in d).map((k) => [k, d[k]])))); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "раундов")} по 3 вопроса`;
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
@@ -1332,6 +1336,7 @@ document.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {
+    if (act && act.dataset.act === "configure") saveRules(draft);
     if (act) { act.disabled = true; await post(act.dataset.act, act.dataset.act === "configure" ? { settings: draft } : {}); }
     if (kick) await post("kick", { pid: kick.dataset.kick });
   } catch {

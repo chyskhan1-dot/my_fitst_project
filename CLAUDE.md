@@ -81,6 +81,11 @@
   `si/*.json|*.siq` — пакеты «Своей игры», `feud/*.json` — пакеты «100 к 1» (`basic.csv` — копия
   для таблиц), `media/` — картинки к пакетам.
 
+## Навыки
+
+- `.claude/skills/quiz-questions/` — добавить или поправить вопросы по правилам проекта
+  (`add_questions.py` раскладывает ответы и качает смайлики, `check_pack.js` проверяет пакет и пересобирает CSV).
+
 ## Как проверять изменения
 
 - Синтаксис: `python3 -c "import ast;ast.parse(open('quiz/server.py').read())"`.

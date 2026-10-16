@@ -654,7 +654,7 @@ function render(s) {
       : st.mode === "jeopardy" ? [`🎯 Своя игра`, `Пакет: ${s.title}`, ...rulesSummary(st)] : [
       `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
-      st.count ? `${s.total} случайных вопросов` : `Вопросов: ${s.total}`,
+      st.rounds ? roundsLabel(Math.ceil(s.total / 3)) : st.count ? `${s.total} случайных вопросов` : `Вопросов: ${s.total}`,
       ...(levelsLabel(st) ? [levelsLabel(st)] : []),
       ...(st.themes && st.themes.length ? [`Темы: ${st.themes.join(", ")}`] : []),
       `${st.seconds} сек на ответ`,
@@ -1036,6 +1036,7 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
+const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "раундов")} по 3 вопроса`;
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
 // подпись сложности для сводки — только если играем не все уровни
 const levelsLabel = (d) => (levelsOf(d).length === 3 ? "" : "Сложность: " + LEVELS.filter(([v]) => levelsOf(d).includes(v)).map(([, n]) => n.toLowerCase()).join(", "));
@@ -1058,7 +1059,8 @@ function themePicker(s, d) {
 function rulesSummary(d) {
   if (d.mode === "100to1") return ["2 команды", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   if (d.mode === "jeopardy") return [d.si_round_min ? `Раунд — ${d.si_round_min} мин` : "Раунд без ограничения", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
-  return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
+  return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.rounds ? roundsLabel(Math.max(1, Math.round((d.count || 30) / 3)))
+    : d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
     ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
 }

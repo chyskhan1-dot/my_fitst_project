@@ -1327,7 +1327,8 @@ class Game:
         n = self.settings["count"]
         if self.settings.get("rounds"):  # раунды по темам: вопросы выбираются после голосования
             self.selected = []
-            self.target = min(n or 30, len(pool))
+            # целое число раундов, без «огрызка» в конце: 10 → 9 (3 раунда), 20 → 21 (7), 30 → 30 (10)
+            self.target = min(max(ROUND_SIZE, round((n or 30) / ROUND_SIZE) * ROUND_SIZE), len(pool))
             return
         if not n or n >= len(pool):
             self.selected = [allq[i] for i in (pool if not n else random.sample(pool, len(pool)))]

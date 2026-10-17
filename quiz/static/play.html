@@ -192,11 +192,9 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .trick-to { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; border: 2px solid transparent;
   background: #2a2f5a; color: var(--ink); font: 700 14px var(--body); cursor: pointer; }
 .trick-to.on { border-color: var(--a0); background: rgba(229, 72, 77, .3); }
-.trick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.trick-btn { border: 0; border-radius: 12px; padding: 12px 8px; background: #2a2f5a; color: var(--ink); font: 800 15px var(--body); display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
-.trick-btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
-.trick-btn small { font-weight: 600; font-size: 12px; color: var(--muted); }
-.trick-btn:disabled { opacity: .5; }
+.trick-throw { width: 100%; background: var(--a0); color: #fff; }
+.trick-got { margin: 0; padding: 12px; border-radius: 12px; background: #2a2f5a; font-weight: 800; font-size: 18px; display: flex; flex-direction: column; gap: 3px; }
+.trick-got small { font-weight: 600; font-size: 13px; color: var(--muted); }
 .qbody { display: contents; }
 .trick-banner { padding: 10px 14px; border-radius: 12px; background: var(--a0); color: #fff; font-weight: 800; text-align: center; }
 .trick-wait { padding: 40px 10px; text-align: center; font-weight: 800; font-size: 18px; border-radius: 16px; background: var(--panel); }
@@ -500,10 +498,14 @@ function trickBox(s, me) {
     if (!others.some((p) => p.id === trickTo)) trickTo = t.leader;
     return `<div class="trick-box pop"><b>😈 Подлянка!</b><p class="muted">Ты на последнем месте — испорти кому-нибудь следующий вопрос. Кому?</p>
     <div class="trick-who">${others.map((p) => `<button class="trick-to ${p.id === trickTo ? "on" : ""}" data-trick-to="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
-    <p class="muted">Какую?</p>
-    <div class="trick-list">${s.tricks.map((k) => `<button class="trick-btn" data-trick="${k.id}" type="button">${k.name}<small>${k.desc}</small></button>`).join("")}</div></div>`;
+    <p class="muted">Какая подлянка достанется — решит случай</p>
+    <button class="btn trick-throw" data-trick type="button">🎲 Кинуть подлянку</button></div>`;
   }
-  if (t.chosen && t.by === me.name) return `<div class="trick-box"><b>😈 Подлянка готова</b><p class="muted">${esc(t.to)} ждёт сюрприз на следующем вопросе</p></div>`;
+  if (t.chosen && t.by === me.name) {
+    const k = s.tricks.find((x) => x.id === me.trick_sent);
+    return `<div class="trick-box pop"><b>😈 Подлянка летит! Кому: ${esc(t.to)}</b>${k ? `<p class="trick-got">Выпало: ${k.name}<small>${k.desc}</small></p>` : ""}
+      <p class="muted">Сработает на следующем вопросе</p></div>`;
+  }
   if (t.chosen && t.to === me.name) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(t.by)}. Сюрприз будет на следующем вопросе</p></div>`;
   return "";
 }
@@ -1287,8 +1289,8 @@ document.addEventListener("click", async (e) => {
   if (vote) { buzz(15); document.querySelectorAll("[data-vote]").forEach((b) => b.classList.toggle("on", b === vote)); await api("/api/vote", { pid, theme: vote.dataset.vote }).catch(() => {}); lastSig = ""; poll(); return; }
   const tto = e.target.closest("[data-trick-to]"); // кому подлянка
   if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
-  const trk = e.target.closest("[data-trick]"); // какая подлянка
-  if (trk) { buzz([20, 40, 20]); document.querySelectorAll("[data-trick]").forEach((b) => (b.disabled = true)); await api("/api/trick", { pid, kind: trk.dataset.trick, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
+  const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер
+  if (trk) { buzz([20, 40, 20]); trk.disabled = true; await api("/api/trick", { pid, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
   const rbet = e.target.closest("[data-rbet]"); // ставка ×2 на раунд (не путать с [data-bet] — ставкой «Своей игры»)
   if (rbet) { buzz(rbet.dataset.rbet === "1" ? [30, 50, 30] : 15); document.querySelectorAll("[data-rbet]").forEach((b) => (b.disabled = true)); await api("/api/bet", { pid, double: rbet.dataset.rbet === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");

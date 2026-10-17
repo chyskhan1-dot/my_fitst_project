@@ -91,7 +91,7 @@ TRICKS = [
     {"id": "mirror", "name": "🪞 Зеркало", "desc": "текст отражён зеркально"},
     {"id": "fog", "name": "🌫 Туман", "desc": "всё в тумане, проясняется не сразу"},
 ]
-TRICK_IDS = {t["id"] for t in TRICKS}
+TRICK_IDS = {t["id"] for t in TRICKS}  # какая подлянка — решает случай, игрок выбирает только кому
 TRICK_DELAY = 6  # «Ответы позже»: столько секунд нельзя ответить
 
 
@@ -1852,6 +1852,8 @@ class Game:
             roles = s.get("trick_next") and self.trick_roles()
             if roles and pid in roles[0]:
                 s["me"]["can_trick"] = True
+            if self.trick and self.trick["by"] == pid:
+                s["me"]["trick_sent"] = self.trick["kind"]  # кинувший видит, какая подлянка выпала
             t = self.active_trick
             if t and t["to"] == pid and self.phase == "question":
                 s["me"]["trick"] = t["kind"]
@@ -2234,10 +2236,10 @@ class Handler(BaseHTTPRequestHandler):
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 
-            if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру)
-                pid, kind = data.get("pid"), data.get("kind")
+            if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру); какая — случайно
+                pid, kind = data.get("pid"), random.choice(sorted(TRICK_IDS))
                 game.tick()
-                roles = game.owns(pid, device) and kind in TRICK_IDS and game.trick_roles()
+                roles = game.owns(pid, device) and game.trick_roles()
                 to = data.get("to") or (roles[1] if roles else None)
                 ok = bool(roles and pid in roles[0] and to in game.players and to != pid)
                 if ok:

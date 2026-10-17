@@ -5,7 +5,8 @@
 # <новые.json> — список вопросов. Для «один верный» (choice) верный ответ пишется отдельно,
 # а место среди вариантов скрипт выбирает сам — так, чтобы правильные ответы лежали по позициям поровну:
 #   {"q": "…?", "right": "Верный", "wrong": ["Неверный 1", "Неверный 2", "Неверный 3"],
-#    "theme": "Космос", "level": "easy|normal|hard", "answer_image": "<картинка>", "image": "<картинка>"}
+#    "theme": "Космос", "level": "easy|normal|hard", "answer_image": "<картинка>", "image": "<картинка>",
+#    "note": "Пояснение к ответу — одно-два предложения, показываем после ответа"}
 # Другие типы — как в пакете (type: number/text/multi/order/map, answer, unit, place…), их скрипт добавляет как есть.
 # <картинка> — путь в media/ (media/flags/italy.svg) или «emoji:Название папки Fluent» (emoji:Red apple):
 # такой смайлик скачивается с GitHub microsoft/fluentui-emoji (лицензия MIT) в media/pics/ans-<имя>.png.
@@ -79,6 +80,8 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     qtype = item.get("type", "choice")
     if qtype not in TYPES:
         sys.exit(f"вопрос {n}: неизвестный тип {qtype}")
+    if not str(item.get("note") or "").strip():
+        sys.exit(f"вопрос {n}: нет пояснения note — коротко объясни ответ (покажем после ответа)")
     if qtype == "map" and item["theme"] != "Где на карте":
         sys.exit(f"вопрос {n}: вопросы на карте — только в теме «Где на карте»")
     if qtype == "choice":
@@ -93,7 +96,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     else:
         q = {k: v for k, v in item.items() if k not in ("right", "wrong", "theme", "level", "image", "answer_image")}
         q["q"] = text
-    q["theme"], q["level"] = item["theme"], item["level"]
+    q["theme"], q["level"], q["note"] = item["theme"], item["level"], item["note"].strip()
     for key in ("image", "answer_image"):
         p = picture(item.get(key))
         if p:

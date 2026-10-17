@@ -69,6 +69,7 @@ input.answer { font: 700 22px var(--body); padding: 16px; border-radius: 16px; b
 .verdict { padding: 16px; border-radius: 16px; background: var(--panel); display: flex; flex-direction: column; gap: 6px; animation: rise .35s ease both; }
 .verdict.ok { border: 2px solid var(--good); } .verdict.no { border: 2px solid var(--bad); }
 .verdict b.big { font-family: var(--display); font-size: 24px; }
+.verdict .note { padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.06); border-left: 4px solid var(--accent); font-weight: 600; line-height: 1.4; }
 .good { color: var(--good); } .bad { color: var(--bad); }
 .btn.auto { position: relative; overflow: hidden; }
 .btn.auto::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--accent); transform-origin: left; animation: drain var(--t) linear forwards; }
@@ -247,16 +248,19 @@ async function judge(value) {
     if (right) b.classList.add("right"); else if (type !== "order") b.classList.add("wrong");
   });
   document.querySelectorAll("#text-form input, #text-form button, #submit").forEach((x) => (x.disabled = true));
+  // следующий вопрос — сам; с картинкой и пояснением — дольше, чтобы успеть прочитать
+  const wait = (ok ? (q.answer_image ? 2000 : 1200) : 2800) + (q.note ? 1500 + q.note.length * 15 : 0);
   const answerText = type === "order" ? q.options.map((o, i) => `${i + 1}. ${esc(o)}`).join("<br>") : esc(answerOf(q));
   document.getElementById("verdict").innerHTML = `
     <div class="verdict ${ok ? "ok" : "no"}"><b class="big ${ok ? "good" : "bad"}">${ok ? "Верно!" : "Не совсем"}</b>
       ${said ? `<span class="muted">${said}</span>` : ""}
       ${ok && type === "choice" ? "" : `<span>Правильный ответ: <b>${answerText}</b></span>`}
+      ${q.note ? `<span class="note">💡 ${esc(q.note)}</span>` : ""}
       ${q.answer_image ? `<img class="qimg" style="max-height:${/media\/pics\/ans-/.test(q.answer_image) ? 18 : 32}vh" src="${esc(QuizPack.mediaSrc(q.answer_image))}" alt="Картинка к ответу">` : ""}
       ${ok ? "" : `<span class="muted">Этот вопрос вернётся чуть позже</span>`}</div>
-    <button class="btn ghost auto" id="next" style="width:100%;margin-top:10px;--t:${ok ? (q.answer_image ? 2 : 1.2) : 2.8}s">Дальше</button>`;
+    <button class="btn ghost auto" id="next" style="width:100%;margin-top:10px;--t:${wait / 1000}s">Дальше</button>`;
   // следующий вопрос — сам: после верного ответа быстро, после ошибки — чтобы успеть прочитать
-  s.autoTimer = setTimeout(next, ok ? (q.answer_image ? 2000 : 1200) : 2800); // с картинкой к ответу — чуть дольше
+  s.autoTimer = setTimeout(next, wait);
 }
 
 function answerOf(q) {

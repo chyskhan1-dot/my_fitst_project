@@ -141,6 +141,12 @@ a.btn { text-decoration: none; display: inline-block; }
 .row.down { animation: slide 1s cubic-bezier(.2, .8, .2, 1) both, flash-down 1.6s 1s ease-out both; animation-delay: calc(var(--i) * 60ms), 1s; }
 @keyframes flash-up { 0% { box-shadow: 0 0 0 3px var(--good), 0 0 28px rgba(61, 220, 132, .55); } 100% { box-shadow: none; } }
 @keyframes flash-down { 0% { box-shadow: 0 0 0 3px var(--bad), 0 0 28px rgba(255, 107, 107, .45); } 100% { box-shadow: none; } }
+.trick-line { margin: 0; padding: 10px 16px; border-radius: 14px; background: rgba(229, 72, 77, .16); border: 2px solid var(--a0); font-weight: 700; }
+.note { margin: 0; max-width: 900px; padding: 12px 18px; border-radius: 14px; background: var(--panel); border-left: 4px solid var(--accent); font-weight: 600; line-height: 1.4; }
+.marks { display: inline-flex; gap: 3px; flex: none; }
+.mk { font-style: normal; display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 50%; font-size: .8em; font-weight: 900;
+  background: rgba(255,255,255,.1); color: var(--muted); }
+.mk.right { background: var(--good); color: #0b1a10; } .mk.partial { background: #ffd23f; color: #2a2000; } .mk.wrong { background: var(--bad); color: #fff; }
 .leaders-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 360px); gap: 24px; align-items: start; }
 .comments { display: flex; flex-direction: column; gap: 10px; }
 /* раунды по темам */
@@ -439,6 +445,7 @@ const MODES = [
 ];
 const RULES = [
   { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо. Ставка ×2 делается на весь раунд — до вопросов" },
+  { id: "sabotage", name: "Подлянки лидеру 😈", desc: "Последнее место между вопросами портит лидеру следующий вопрос на его телефоне: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
@@ -572,6 +579,20 @@ function options(s, reveal) {
   }).join("")}</div>`;
 }
 
+const MARKS = { right: ["✓", "верно"], partial: ["½", "частично"], wrong: ["✗", "неверно"], skip: ["⏭", "пропустил"], none: ["—", "не ответил"] };
+const marks = (p) => (p.marks && p.marks.length ? `<span class="marks">${p.marks.map((m) => `<i class="mk ${m}" title="${MARKS[m][1]}">${MARKS[m][0]}</i>`).join("")}</span>` : "");
+// подлянки: объявляем на большом экране — так веселее
+function trickNow(s) {
+  const t = s.trick_now, k = t && s.tricks && s.tricks.find((x) => x.id === t.kind);
+  return k ? `<p class="trick-line pop">😈 Подлянка лидеру: <b>${esc(t.by)}</b> → <b>${esc(t.to)}</b> · ${k.name} — ${k.desc}</p>` : "";
+}
+function trickNext(s) {
+  const t = s.trick_next;
+  if (!t) return "";
+  return t.chosen ? `<p class="trick-line">😈 Готовится подлянка лидеру: <b>${esc(t.by)}</b> → <b>${esc(t.to)}</b>…</p>`
+    : `<p class="trick-line">😈 Последнее место может устроить подлянку лидеру (<b>${esc(t.to)}</b>) — выбор на телефоне!</p>`;
+}
+
 function board(players) {
   const max = Math.max(1, ...players.map((p) => p.score));
   if (!players.length) return "";
@@ -580,7 +601,7 @@ function board(players) {
     const move = !p.prev ? "" : from > 0 ? `<span class="move up">↑${from}</span>` : from < 0 ? `<span class="move down">↓${-from}</span>` : `<span class="move same">—</span>`;
     return `<li class="row ${from > 0 ? "up" : from < 0 ? "down" : ""}" style="--i:${i};--from:${from};--w:${(p.score / max) * 100}%">
       <span class="bar"></span><span class="pos">${place}</span>${p.team != null && p.id == null ? teamDot(p.team) : avaP(p)}
-      <span class="nm">${esc(p.name)}</span>
+      <span class="nm">${esc(p.name)}</span>${marks(p)}
       ${p.streak >= 2 ? `<span class="fire">🔥 ${p.streak}</span>` : ""}
       ${p.last > 0 ? `<span class="plus">+${p.last}</span>` : p.last < 0 ? `<span class="minus">−${-p.last}</span>` : ""}
       ${move}<span class="sc" data-count="${p.score}">${p.score - p.last}</span></li>`;
@@ -628,7 +649,22 @@ function soundButton() {
   b.classList.toggle("blocked", blocked);
 }
 
+// Экран перерисовывается целиком; если этап тот же — держим прокрутку на месте (картинки
+// подгружаются не сразу, поэтому до их загрузки не даём странице стать короче), новый этап — с начала.
+let settleTimer = 0, lastDrawn = "";
 function render(s) {
+  const scene = s.phase + ":" + s.index, same = scene === lastDrawn, y = window.scrollY;
+  lastDrawn = scene;
+  clearTimeout(settleTimer);
+  $main.style.minHeight = same ? $main.offsetHeight + "px" : "";
+  draw(s);
+  if (same) {
+    window.scrollTo(0, y);
+    settleTimer = setTimeout(() => { $main.style.minHeight = ""; }, 1500);
+  } else if (y) window.scrollTo(0, 0);
+}
+
+function draw(s) {
   document.getElementById("brand").textContent = `${s.title} · комната ${s.room}`;
   // это устройство ещё и игрок — кнопка вернуться к своему телефонному экрану
   const tp = document.getElementById("to-player");
@@ -723,6 +759,7 @@ function render(s) {
         <div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="bar" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><span id="timer">${Math.ceil(s.left)}</span></div>
       </div>
       ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
+      ${trickNow(s)}
       ${questionBody(s)}
       <p class="muted" id="answered"></p>`;
     mountMap(s);
@@ -737,7 +774,9 @@ function render(s) {
       ${s.answer_image && s.qtype !== "map" ? `<div class="qmedia pop"><img class="qimg answer-pic ${/media\/pics\/ans-/.test(s.answer_image) ? "" : "photo"}" src="${esc(QuizPack.mediaSrc(s.answer_image))}" alt="Картинка к ответу"></div>`
         : s.image && s.qtype !== "map" ? `<div class="qmedia"><img class="qimg small" src="${esc(QuizPack.mediaSrc(s.image))}" alt=""></div>` : ""}
       ${revealBody(s)}
-      <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>`;
+      ${s.note ? `<p class="note rise">💡 ${esc(s.note)}</p>` : ""}
+      <p class="muted rise">Правильно ответили: <b style="color:var(--ink)">${s.right_count} из ${s.players.length}</b>${partial}</p>
+      ${s.settings.leaders ? "" : trickNext(s)}`;
     mountMap(s);
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
@@ -747,7 +786,7 @@ function render(s) {
     $main.innerHTML = `
       <div><div class="eyebrow">После вопроса ${s.index + 1} из ${s.total}</div><h1>Таблица лидеров</h1></div>
       <div class="leaders-wrap"><div>${s.settings.teams ? board(s.teams) + `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : board(s.players)}</div>
-        <aside class="comments">${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
+        <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
     countUp();
     $actions.innerHTML = `<button class="btn" data-act="next">${s.round_end ? "Следующий раунд" : "Следующий вопрос"}</button>`;
   } else if (s.phase === "final") {
@@ -1037,7 +1076,7 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
-const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
 function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify(Object.fromEntries(RULE_KEYS.filter((k) => k in d).map((k) => [k, d[k]])))); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
@@ -1268,7 +1307,7 @@ async function pollOnce() {
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.players, s.join]) + siKey + fdKey + topicKey;
+    const sig = JSON.stringify([s.phase, s.index, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {

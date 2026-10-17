@@ -51,7 +51,7 @@ p { margin: 0; line-height: 1.5; }
 .rise { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 .pop { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
-#main.calm .rise, #main.calm .pop { animation: none; } /* тот же экран обновился — без повторной анимации */
+#main.calm .rise, #main.calm .pop, #main.calm .person { animation: none; } /* тот же экран обновился — без повторной анимации */
 @keyframes pop { from { opacity: 0; transform: scale(.4); } }
 
 .ava {
@@ -181,7 +181,35 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .av.on { border-color: var(--accent); background: rgba(255, 210, 63, .18); }
 .ava-change { width: 100%; }
 .ava-change summary { color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.marks { display: inline-flex; gap: 3px; flex: none; }
+.mk { font-style: normal; display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; border-radius: 50%; font-size: .8em; font-weight: 900;
+  background: rgba(255,255,255,.1); color: var(--muted); }
+.mk.right { background: var(--good); color: #0b1a10; } .mk.partial { background: #ffd23f; color: #2a2000; } .mk.wrong { background: var(--bad); color: #fff; }
+/* подлянки */
+.trick-box { width: 100%; padding: 14px; border-radius: 16px; background: rgba(229, 72, 77, .14); border: 2px solid var(--a0); display: flex; flex-direction: column; gap: 8px; text-align: center; }
+.trick-box b { font-size: 18px; } .trick-box p { margin: 0; }
+.trick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.trick-btn { border: 0; border-radius: 12px; padding: 12px 8px; background: #2a2f5a; color: var(--ink); font: 800 15px var(--body); display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+.trick-btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.trick-btn small { font-weight: 600; font-size: 12px; color: var(--muted); }
+.trick-btn:disabled { opacity: .5; }
+.qbody { display: contents; }
+.trick-banner { padding: 10px 14px; border-radius: 12px; background: var(--a0); color: #fff; font-weight: 800; text-align: center; }
+.trick-wait { padding: 40px 10px; text-align: center; font-weight: 800; font-size: 18px; border-radius: 16px; background: var(--panel); }
+.trick-wait b { font-family: var(--display); font-size: 1.4em; color: var(--accent); }
+.ans.plain { background: #4a4f72; }
+.trick-flip h2, .trick-flip .ans .tx { display: inline-block; transform: rotate(180deg); }
+.trick-mirror h2, .trick-mirror .ans .tx { display: inline-block; transform: scaleX(-1); }
+.trick-fog h2, .trick-fog .answers, .trick-fog .text-form { animation: defog 14s linear both; animation-delay: var(--fog-d, 0s); }
+@keyframes defog { from { filter: blur(9px); } 70% { filter: blur(3px); } to { filter: blur(0); } }
+.lobby-people { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.people { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.person { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; background: var(--panel);
+  border: 2px solid var(--c, transparent); font-weight: 700; font-size: 14px; animation: rise .35s ease both; }
+.person.me { background: rgba(255, 210, 63, .18); }
+.person.off { opacity: .45; }
 .small-note { font-size: 13px; }
+.note { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--panel); border-left: 4px solid var(--accent); font-weight: 600; font-size: 15px; line-height: 1.4; text-align: left; }
 .flash { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--good); color: #062b16; padding: 10px 18px; border-radius: 12px; font-weight: 800; z-index: 9; }
 .emoji-pic { font-size: 56px; text-align: center; letter-spacing: .06em; line-height: 1.15; }
 .si-pick { display: flex; flex-direction: column; gap: 6px; width: 100%; }
@@ -375,6 +403,7 @@ function codeForm() {
 
 const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+let trickTimer = 0;
 let pickAva = recall("quiz-avatar") || null, avaOpen = false, lastScene = "";
 const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
 
@@ -450,13 +479,34 @@ function fxImg(s, alt) {
   return `<div class="fx fx-${s.image_fx}" style="--t:${s.seconds}s;--d:-${Math.max(0, s.seconds - s.left).toFixed(1)}s;--fx:${x}% ${y}%">${img}</div>`;
 }
 
+// «Подлянки»: на телефоне лидера текст портится, кнопки перемешаны и одного цвета (по экрану ведущего не сверить)
+const trickText = (s, t) => (s.me && s.me.trick === "vowels" ? String(t).replace(/[аеёиоуыэюяaeiouy]/gi, "_") : t);
+function trickOrder(s) {
+  const ids = s.options.map((_, i) => i);
+  if (!s.me || !s.me.trick || s.qtype === "order") return ids;
+  let seed = s.index * 7919 + 13;
+  for (let i = ids.length - 1; i > 0; i--) { seed = (seed * 16807) % 2147483647; const j = seed % (i + 1); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  return ids;
+}
+function trickBox(s, me) {
+  const t = s.trick_next;
+  if (!t || !s.tricks) return "";
+  if (me.can_trick) return `<div class="trick-box pop"><b>😈 Подлянка лидеру!</b><p class="muted">Ты на последнем месте — испорти следующий вопрос лидеру (<b>${esc(t.to)}</b>):</p>
+    <div class="trick-list">${s.tricks.map((k) => `<button class="trick-btn" data-trick="${k.id}" type="button">${k.name}<small>${k.desc}</small></button>`).join("")}</div></div>`;
+  if (t.chosen && t.by === me.name) return `<div class="trick-box"><b>😈 Подлянка готова</b><p class="muted">${esc(t.to)} ждёт сюрприз на следующем вопросе</p></div>`;
+  if (t.chosen && t.to === me.name) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(t.by)}. Сюрприз будет на следующем вопросе</p></div>`;
+  return "";
+}
+
 function answerControls(s) {
   const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
-  const btn = (i, attr, extra = "") => `<button class="ans rise ${extra}" style="--c:var(--a${i});--i:${i}" ${attr}="${i}">
-    ${pic(i)}${esc(s.options[i])}<span class="badge-num"></span></button>`;
+  const plain = s.me && s.me.trick;
+  const btn = (i, attr, extra = "", n = i) => `<button class="ans rise ${extra} ${plain ? "plain" : ""}" style="--c:var(--a${i});--i:${n}" ${attr}="${i}">
+    ${pic(i)}<span class="tx">${esc(trickText(s, s.options[i]))}</span><span class="badge-num"></span></button>`;
+  const order = trickOrder(s);
   if (s.qtype === "multi") {
     return `<p class="hint">Отметь все верные варианты</p>
-      <div class="answers">${s.options.map((_, i) => btn(i, "data-pick", picks.includes(i) ? "sel" : "")).join("")}</div>
+      <div class="answers">${order.map((i, n) => btn(i, "data-pick", picks.includes(i) ? "sel" : "", n)).join("")}</div>
       <button class="btn" id="submit" ${picks.length ? "" : "disabled"}>Ответить</button>`;
   }
   if (s.qtype === "order") {
@@ -481,7 +531,7 @@ function answerControls(s) {
       <button class="btn" type="submit">Ответить</button></form>
       <p class="hint">Регистр и небольшие опечатки не важны</p>`;
   }
-  return `<div class="answers">${s.options.map((_, i) => btn(i, "data-choice")).join("")}</div>`;
+  return `<div class="answers">${order.map((i, n) => btn(i, "data-choice", "", n)).join("")}</div>`;
 }
 
 // номера на кнопках «по порядку»
@@ -822,10 +872,12 @@ function news(s) {
 }
 
 // вся таблица: кто сколько заработал за последний вопрос и сколько всего
+const MARKS = { right: ["✓", "верно"], partial: ["½", "частично"], wrong: ["✗", "неверно"], skip: ["⏭", "пропустил"], none: ["—", "не ответил"] };
+const marks = (p) => (p.marks && p.marks.length ? `<span class="marks">${p.marks.map((m) => `<i class="mk ${m}" title="${MARKS[m][1]}">${MARKS[m][0]}</i>`).join("")}</span>` : "");
 function standings(s, me) {
   return `<ol class="mini">${s.players.map((p, i) => `
     <li class="rise ${p.name === me.name ? "me" : ""}" style="--i:${Math.min(i + 2, 12)}">
-      <span class="pos">${i + 1}</span>${avaP(p)}<span class="n">${esc(p.name)}</span>
+      <span class="pos">${i + 1}</span>${avaP(p)}<span class="n">${esc(p.name)}</span>${marks(p)}
       ${p.last ? `<span class="gain ${p.last > 0 ? "up" : "down"}">${p.last > 0 ? "+" : "−"}${Math.abs(p.last)}</span>` : `<span class="gain">0</span>`}
       <span class="sc">${p.score}</span></li>`).join("")}</ol>`;
 }
@@ -858,7 +910,22 @@ function moveText(me) {
   return d > 0 ? `<span class="move up">🚀 +${n} ${w} вверх</span>` : `<span class="move down">📉 −${n} ${w}</span>`;
 }
 
+// Экран перерисовывается целиком; если этап тот же — держим прокрутку на месте (картинки
+// подгружаются не сразу, поэтому до их загрузки не даём странице стать короче), новый этап — с начала.
+let settleTimer = 0, lastDrawn = "";
 function render(s) {
+  const scene = s.phase + ":" + s.index, same = scene === lastDrawn, y = window.scrollY;
+  lastDrawn = scene;
+  clearTimeout(settleTimer);
+  $main.style.minHeight = same ? $main.offsetHeight + "px" : "";
+  draw(s);
+  if (same) {
+    window.scrollTo(0, y);
+    settleTimer = setTimeout(() => { $main.style.minHeight = ""; }, 1500);
+  } else if (y) window.scrollTo(0, 0);
+}
+
+function draw(s) {
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
   document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc">${me.score}</span>`;
@@ -890,7 +957,9 @@ function render(s) {
         ${myTeam ? `<span class="teambadge rise" style="--c:${TEAM_COLORS[me.team]}">Команда: ${esc(myTeam)}</span>
           <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
         <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
-        <span class="pill rise" style="--i:2">Игроков: ${s.players.length}</span>
+        <div class="lobby-people rise" style="--i:2"><div class="eyebrow">В игре: ${s.players.length}</div>
+          <div class="people">${s.players.slice().sort((a, b) => (a.name === me.name ? -1 : b.name === me.name ? 1 : 0)).map((p) => `
+            <span class="person ${p.name === me.name ? "me" : ""} ${p.online ? "" : "off"}" ${p.team != null && TEAM_COLORS[p.team] ? `style="--c:${TEAM_COLORS[p.team]}"` : ""}>${avaP(p)}${esc(p.name)}${p.name === me.name ? " (ты)" : ""}</span>`).join("")}</div></div>
         <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
         <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
@@ -925,19 +994,25 @@ function render(s) {
     document.getElementById("topic-bet").innerHTML = betHtml;
   } else if (s.phase === "question" && !me.answered) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
+    const trick = me.trick, waiting = me.trick_wait > 0, tn = s.trick_now;
+    const trickName = trick && s.tricks ? (s.tricks.find((k) => k.id === trick) || {}).name : "";
+    if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
     $main.innerHTML = `
       <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
-      <h2>${esc(s.question)}</h2>
+      ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}</div>` : ""}
+      <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
+      <h2>${esc(trickText(s, s.question))}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
-      ${answerControls(s)}
+      ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
+      </div>
       ${s.settings.rounds && me.doubled ? `<span class="pill x2">×2 на раунд</span>` : ""}
-      <div class="extra">${me.doubles > 0 && !s.settings.rounds ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
-        <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`;
-    if (s.qtype === "text" || s.qtype === "number") {
+      ${waiting ? "" : `<div class="extra">${me.doubles > 0 && !s.settings.rounds ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
+        <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`}`;
+    if (!waiting && (s.qtype === "text" || s.qtype === "number")) {
       const input = document.getElementById("answer-text");
       input.value = typed;
       input.addEventListener("input", () => { typed = input.value; });
@@ -954,7 +1029,7 @@ function render(s) {
     clearTimeout(draftTimer);
     draftTimer = setTimeout(() => sendDraft(s), Math.max(0, s.left - 1.2) * 1000);
     if (s.qtype === "order") paintOrder();
-    if (s.qtype === "map") {
+    if (s.qtype === "map" && !waiting) {
       const m = QuizMap.create(document.getElementById("phone-map"), {
         onPick(p) {
           mapPick = p; buzz(10);
@@ -985,16 +1060,19 @@ function render(s) {
     const miss = s.qtype === "map" && Array.isArray(me.answer) ? QuizMap.distance(me.answer, s.correct_point) : null;
     $main.innerHTML = `
       <div class="scene">
+        ${me.can_trick ? trickBox(s, me) : ""}
         <span class="big pop ${res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad"}">${text}</span>
         ${me.doubled ? `<span class="pill x2 rise">×2 ${me.last > 0 ? "сыграла!" : "не сыграла"}</span>` : ""}
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
+        ${s.note ? `<p class="note rise" style="--i:2">💡 ${esc(s.note)}</p>` : ""}
         ${s.answer_image ? `<img class="qimg answer-pic pop ${isEmojiPic(s.answer_image) ? "" : "photo"}" src="${esc(mediaSrc(s.answer_image))}" alt="Картинка к ответу">` : ""}
         ${s.qtype === "map" ? `<div class="phone-map small" id="reveal-map"></div>` : ""}
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
+        ${me.can_trick ? "" : trickBox(s, me)}
         ${othersAnswers(s, me)}
         ${s.settings.leaders ? "" : `<div class="others"><div class="eyebrow">Счёт</div>${standings(s, me)}</div>`}
       </div>`;
@@ -1023,10 +1101,12 @@ function render(s) {
   } else if (s.phase === "leaders") {
     $main.innerHTML = `
       <div class="scene">
+        ${me.can_trick ? trickBox(s, me) : ""}
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
         ${moveText(me)}
+        ${me.can_trick ? "" : trickBox(s, me)}
         ${news(s)}
         ${standings(s, me)}
       </div>`;
@@ -1088,9 +1168,12 @@ async function pollOnce() {
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" || k === "voters" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.me, s.players.length, s.phase === "lobby" && s.teams]) + siKey + fdKey + topicKey;
+    const meKey = s.me ? JSON.stringify(s.me, (k, v) => (k === "trick_wait" ? v > 0 : v)) : "";
+    const sig = JSON.stringify([s.phase, s.index, meKey, s.trick_next, s.trick_now, s.players.length, s.phase === "lobby" && s.teams,
+      s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
+    const tw = document.getElementById("trick-left"); if (tw && s.me) tw.textContent = Math.ceil(s.me.trick_wait || 0);
     const tl = document.getElementById("topic-left"); if (tl && s.topic) tl.textContent = `${Math.ceil(s.topic.left)} с`;
     const tres = document.getElementById("topic-res"); if (tres && s.topic) tres.classList.toggle("shown", s.topic.spin_left <= 0);
     hostBar(s);
@@ -1192,6 +1275,8 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-listen]") && lastState) { listen(lastState); return; }
   const vote = e.target.closest("[data-vote]");
   if (vote) { buzz(15); document.querySelectorAll("[data-vote]").forEach((b) => b.classList.toggle("on", b === vote)); await api("/api/vote", { pid, theme: vote.dataset.vote }).catch(() => {}); lastSig = ""; poll(); return; }
+  const trk = e.target.closest("[data-trick]"); // подлянка лидеру
+  if (trk) { buzz([20, 40, 20]); document.querySelectorAll("[data-trick]").forEach((b) => (b.disabled = true)); await api("/api/trick", { pid, kind: trk.dataset.trick }).catch(() => {}); lastSig = ""; poll(); return; }
   const rbet = e.target.closest("[data-rbet]"); // ставка ×2 на раунд (не путать с [data-bet] — ставкой «Своей игры»)
   if (rbet) { buzz(rbet.dataset.rbet === "1" ? [30, 50, 30] : 15); document.querySelectorAll("[data-rbet]").forEach((b) => (b.disabled = true)); await api("/api/bet", { pid, double: rbet.dataset.rbet === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");

@@ -83,6 +83,16 @@ FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
+# «Подлянки»: последнее место может усложнить лидеру следующий вопрос (это видно только на телефоне лидера)
+TRICKS = [
+    {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
+    {"id": "vowels", "name": "🔤 Без гласных", "desc": "в тексте пропадут гласные"},
+    {"id": "flip", "name": "🙃 Вверх ногами", "desc": "вопрос и ответы перевёрнуты"},
+    {"id": "mirror", "name": "🪞 Зеркало", "desc": "текст отражён зеркально"},
+    {"id": "fog", "name": "🌫 Туман", "desc": "всё в тумане, проясняется не сразу"},
+]
+TRICK_IDS = {t["id"] for t in TRICKS}
+TRICK_DELAY = 6  # «Ответы позже»: столько секунд нельзя ответить
 
 
 class PackError(ValueError):
@@ -307,6 +317,7 @@ def clean_pack(data, store=None, scope="_"):
                 "answer": answer,
                 "image": media_ref(q.get("image"), "image", store, scope),
                 "answer_image": media_ref(q.get("answer_image"), "image", store, scope),  # показывается после ответа
+                "note": str(q.get("note") or "").strip()[:400] or None,  # пояснение к ответу — после ответа
                 "option_images": clean_option_images(q.get("option_images"), options, store, scope),
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
@@ -402,7 +413,7 @@ def si_question(q, answers, price):
     return {"price": price, "special": "simple", "cat_cost": None, "cat_theme": None,
             "text": q["q"], "image": q["image"], "audio": q["audio"], "video": None,
             "melody": q.get("melody"), "tempo": q.get("tempo"), "instrument": q.get("instrument"),
-            "answer": answers, "answer_text": answers[0], "answer_image": None, "answer_audio": None, "answer_note": None}
+            "answer": answers, "answer_text": answers[0], "answer_image": q.get("answer_image"), "answer_audio": None, "answer_note": q.get("note")}
 
 
 def si_from_quiz(pack, used=frozenset()):
@@ -534,6 +545,7 @@ DEFAULTS = {
     "themes": [],  # какие темы пакета играть (пусто — все)
     "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
     "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
+    "sabotage": True,  # «Подлянки»: последнее место усложняет лидеру следующий вопрос
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
@@ -1292,7 +1304,7 @@ class Game:
 
     def reset(self, phase="setup"):
         for p in self.players.values():
-            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False)
+            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, marks={})
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
@@ -1304,6 +1316,8 @@ class Game:
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
         self.round_bets = {}  # id -> поставил ли ×2 на текущий раунд
+        self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
+        self.active_trick = None  # подлянка на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
         self.si = None
         self.fd = None
@@ -1536,11 +1550,29 @@ class Game:
         elif self.settings["auto"] and self.auto_left() == 0 and not self.phase.startswith(("si_", "fd_")):
             self.next()
 
+    def trick_roles(self):
+        """Кто может устроить подлянку и кому: (последние места, лидер) или None.
+        Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
+        if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.trick
+                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total):
+            return None
+        online = set(self.online())
+        board = [r for r in self.leaderboard() if r["id"] in online]
+        if len(board) < 2 or board[-1]["score"] >= board[0]["score"]:
+            return None
+        low = board[-1]["score"]
+        return {r["id"] for r in board[1:] if r["score"] == low}, board[0]["id"]
+
     def auto_left(self):
         """Сколько секунд до автоперехода, или None, если его нет."""
         if not self.settings["auto"] or self.phase not in ("reveal", "leaders"):
             return None
         wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS
+        note = self.question().get("note") if self.phase == "reveal" and self.index >= 0 else None
+        if note:
+            wait += min(6, 2 + len(note) / 40)  # успеть прочитать пояснение
+        if self.phase == ("leaders" if self.settings["leaders"] else "reveal") and self.trick_roles():
+            wait += 3  # последнему месту — время выбрать подлянку
         return max(0, round(wait - (time.time() - self.phase_at), 1))
 
     def finish_question(self):
@@ -1585,6 +1617,7 @@ class Game:
                 self.answers[pid] = a
             p["last_points"] = points
             p["score"] += points
+            p.setdefault("marks", {})[self.index] = a["result"]  # для таблицы: кто как ответил
         self.set_phase("reveal")
 
     def next(self):
@@ -1614,12 +1647,22 @@ class Game:
         self.started_at = time.time()
         self.answers = {}
         self.all_answered_at = None
+        t, self.trick = self.trick, None
+        self.active_trick = t if t and t["to"] in self.players else None
 
     def online(self):
         now = time.time()
         return [pid for pid, p in self.players.items() if now - p.get("seen", now) <= OFFLINE_AFTER]
 
+    def marks_range(self):
+        """Чьи ответы показать в таблице: в раундах — все вопросы текущего раунда, иначе — последний."""
+        if self.phase not in ("reveal", "leaders") or self.index < 0 or self.si or self.fd:
+            return range(0)
+        start = self.index // ROUND_SIZE * ROUND_SIZE if self.settings.get("rounds") else self.index
+        return range(start, self.index + 1)
+
     def leaderboard(self):
+        span = self.marks_range()
         rows = [
             {
                 "id": pid,
@@ -1632,6 +1675,7 @@ class Game:
                 "doubled": p.get("doubled", False),
                 "avatar": p.get("avatar"),
                 "online": time.time() - p.get("seen", 0) <= OFFLINE_AFTER,
+                "marks": [p.get("marks", {}).get(i, "none") for i in span],
             }
             for pid, p in self.players.items()
         ]
@@ -1707,6 +1751,17 @@ class Game:
             s["round_theme"] = self.topic["options"][self.topic["winner"]]
             s["round_bets"] = [self.players[v]["name"] for v, b in self.round_bets.items() if b and v in self.players]
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
+        if self.settings.get("sabotage") and not self.si and not self.fd:
+            name = lambda i: self.players[i]["name"] if i in self.players else "?"
+            roles = self.trick_roles()
+            if roles:
+                s["trick_next"] = {"to": name(roles[1])}
+            elif self.trick:
+                s["trick_next"] = {"to": name(self.trick["to"]), "by": name(self.trick["by"]), "chosen": True}
+            t = self.active_trick
+            if t and self.phase in ("question", "reveal"):
+                s["trick_now"] = {"to": name(t["to"]), "by": name(t["by"]), "kind": t["kind"]}
+            s["tricks"] = TRICKS
         if self.phase in ("question", "reveal") and not self.si and not self.fd:
             q = self.question()
             s["qtype"] = q["type"]
@@ -1735,6 +1790,7 @@ class Game:
             s["answers_total"] = len(self.answers)
         if self.phase == "reveal":
             s["answer_image"] = q.get("answer_image")
+            s["note"] = q.get("note")
             results = [a.get("result") for a in self.answers.values()]
             s["right_count"] = results.count("right")
             s["partial_count"] = results.count("partial")
@@ -1793,6 +1849,13 @@ class Game:
                 "result": self.answers.get(pid, {}).get("result"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
+            roles = s.get("trick_next") and self.trick_roles()
+            if roles and pid in roles[0]:
+                s["me"]["can_trick"] = True
+            t = self.active_trick
+            if t and t["to"] == pid and self.phase == "question":
+                s["me"]["trick"] = t["kind"]
+                s["me"]["trick_wait"] = max(0, round(TRICK_DELAY - (time.time() - self.started_at), 1)) if t["kind"] == "delay" else 0
             if me.get("team") is not None:
                 s["me"]["team_place"] = [t["team"] for t in s["teams"]].index(me["team"]) + 1
         return s
@@ -2154,6 +2217,9 @@ class Handler(BaseHTTPRequestHandler):
                 pid = data.get("pid")
                 game.tick()
                 ok = game.phase == "question" and game.owns(pid, device) and pid not in game.answers
+                t = game.active_trick
+                if ok and t and t["to"] == pid and t["kind"] == "delay" and time.time() - game.started_at < TRICK_DELAY - 0.5:
+                    ok = False  # подлянка «Ответы позже»: рано
                 skip = ok and data.get("skip") is True  # «Пропустить вопрос»: без штрафа и без очков
                 value = game.check(data.get("answer")) if ok and not skip else None
                 ok = skip or value is not None
@@ -2166,6 +2232,15 @@ class Handler(BaseHTTPRequestHandler):
                         me["doubles"] = me.get("doubles", DOUBLES) - 1
                     game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
+                return self.send_json({"ok": ok})
+
+            if path == "/api/trick":  # подлянка лидеру на следующий вопрос
+                pid, kind = data.get("pid"), data.get("kind")
+                game.tick()
+                roles = game.owns(pid, device) and kind in TRICK_IDS and game.trick_roles()
+                ok = bool(roles and pid in roles[0])
+                if ok:
+                    game.trick = {"by": pid, "to": roles[1], "kind": kind}
                 return self.send_json({"ok": ok})
 
             if path == "/api/vote":  # голос за тему раунда (можно передумать)

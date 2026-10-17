@@ -1,6 +1,6 @@
 # Добавляет вопросы в пакет викторины по правилам проекта.
 # Запуск из корня репозитория: python3 .claude/skills/quiz-questions/scripts/add_questions.py <новые.json> [пакет]
-# Пакет по умолчанию — quiz/packs/general.json. Повторный запуск не дублирует (сверка по тексту вопроса).
+# Пакет по умолчанию — quiz/packs/general.json. Повторный запуск не дублирует (сверка по тексту и картинке вопроса).
 #
 # <новые.json> — список вопросов. Для «один верный» (choice) верный ответ пишется отдельно,
 # а место среди вариантов скрипт выбирает сам — так, чтобы правильные ответы лежали по позициям поровну:
@@ -58,7 +58,8 @@ def picture(v):
 pack = json.load(open(pack_path, encoding="utf-8"))
 Q = pack["questions"]
 themes = {q.get("theme") for q in Q if q.get("theme")}
-have = {q["q"].strip().lower() for q in Q}
+qkey = lambda text, image: text.strip().lower() + "|" + (image or "")  # один текст с разными картинками — разные вопросы
+have = {qkey(q["q"], q.get("image")) for q in Q}
 counts = collections.Counter(q["answer"] for q in Q if q.get("type", "choice") == "choice")
 right_of = lambda q: q["options"][q["answer"]] if q.get("type", "choice") == "choice" else None
 by_answer = collections.defaultdict(list)  # (тема, верный ответ) → вопросы: ловим повторы другими словами
@@ -70,7 +71,10 @@ rnd = random.Random(len(Q))
 added, skipped = [], []
 for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     text = item["q"].strip()
-    if text.lower() in have:
+    image = item.get("image")
+    if image and image.startswith("emoji:"):
+        image = picture(image)
+    if qkey(text, image) in have:
         skipped.append(text)
         continue
     if item.get("theme") not in themes:
@@ -102,7 +106,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
         if p:
             q[key] = p
     Q.append(q)
-    have.add(text.lower())
+    have.add(qkey(text, q.get("image")))
     added.append(text)
 json.dump(pack, open(pack_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"добавлено: {len(added)} | уже были: {len(skipped)} | всего: {len(Q)} | позиции верных: {dict(sorted(counts.items()))}")

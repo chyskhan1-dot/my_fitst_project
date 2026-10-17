@@ -195,7 +195,7 @@ function fromPack(p) {
       let answer = type === "multi" ? [].concat(q.answer || []).filter(Number.isInteger)
         : Number.isInteger(q.answer) && q.answer >= 0 ? q.answer : -1;
       if (type === "order" || type === "text" || type === "number" || type === "map") answer = -1;
-      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null, option_images: q.option_images || null };
+      return { type, q: String(q.q || ""), options, answer, image: q.image || null, audio: q.audio || null, melody: q.melody || "", tempo: q.tempo || 110, emoji: q.emoji || "", instrument: q.instrument || "", theme: q.theme || "", level: q.level || "", seconds: q.seconds || "", image_fx: q.image_fx || "", focus: q.focus || null, si: q.si, answer_image: q.answer_image || null, note: q.note || "", option_images: q.option_images || null };
     }),
   };
 }
@@ -218,6 +218,7 @@ function toPack() {
       if (q.image && q.image_fx) { q2.image_fx = q.image_fx; if (q.image_fx === "zoom" && q.focus) q2.focus = q.focus; }
       if (q.audio) q2.audio = q.audio;
       if (q.answer_image) q2.answer_image = q.answer_image;
+      if (q.note && q.note.trim()) q2.note = q.note.trim();
       const pics = q.option_images && q2.options ? kept.map((o) => q.option_images[o.i]) : [];
       if (pics.length && pics.every(Boolean)) q2.option_images = pics; // картинки к вариантам (пока только из файла пакета)
       if (q.melody && q.melody.trim()) { q2.melody = q.melody.trim(); q2.tempo = Number(q.tempo) || 110; if (q.instrument) q2.instrument = q.instrument; }
@@ -328,6 +329,7 @@ function card(q, i) {
     ${q.type === "map" ? `<div><button class="btn" data-emap="${i}" type="button">${mapOpen === i ? "Скрыть карту" : "🗺 Выбрать на карте"}</button>
       ${mapOpen === i ? `<div class="emap" id="emap"></div><span class="help">Нажми на карту — там будет правильный ответ. Колесо мыши — увеличить</span>` : ""}</div>` : ""}
     <div class="media">${slot(q, i, "image")}${slot(q, i, "audio")}${slot(q, i, "answer_image")}</div>
+    <textarea data-note="${i}" maxlength="400" rows="2" placeholder="💡 Пояснение к ответу (необязательно) — покажем после ответа" aria-label="Пояснение к ответу">${esc(q.note || "")}</textarea>
     <details class="slot" ${q.melody ? "open" : ""}><summary class="slot-head" style="cursor:pointer">🎼 Мелодия нотами (для «Угадай мелодию»)</summary>
       <div class="row">
         <input type="text" data-melody="${i}" value="${esc(q.melody || "")}" placeholder="E4 E4 F4 G4 G4 F4 E4 D4 C4:2" aria-label="Ноты" style="flex:1 1 300px">
@@ -396,6 +398,7 @@ document.getElementById("title").addEventListener("input", (e) => { pack.title =
 $list.addEventListener("input", (e) => {
   const t = e.target, i = Number(t.dataset.i ?? t.dataset.q);
   if (t.dataset.emoji != null) { pack.questions[Number(t.dataset.emoji)].emoji = t.value; return summary(); }
+  if (t.dataset.note != null) { pack.questions[Number(t.dataset.note)].note = t.value; return summary(); }
   if (t.dataset.theme != null) { pack.questions[Number(t.dataset.theme)].theme = t.value; return; }
   if (t.dataset.secs != null) { pack.questions[Number(t.dataset.secs)].seconds = t.value.replace(/\D/g, ""); return summary(); }
   if (t.dataset.melody != null) { pack.questions[Number(t.dataset.melody)].melody = t.value; return refreshCard(Number(t.dataset.melody)); }

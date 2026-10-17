@@ -1,11 +1,12 @@
 # Добавляет вопросы в пакет викторины по правилам проекта.
 # Запуск из корня репозитория: python3 .claude/skills/quiz-questions/scripts/add_questions.py <новые.json> [пакет]
-# Пакет по умолчанию — quiz/packs/general.json. Повторный запуск не дублирует (сверка по тексту вопроса).
+# Пакет по умолчанию — quiz/packs/general.json. Повторный запуск не дублирует (сверка по тексту и картинке вопроса).
 #
 # <новые.json> — список вопросов. Для «один верный» (choice) верный ответ пишется отдельно,
 # а место среди вариантов скрипт выбирает сам — так, чтобы правильные ответы лежали по позициям поровну:
 #   {"q": "…?", "right": "Верный", "wrong": ["Неверный 1", "Неверный 2", "Неверный 3"],
-#    "theme": "Космос", "level": "easy|normal|hard", "answer_image": "<картинка>", "image": "<картинка>"}
+#    "theme": "Космос", "level": "easy|normal|hard", "answer_image": "<картинка>", "image": "<картинка>",
+#    "note": "Пояснение к ответу — одно-два предложения, показываем после ответа"}
 # Другие типы — как в пакете (type: number/text/multi/order/map, answer, unit, place…), их скрипт добавляет как есть.
 # <картинка> — путь в media/ (media/flags/italy.svg) или «emoji:Название папки Fluent» (emoji:Red apple):
 # такой смайлик скачивается с GitHub microsoft/fluentui-emoji (лицензия MIT) в media/pics/ans-<имя>.png.
@@ -57,7 +58,8 @@ def picture(v):
 pack = json.load(open(pack_path, encoding="utf-8"))
 Q = pack["questions"]
 themes = {q.get("theme") for q in Q if q.get("theme")}
-have = {q["q"].strip().lower() for q in Q}
+qkey = lambda text, image: text.strip().lower() + "|" + (image or "")  # один текст с разными картинками — разные вопросы
+have = {qkey(q["q"], q.get("image")) for q in Q}
 counts = collections.Counter(q["answer"] for q in Q if q.get("type", "choice") == "choice")
 right_of = lambda q: q["options"][q["answer"]] if q.get("type", "choice") == "choice" else None
 by_answer = collections.defaultdict(list)  # (тема, верный ответ) → вопросы: ловим повторы другими словами
@@ -69,7 +71,10 @@ rnd = random.Random(len(Q))
 added, skipped = [], []
 for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     text = item["q"].strip()
-    if text.lower() in have:
+    image = item.get("image")
+    if image and image.startswith("emoji:"):
+        image = picture(image)
+    if qkey(text, image) in have:
         skipped.append(text)
         continue
     if item.get("theme") not in themes:
@@ -79,6 +84,8 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     qtype = item.get("type", "choice")
     if qtype not in TYPES:
         sys.exit(f"вопрос {n}: неизвестный тип {qtype}")
+    if not str(item.get("note") or "").strip():
+        sys.exit(f"вопрос {n}: нет пояснения note — коротко объясни ответ (покажем после ответа)")
     if qtype == "map" and item["theme"] != "Где на карте":
         sys.exit(f"вопрос {n}: вопросы на карте — только в теме «Где на карте»")
     if qtype == "choice":
@@ -93,13 +100,13 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     else:
         q = {k: v for k, v in item.items() if k not in ("right", "wrong", "theme", "level", "image", "answer_image")}
         q["q"] = text
-    q["theme"], q["level"] = item["theme"], item["level"]
+    q["theme"], q["level"], q["note"] = item["theme"], item["level"], item["note"].strip()
     for key in ("image", "answer_image"):
         p = picture(item.get(key))
         if p:
             q[key] = p
     Q.append(q)
-    have.add(text.lower())
+    have.add(qkey(text, q.get("image")))
     added.append(text)
 json.dump(pack, open(pack_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"добавлено: {len(added)} | уже были: {len(skipped)} | всего: {len(Q)} | позиции верных: {dict(sorted(counts.items()))}")

@@ -61,6 +61,31 @@ def roundabout_arrow(a0, r=64, span=78):
             f'<path d="M{tip[0]:.1f} {tip[1]:.1f} L{b1[0]:.1f} {b1[1]:.1f} L{b2[0]:.1f} {b2[1]:.1f} Z" fill="#fff"/>')
 
 
+def octagon(r, fill):
+    pts = " ".join(f"{150 + r * math.cos(math.radians(22.5 + 45 * i)):.1f},{150 + r * math.sin(math.radians(22.5 + 45 * i)):.1f}" for i in range(8))
+    return f'<polygon points="{pts}" fill="{fill}" stroke="#9aa5b1" stroke-width="2"/>'
+
+
+def number(text, color=BLACK):
+    return (f'<text x="150" y="182" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" '
+            f'font-size="96" fill="{color}">{text}</text>')
+
+
+def blue_disc():
+    return f'<circle cx="150" cy="150" r="128" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><circle cx="150" cy="150" r="116" fill="{BLUE}"/>'
+
+
+def slash():
+    """Красная полоса «запрещено» поверх символа."""
+    return f'<line x1="78" y1="78" x2="222" y2="222" stroke="{RED}" stroke-width="20"/>'
+
+
+def triangle_warn():
+    """Предупреждающий треугольник без символа."""
+    return ('<path d="M150 38 L270 248 H30 Z" fill="#fff" stroke="#9aa5b1" stroke-width="2" stroke-linejoin="round"/>'
+            '<path d="M150 66 L246 234 H54 Z" fill="#fff" stroke="' + RED + '" stroke-width="22" stroke-linejoin="round"/>')
+
+
 SIGNS = {
     # «Уступи дорогу»: треугольник вершиной вниз
     "yield": card('<path d="M30 52 H270 L150 262 Z" fill="#fff" stroke="#9aa5b1" stroke-width="2" stroke-linejoin="round"/>'
@@ -99,6 +124,48 @@ SIGNS = {
     # «Круговое движение»: синий круг с тремя белыми стрелками против часовой стрелки
     "roundabout": card(f'<circle cx="150" cy="150" r="128" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><circle cx="150" cy="150" r="116" fill="{BLUE}"/>'
                        + "".join(roundabout_arrow(a) for a in (100, 220, 340))),
+    # «STOP»: красный восьмиугольник
+    "stop": card(octagon(118, "#fff") + octagon(108, RED) +
+                 '<text x="150" y="172" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" font-size="64" fill="#fff">STOP</text>'),
+    # «Конец главной дороги»: жёлтый ромб, перечёркнутый чёрными полосами
+    "end-priority": card('<rect x="62" y="62" width="176" height="176" transform="rotate(45 150 150)" fill="#fff" stroke="#555" stroke-width="3"/>'
+                         '<rect x="90" y="90" width="120" height="120" transform="rotate(45 150 150)" fill="' + YELLOW + '" stroke="#333" stroke-width="2"/>'
+                         '<g stroke="#222" stroke-width="6">' + "".join(f'<line x1="{88 + d}" y1="{212 + d}" x2="{212 + d}" y2="{88 + d}"/>' for d in (-12, 0, 12)) + '</g>'),
+    # «Ограничение скорости 60»
+    "speed-60": card(disc(WHITE) + number("60")),
+    # «Минимальная скорость 50»: синий круг с белым числом
+    "min-speed-50": card(blue_disc() + number("50", "#fff")),
+    # «Поворот налево запрещён»
+    "no-left": card(disc(WHITE) + '<path d="M196 214 V138 H126 V112 L84 150 L126 188 V162 H172 V214 Z" fill="' + BLACK + '"/>' + slash()),
+    # «Разворот запрещён»
+    "no-u-turn": card(disc(WHITE) + '<path d="M118 214 V136 a32 32 0 0 1 64 0 V160 h18 l-30 36 -30 -36 h18 V136 a8 8 0 0 0 -16 0 V214 Z" fill="' + BLACK + '"/>' + slash()),
+    # «Движение направо»
+    "turn-right": card(blue_disc() + '<path d="M112 236 V146 a26 26 0 0 1 26 -26 H176 V92 L222 134 L176 176 V148 H140 V236 Z" fill="#fff"/>'),
+    # «Пересечение равнозначных дорог»: треугольник с крестом
+    "crossroads": card(triangle_warn() + f'<rect x="141" y="114" width="18" height="104" fill="{BLACK}"/><rect x="104" y="160" width="92" height="18" fill="{BLACK}"/>'),
+    # «Однопутная железная дорога» — Андреевский крест у переезда без шлагбаума
+    "rail-cross": card('<g transform="rotate(35 150 150)"><rect x="40" y="128" width="220" height="44" fill="#fff" stroke="' + RED + '" stroke-width="6"/>'
+                       + "".join(f'<rect x="{x}" y="131" width="24" height="38" fill="{RED}"/>' for x in (58, 108, 158, 208)) + '</g>'
+                       '<g transform="rotate(-35 150 150)"><rect x="40" y="128" width="220" height="44" fill="#fff" stroke="' + RED + '" stroke-width="6"/>'
+                       + "".join(f'<rect x="{x}" y="131" width="24" height="38" fill="{RED}"/>' for x in (58, 108, 158, 208)) + '</g>'),
+    # «Дорога с односторонним движением»
+    "one-way": card(f'<rect x="78" y="34" width="144" height="232" rx="14" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="88" y="44" width="124" height="212" rx="10" fill="{BLUE}"/>'
+                    '<path d="M150 62 L196 118 H166 V238 H134 V118 H104 Z" fill="#fff"/>'),
+    # «Тупик»
+    "dead-end": card(f'<rect x="40" y="40" width="220" height="220" rx="20" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="52" y="52" width="196" height="196" rx="14" fill="{BLUE}"/>'
+                     f'<rect x="134" y="118" width="32" height="112" fill="#fff"/><rect x="88" y="86" width="124" height="34" fill="{RED}"/>'),
+    # «Двустороннее движение»: треугольник со стрелками вверх и вниз
+    "two-way": card(triangle_warn() + f'<path d="M126 220 V142 H112 L130 112 L148 142 H134 V220 Z M174 112 V190 H188 L170 220 L152 190 H166 V112 Z" fill="{BLACK}"/>'),
+    # «Преимущество встречного движения»: красная стрелка вверх, чёрная вниз
+    "oncoming-priority": card(disc(WHITE) + f'<path d="M124 226 V136 H106 L130 96 L154 136 H136 V226 Z" fill="{RED}"/><path d="M176 74 V164 H194 L170 204 L146 164 H164 V74 Z" fill="{BLACK}"/>'),
+    # «Преимущество перед встречным движением»: синий квадрат, белая стрелка вверх, красная вниз
+    "priority-over-oncoming": card(f'<rect x="40" y="40" width="220" height="220" rx="20" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="52" y="52" width="196" height="196" rx="14" fill="{BLUE}"/>'
+                                   f'<path d="M124 226 V136 H106 L130 96 L154 136 H136 V226 Z" fill="#fff"/><path d="M176 74 V164 H194 L170 204 L146 164 H164 V74 Z" fill="{RED}"/>'),
+    # «Пешеходный переход»: синий квадрат, белый треугольник, пешеход на «зебре»
+    "crosswalk": card(f'<rect x="40" y="40" width="220" height="220" rx="20" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="52" y="52" width="196" height="196" rx="14" fill="{BLUE}"/>'
+                      '<path d="M150 66 L238 228 H62 Z" fill="#fff"/>'
+                      + "".join(f'<rect x="{x}" y="206" width="14" height="14" fill="{BLACK}"/>' for x in (96, 120, 144, 168, 192))
+                      + f'<circle cx="152" cy="112" r="11" fill="{BLACK}"/><path d="M146 126 L136 168 L120 200 M140 150 L164 178 L172 202 M144 132 L126 150 M150 130 L174 146" stroke="{BLACK}" stroke-width="9" stroke-linecap="round" fill="none"/>'),
     # светофоры
     "lights-yellow-blink": lights(False, True, False, blink=True),
     "lights-red-yellow": lights(True, True, False),

@@ -687,8 +687,10 @@ class SiEngine:
         self.phase("si_question")
 
     def open_buzz(self):
-        """Ведущий: «Открыть кнопки» — не ждать конца чтения."""
+        """Ведущий: «Открыть кнопки» — не ждать конца чтения (уже открытые не продлеваем)."""
         now = time.time()
+        if now >= self.cur["buzz_at"]:
+            return
         self.cur["buzz_at"] = now
         self.cur["deadline"] = now + self.BUZZ_WINDOW
 
@@ -841,7 +843,12 @@ class SiEngine:
         elif ph == "si_stake":
             self.stake(self.chooser, self.cur["q"]["price"], force=True)
         elif ph == "si_question":
-            self.open_buzz() if not self.cur["exclusive"] else self.tick()
+            if self.cur["exclusive"]:
+                self.tick()
+            elif time.time() < self.cur["buzz_at"]:
+                self.open_buzz()
+            else:
+                self.phase("si_reveal")  # кнопки открыты, никто не знает — показать ответ
         elif ph == "si_answer":
             self.judge(self.cur["answerer"], "")
         elif ph == "si_reveal":

@@ -856,7 +856,7 @@ function renderSi(s) {
     const who = c.answerer ? `<p class="si-who">✋ Отвечает ${avaP(c.answerer)} <b>${esc(c.answerer.name)}</b></p>` : "";
     body = `<div class="si-layout"><div class="si-q">${head}<h2 class="si-text">${esc(c.text || "")}</h2>${siMedia(c)}
       ${who}<p class="si-timer" id="si-timer"></p></div>${siScores(s, c.answerer)}</div>`;
-    actions = s.phase === "si_question" && !c.exclusive && !c.buzz_open ? `<button class="btn ghost" data-act="next">Открыть кнопки</button>`
+    actions = s.phase === "si_question" && !c.exclusive ? `<button class="btn ghost" data-act="next">${c.buzz_open ? "Никто не знает" : "Открыть кнопки"}</button>`
       : s.phase === "si_answer" ? `<button class="btn ghost" data-act="next">Время вышло</button>` : "";
   } else if (s.phase === "si_reveal") {
     const v = si.verdicts || [];

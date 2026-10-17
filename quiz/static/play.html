@@ -411,7 +411,7 @@ function joinForm() {
   document.getElementById("other").onclick = startScreen;
   document.getElementById("join").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector("button"); btn.disabled = true;
+    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; // не первая кнопка формы — это аватарка
     const name = document.getElementById("name").value;
     const res = await api("/api/join", { name, avatar: pickAva, team: joinTeams ? pickTeam : null }).catch(() => ({ error: "Нет связи с сервером" }));
     if (res.error) { document.getElementById("err").textContent = res.error; btn.disabled = false; return; }
@@ -790,6 +790,8 @@ function hostBar(s) {
   const token = s.me ? hostToken() : "";
   if (!bar) { bar = document.createElement("div"); bar.id = "hostbar"; document.body.appendChild(bar); }
   let label = token && HOST_NEXT[s.phase];
+  if (label && s.phase === "si_question" && s.si && s.si.cur && s.si.cur.buzz_open) label = "Никто не знает";
+  if (label && s.round_end && (s.phase === "leaders" || (s.phase === "reveal" && !s.settings.leaders)) && s.index + 1 < s.total) label = "Следующий раунд";
   // ведущий тоже играет: пока сам не ответил, кнопки «Показать ответ» нет — чтобы не нажать её вместо «Ответить»
   if (label && s.phase === "question" && s.me && !s.me.answered) label = "";
   document.body.classList.toggle("has-hostbar", !!label);
@@ -1060,8 +1062,10 @@ const timeout = (ms) => (window.AbortSignal && AbortSignal.timeout ? AbortSignal
 async function pollOnce() {
   try {
     if (!room) return;
+    const asked = pid; // ответ на запрос, отправленный до входа (или до выхода), уже устарел
     const s = await (await fetch(`/api/state?room=${encodeURIComponent(room)}&pid=${encodeURIComponent(pid || "")}`, { cache: "no-store", signal: timeout(5000) })).json();
     fails = 0;
+    if (asked !== pid) { pollAgain = true; return; } // иначе только что вошедшего выкинет обратно на форму входа
     if (s.phase === "gone") {
       if (!document.getElementById("gone")) {
         document.getElementById("top").innerHTML = ""; mood("");

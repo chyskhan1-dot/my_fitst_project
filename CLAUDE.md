@@ -35,8 +35,9 @@
     поле вопроса `seconds`). Картинка с эффектом: `image_fx` (`blur`/`zoom`) + `focus`, `fxImg()` в host/play.
     Комментарии к таблице лидеров — `static/comments.js` (общие для ведущего и телефонов).
     «Подлянки» (`sabotage`, по умолчанию вкл., только «каждый за себя»): между вопросами последнее место (`trick_roles()`)
-    выбирает лидеру подлянку на следующий вопрос (`/api/trick`, `TRICKS`: delay — ответ не раньше `TRICK_DELAY`, сервер
-    проверяет; vowels/flip/mirror/fog — портят текст только на телефоне лидера, кнопки там перемешаны и серые);
+    выбирает, кому (любой игрок, по умолчанию лидер — `trick_next.leader`, на телефоне `trickTo`) и какую подлянку устроить
+    на следующий вопрос (`/api/trick` {kind, to}, `TRICKS`: delay — ответ не раньше `TRICK_DELAY`, сервер
+    проверяет; vowels/flip/mirror/fog — портят текст только на телефоне жертвы, кнопки там перемешаны и серые);
     в состоянии `trick_next`/`trick_now`, у игрока `me.can_trick`/`me.trick`/`me.trick_wait`.
     В таблице лидеров у каждого `marks` — как ответил (в раундах — все вопросы раунда), `marks_range()`.
     После вопроса видны ответы всех: `number_answers`/`map_answers` (по точности), `text_answers`, `player_answers`
@@ -66,7 +67,7 @@
   темы внутри `general.json`; простые флаги рисует `tools/make_flags.py` (SVG), флаги с гербами — PNG с Wikimedia Commons
   (владелец разрешил; источники — `media/flags/CREDITS.md`). Нет флагов Афганистана и Сирии (спорные/сменились).
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы. Картинки к вопросам: `media/signs/`
-  (знаки и светофоры, рисует `tools/make_signs.py`), `media/pics/` — Microsoft Fluent Emoji (MIT, `media/pics/LICENSE`,
+  (знаки и светофоры, рисует `tools/make_signs.py`), `media/count/` — картинки «На внимательность» (`tools/make_count.py` рисует и считает ответы), `media/pics/` — Microsoft Fluent Emoji (MIT, `media/pics/LICENSE`,
   брать с GitHub `microsoft/fluentui-emoji`, папки `3D`). Картинка не должна подсказывать ответ — она сама вопрос.
   Поле `note` — пояснение к ответу (есть у всех вопросов `general`; CSV-колонка «Пояснение»; host/play/learn, редактор;
   в автопереходе показ ответа длится дольше, если есть пояснение). Поле `answer_image` — картинка к ответу (после ответа: host/play/learn, редактор, колонка CSV `Картинка к ответу`):

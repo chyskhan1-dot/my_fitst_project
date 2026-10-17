@@ -57,7 +57,7 @@ MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
 MAX_SIQ = 60 * 1024 * 1024  # самый большой пакет «Своей игры» (.siq)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
-MAX_QUESTIONS = 1000  # вопросов в одном пакете
+MAX_QUESTIONS = 1000  # вопросов в одном загружаемом пакете (встроенные — без ограничения)
 OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
 AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙", "🦄", "🐲", "🐺",
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
@@ -83,7 +83,7 @@ FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
-# «Подлянки»: последнее место может усложнить лидеру следующий вопрос (это видно только на телефоне лидера)
+# «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
 TRICKS = [
     {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
     {"id": "vowels", "name": "🔤 Без гласных", "desc": "в тексте пропадут гласные"},
@@ -261,7 +261,7 @@ def clean_seconds(value):
     return max(5, min(120, n)) if n else None
 
 
-def clean_pack(data, store=None, scope="_"):
+def clean_pack(data, store=None, scope="_", limit=MAX_QUESTIONS):
     """Проверяет пакет вопросов и приводит его к единому виду."""
     if not isinstance(data, dict):
         raise PackError("файл не похож на пакет вопросов")
@@ -269,8 +269,8 @@ def clean_pack(data, store=None, scope="_"):
     raw = data.get("questions")
     if not isinstance(raw, list) or not raw:
         raise PackError("в пакете нет вопросов")
-    if len(raw) > MAX_QUESTIONS:
-        raise PackError(f"слишком много вопросов, максимум {MAX_QUESTIONS}")
+    if limit and len(raw) > limit:
+        raise PackError(f"слишком много вопросов, максимум {limit}")
     questions = []
     for n, q in enumerate(raw, 1):
         try:
@@ -344,7 +344,7 @@ PACK_FILES = {}  # id пакета -> исходный файл (для реда
 for f in sorted(PACKS_DIR.glob("*.json")):
     try:
         raw = json.loads(f.read_text(encoding="utf-8"))
-        PACKS[f.stem] = clean_pack(raw, BUILTIN_MEDIA, "_")
+        PACKS[f.stem] = clean_pack(raw, BUILTIN_MEDIA, "_", limit=None)
         PACK_FILES[f.stem] = f
     except (json.JSONDecodeError, PackError) as e:
         print(f"Пакет {f.name} пропущен: {e}", flush=True)
@@ -545,7 +545,7 @@ DEFAULTS = {
     "themes": [],  # какие темы пакета играть (пусто — все)
     "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
     "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
-    "sabotage": True,  # «Подлянки»: последнее место усложняет лидеру следующий вопрос
+    "sabotage": True,  # «Подлянки»: последнее место усложняет следующий вопрос любому игроку
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
@@ -1551,7 +1551,7 @@ class Game:
             self.next()
 
     def trick_roles(self):
-        """Кто может устроить подлянку и кому: (последние места, лидер) или None.
+        """Кто может устроить подлянку: (последние места, лидер — цель по умолчанию) или None.
         Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
         if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.trick
                 or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total):
@@ -1755,7 +1755,7 @@ class Game:
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()
             if roles:
-                s["trick_next"] = {"to": name(roles[1])}
+                s["trick_next"] = {"to": name(roles[1]), "leader": roles[1]}
             elif self.trick:
                 s["trick_next"] = {"to": name(self.trick["to"]), "by": name(self.trick["by"]), "chosen": True}
             t = self.active_trick
@@ -2234,13 +2234,14 @@ class Handler(BaseHTTPRequestHandler):
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 
-            if path == "/api/trick":  # подлянка лидеру на следующий вопрос
+            if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру)
                 pid, kind = data.get("pid"), data.get("kind")
                 game.tick()
                 roles = game.owns(pid, device) and kind in TRICK_IDS and game.trick_roles()
-                ok = bool(roles and pid in roles[0])
+                to = data.get("to") or (roles[1] if roles else None)
+                ok = bool(roles and pid in roles[0] and to in game.players and to != pid)
                 if ok:
-                    game.trick = {"by": pid, "to": roles[1], "kind": kind}
+                    game.trick = {"by": pid, "to": to, "kind": kind}
                 return self.send_json({"ok": ok})
 
             if path == "/api/vote":  # голос за тему раунда (можно передумать)

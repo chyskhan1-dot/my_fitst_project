@@ -188,6 +188,10 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 /* подлянки */
 .trick-box { width: 100%; padding: 14px; border-radius: 16px; background: rgba(229, 72, 77, .14); border: 2px solid var(--a0); display: flex; flex-direction: column; gap: 8px; text-align: center; }
 .trick-box b { font-size: 18px; } .trick-box p { margin: 0; }
+.trick-who { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.trick-to { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; border: 2px solid transparent;
+  background: #2a2f5a; color: var(--ink); font: 700 14px var(--body); cursor: pointer; }
+.trick-to.on { border-color: var(--a0); background: rgba(229, 72, 77, .3); }
 .trick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .trick-btn { border: 0; border-radius: 12px; padding: 12px 8px; background: #2a2f5a; color: var(--ink); font: 800 15px var(--body); display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
 .trick-btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -403,7 +407,7 @@ function codeForm() {
 
 const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch {} };
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
-let trickTimer = 0;
+let trickTimer = 0, trickTo = null; // кому подлянка (по умолчанию — лидеру)
 let pickAva = recall("quiz-avatar") || null, avaOpen = false, lastScene = "";
 const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
 
@@ -491,8 +495,14 @@ function trickOrder(s) {
 function trickBox(s, me) {
   const t = s.trick_next;
   if (!t || !s.tricks) return "";
-  if (me.can_trick) return `<div class="trick-box pop"><b>😈 Подлянка лидеру!</b><p class="muted">Ты на последнем месте — испорти следующий вопрос лидеру (<b>${esc(t.to)}</b>):</p>
+  if (me.can_trick) {
+    const others = s.players.filter((p) => p.name !== me.name);
+    if (!others.some((p) => p.id === trickTo)) trickTo = t.leader;
+    return `<div class="trick-box pop"><b>😈 Подлянка!</b><p class="muted">Ты на последнем месте — испорти кому-нибудь следующий вопрос. Кому?</p>
+    <div class="trick-who">${others.map((p) => `<button class="trick-to ${p.id === trickTo ? "on" : ""}" data-trick-to="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
+    <p class="muted">Какую?</p>
     <div class="trick-list">${s.tricks.map((k) => `<button class="trick-btn" data-trick="${k.id}" type="button">${k.name}<small>${k.desc}</small></button>`).join("")}</div></div>`;
+  }
   if (t.chosen && t.by === me.name) return `<div class="trick-box"><b>😈 Подлянка готова</b><p class="muted">${esc(t.to)} ждёт сюрприз на следующем вопросе</p></div>`;
   if (t.chosen && t.to === me.name) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(t.by)}. Сюрприз будет на следующем вопросе</p></div>`;
   return "";
@@ -1275,8 +1285,10 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-listen]") && lastState) { listen(lastState); return; }
   const vote = e.target.closest("[data-vote]");
   if (vote) { buzz(15); document.querySelectorAll("[data-vote]").forEach((b) => b.classList.toggle("on", b === vote)); await api("/api/vote", { pid, theme: vote.dataset.vote }).catch(() => {}); lastSig = ""; poll(); return; }
-  const trk = e.target.closest("[data-trick]"); // подлянка лидеру
-  if (trk) { buzz([20, 40, 20]); document.querySelectorAll("[data-trick]").forEach((b) => (b.disabled = true)); await api("/api/trick", { pid, kind: trk.dataset.trick }).catch(() => {}); lastSig = ""; poll(); return; }
+  const tto = e.target.closest("[data-trick-to]"); // кому подлянка
+  if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
+  const trk = e.target.closest("[data-trick]"); // какая подлянка
+  if (trk) { buzz([20, 40, 20]); document.querySelectorAll("[data-trick]").forEach((b) => (b.disabled = true)); await api("/api/trick", { pid, kind: trk.dataset.trick, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
   const rbet = e.target.closest("[data-rbet]"); // ставка ×2 на раунд (не путать с [data-bet] — ставкой «Своей игры»)
   if (rbet) { buzz(rbet.dataset.rbet === "1" ? [30, 50, 30] : 15); document.querySelectorAll("[data-rbet]").forEach((b) => (b.disabled = true)); await api("/api/bet", { pid, double: rbet.dataset.rbet === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");

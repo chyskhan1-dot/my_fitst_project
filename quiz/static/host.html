@@ -462,12 +462,12 @@ const MODES = [
   { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true },
 ];
 const RULES = [
-  { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо. Ставка ×2 делается на весь раунд — до вопросов" },
+  { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
   { id: "sabotage", name: "Подлянки 😈", desc: "Последнее место между вопросами кидает любому игроку (по умолчанию лидеру) случайную подлянку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
-  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок может удвоить ставку: верно — очки ×2, неверно — минус 1000. В раундах по темам — ставка на весь раунд, когда известна только тема" },
+  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок может удвоить ставку на вопрос: верно — очки ×2, неверно — минус 1000" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -790,11 +790,9 @@ function draw(s) {
         <div class="topic-stage"><div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 460)}</div>
           <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · тема</div>
             <h1>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h1>
-            <p class="muted">${s.settings.doubles ? "Ставите ×2 на весь раунд? Решайте на телефонах: верно — очки ×2, ошибка или пропуск — минус 1000." : "Приготовьтесь!"}</p>
-            <div class="chips" id="topic-bets"></div></div></div>`;
+            <p class="muted">Приготовьтесь!</p></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
     }
-    document.getElementById("topic-bets").innerHTML = t.bets.map((p) => `<span class="chip said ok">×2 ${avaP(p)}${esc(p.name)}</span>`).join("");
     $actions.innerHTML = `<button class="btn" data-act="next">Начать раунд</button>`;
   } else if (s.phase === "question") {
     $main.innerHTML = `

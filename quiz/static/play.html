@@ -1063,21 +1063,13 @@ function draw(s) {
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>`;
   } else if (s.phase === "topic_bet") {
     const t = s.topic, w = t.weights;
-    const canBet = s.settings.doubles && me.doubles > 0 && t.my_bet == null;
-    const betHtml = !s.settings.doubles ? `<p class="muted">Приготовься!</p>`
-      : t.my_bet === true ? `<span class="pill x2">×2 на весь раунд — удачи!</span>`
-      : t.my_bet === false ? `<p class="muted">Играешь без ставки</p>`
-      : canBet ? `<p class="muted">Ставишь ×2 на весь раунд? Верно — очки ×2, ошибка или пропуск — минус 1000. Осталось ставок: ${me.doubles}</p>
-        <div class="row2"><button class="btn ghost" data-rbet="0" type="button">Без ставки</button><button class="btn" data-rbet="1" type="button">×2 Ставлю</button></div>`
-      : `<p class="muted">Ставки ×2 закончились</p>`;
     const wheel = document.getElementById("topic-wheel");
     if (!wheel || wheel.dataset.round !== String(t.round)) {
       $main.innerHTML = `<div class="scene"><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div>
         <div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 300)}</div>
-        <div class="topic-res" id="topic-res"><h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><div id="topic-bet"></div></div></div>`;
+        <div class="topic-res" id="topic-res"><h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
     }
-    document.getElementById("topic-bet").innerHTML = betHtml;
   } else if (s.phase === "question" && !me.answered) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
     const trick = me.trick, waiting = me.trick_wait > 0, tn = s.trick_now;
@@ -1095,8 +1087,7 @@ function draw(s) {
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
       </div>
-      ${s.settings.rounds && me.doubled ? `<span class="pill x2">×2 на раунд</span>` : ""}
-      ${waiting ? "" : `<div class="extra">${me.doubles > 0 && !s.settings.rounds ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
+      ${waiting ? "" : `<div class="extra">${me.doubles > 0 ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
         <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`}`;
     if (!waiting && (s.qtype === "text" || s.qtype === "number")) {
       const input = document.getElementById("answer-text");
@@ -1392,8 +1383,6 @@ document.addEventListener("click", async (e) => {
   if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
   const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер
   if (trk) { buzz([20, 40, 20]); trk.disabled = true; await api("/api/trick", { pid, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
-  const rbet = e.target.closest("[data-rbet]"); // ставка ×2 на раунд (не путать с [data-bet] — ставкой «Своей игры»)
-  if (rbet) { buzz(rbet.dataset.rbet === "1" ? [30, 50, 30] : 15); document.querySelectorAll("[data-rbet]").forEach((b) => (b.disabled = true)); await api("/api/bet", { pid, double: rbet.dataset.rbet === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");
   if (snd && window.QuizMusic) { snd.textContent = QuizMusic.toggle() ? "🔇" : "🔊"; return; }
   const here = e.target.closest("[data-play-here]");

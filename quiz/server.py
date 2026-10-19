@@ -47,11 +47,11 @@ VERSION = hashlib.md5(
 REVEAL_PAUSE = 0.8  # пауза перед показом ответа, когда все уже ответили
 REVEAL_SECONDS = 4  # автопереход: сколько показываем правильный ответ
 LEADERS_SECONDS = 5  # автопереход: сколько показываем таблицу лидеров
-# «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему, рулетка и ставка ×2 на весь раунд
+# «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему и колесо («×2» — как обычно, на один вопрос)
 ROUND_SIZE = 3
 VOTE_SECONDS = 10  # голосование за тему
 SPIN_SECONDS = 4.5  # колесо крутится
-BET_SECONDS = 8  # решить, ставить ли ×2 на раунд
+THEME_SHOW = 2.5  # после колеса — показать выпавшую тему
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
@@ -1333,7 +1333,6 @@ class Game:
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
-        self.round_bets = {}  # id -> поставил ли ×2 на текущий раунд
         self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
         self.active_trick = None  # подлянка на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
@@ -1428,7 +1427,6 @@ class Game:
         chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
         used.update(chosen)
         self.selected += [allq[i] for i in chosen]
-        self.round_bets = {}
         self.set_phase("topic_bet")
 
     def topic_state(self, pid):
@@ -1442,12 +1440,9 @@ class Game:
                               for v, th in self.votes.items() if th == o and v in self.players] for o in out["options"]]
         else:
             out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(SPIN_SECONDS - el, 1)),
-                       left=max(0, round(SPIN_SECONDS + BET_SECONDS - el, 1)))
-            out["bets"] = [{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
-                           for v, b in self.round_bets.items() if b and v in self.players]
+                       left=max(0, round(SPIN_SECONDS + THEME_SHOW - el, 1)))
         if pid:
             out["my_vote"] = self.votes.get(pid)
-            out["my_bet"] = self.round_bets.get(pid)
         return out
 
     def set_phase(self, phase):
@@ -1579,9 +1574,7 @@ class Game:
                 self.finish_vote()
             return
         if self.phase == "topic_bet":
-            el, online = now - self.phase_at, self.online()
-            decided = not self.settings.get("doubles") or (online and all(p in self.round_bets for p in online))
-            if el >= SPIN_SECONDS + BET_SECONDS or (el >= SPIN_SECONDS + 1.5 and decided):
+            if now - self.phase_at >= SPIN_SECONDS + THEME_SHOW:
                 self.start_question()
             return
         if self.phase == "question":
@@ -1635,8 +1628,7 @@ class Game:
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
-            rounds = self.settings.get("rounds")
-            p["doubled"] = bool(self.round_bets.get(pid)) if rounds else bool(a and a.get("double"))
+            p["doubled"] = bool(a and a.get("double"))
             points = 0
             if frac > 0:
                 if rules["speed"]:
@@ -1653,7 +1645,7 @@ class Game:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
-            if p["doubled"]:  # ставка ×2: выигрыш удваивается, а промах (в раундах — и пропуск) стоит 1000
+            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах стоит 1000
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
             a = a or {}
@@ -1795,7 +1787,6 @@ class Game:
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
         if self.settings.get("rounds") and self.topic and self.topic.get("winner") is not None:
             s["round_theme"] = self.topic["options"][self.topic["winner"]]
-            s["round_bets"] = [self.players[v]["name"] for v, b in self.round_bets.items() if b and v in self.players]
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
         if self.settings.get("sabotage") and not self.si and not self.fd:
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
@@ -1888,8 +1879,7 @@ class Game:
                 "prev": me["prev_place"],
                 "streak": me["streak"],
                 "doubles": me.get("doubles", DOUBLES) if self.settings.get("doubles") else 0,
-                "doubled": bool(self.round_bets.get(pid)) if self.settings.get("rounds") else self.answers.get(pid, {}).get("double", False),
-                "round_bet": self.round_bets.get(pid),
+                "doubled": self.answers.get(pid, {}).get("double", False),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
                 "answer_time": round(self.answers[pid]["time"], 1) if pid in self.answers and not self.answers[pid].get("skip") else None,
@@ -2208,7 +2198,7 @@ class Handler(BaseHTTPRequestHandler):
                 STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
-            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/bet") or path.startswith(("/api/fd/", "/api/si/"))):
+            if game.paused_at and (path in ("/api/answer", "/api/vote") or path.startswith(("/api/fd/", "/api/si/"))):
                 return self.send_json({"ok": False, "paused": True})  # на паузе ответы не принимаем
 
             if path.startswith("/api/fd/"):
@@ -2282,7 +2272,7 @@ class Handler(BaseHTTPRequestHandler):
                     STATS.counts["answers"] += 1
                     me = game.players[pid]
                     double = (not skip and data.get("double") is True and game.settings.get("doubles")
-                              and not game.settings.get("rounds") and me.get("doubles", DOUBLES) > 0)
+                              and me.get("doubles", DOUBLES) > 0)
                     if double:
                         me["doubles"] = me.get("doubles", DOUBLES) - 1
                     game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
@@ -2305,20 +2295,6 @@ class Handler(BaseHTTPRequestHandler):
                 ok = game.phase == "topic_vote" and game.owns(pid, device) and theme in game.topic["options"]
                 if ok:
                     game.votes[pid] = theme
-                    game.tick()
-                return self.send_json({"ok": ok})
-
-            if path == "/api/bet":  # ставка ×2 на весь раунд — да или нет, один раз
-                pid = data.get("pid")
-                game.tick()
-                ok = (game.phase == "topic_bet" and game.owns(pid, device) and pid not in game.round_bets
-                      and time.time() - game.phase_at >= SPIN_SECONDS - 0.3)
-                if ok:
-                    me = game.players[pid]
-                    bet = data.get("double") is True and game.settings.get("doubles") and me.get("doubles", DOUBLES) > 0
-                    if bet:
-                        me["doubles"] = me.get("doubles", DOUBLES) - 1
-                    game.round_bets[pid] = bool(bet)
                     game.tick()
                 return self.send_json({"ok": ok})
 

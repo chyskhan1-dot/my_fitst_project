@@ -34,3 +34,16 @@
 | scream.jpg | https://commons.wikimedia.org/wiki/File%3AEdvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg | Public domain (PD-Art) |
 | starry-night.jpg | https://commons.wikimedia.org/wiki/File%3AVan_Gogh_-_Starry_Night_-_Google_Art_Project.jpg | Public domain (PD-Art) |
 | unknown-woman.jpg | https://commons.wikimedia.org/wiki/File%3AKramskoy_Portrait_of_a_Woman.jpg | Public domain (PD-Art) |
+| american-gothic.jpg | https://commons.wikimedia.org/wiki/File%3AGrant_Wood_-_American_Gothic_-_Google_Art_Project.jpg | Public domain (PD-Art) |
+| arnolfini.jpg | https://commons.wikimedia.org/wiki/File%3AVan_Eyck_-_Arnolfini_Portrait.jpg | Public domain (PD-Art) |
+| babel.jpg | https://commons.wikimedia.org/wiki/File%3APieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg | Public domain (PD-Art) |
+| garden-delights.jpg | https://commons.wikimedia.org/wiki/File%3AThe_Garden_of_earthly_delights.jpg | Public domain (PD-Art) |
+| last-supper.jpg | https://commons.wikimedia.org/wiki/File%3AThe_Last_Supper_-_Leonardo_Da_Vinci_-_High_Resolution_32x16.jpg | Public domain (PD-Art) |
+| liberty.jpg | https://commons.wikimedia.org/wiki/File%3AEug%C3%A8ne_Delacroix_-_Le_28_Juillet._La_Libert%C3%A9_guidant_le_peuple.jpg | Public domain (PD-Art) |
+| milkmaid.jpg | https://commons.wikimedia.org/wiki/File%3AJohannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg | Public domain (PD-Art) |
+| prodigal-son.jpg | https://commons.wikimedia.org/wiki/File%3ARembrandt_Harmensz_van_Rijn_-_Return_of_the_Prodigal_Son_-_Google_Art_Project.jpg | Public domain (PD-Art) |
+| sunflowers.jpg | https://commons.wikimedia.org/wiki/File%3AVincent_Willem_van_Gogh_127.jpg | Public domain (PD-Art) |
+| van-gogh-self.jpg | https://commons.wikimedia.org/wiki/File%3AVincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project_%28454045%29.jpg | Public domain (PD-Art) |
+| wanderer.jpg | https://commons.wikimedia.org/wiki/File%3ACaspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg | Public domain (PD-Art) |
+| water-lilies.jpg | https://commons.wikimedia.org/wiki/File%3AClaude_Monet_-_Water_Lilies_-_Google_Art_Project_%28462013%29.jpg | Public domain (PD-Art) |
+| whistler-mother.jpg | https://commons.wikimedia.org/wiki/File%3AWhistlers_Mother_high_res.jpg | Public domain (PD-Art) |

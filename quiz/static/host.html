@@ -447,6 +447,7 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script src="/static/wheel.js"></script>
+<script src="/static/rope.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const room = new URLSearchParams(location.search).get("room") || "";
@@ -456,18 +457,20 @@ const $actions = document.getElementById("actions");
 const seen = new Set();
 let version = null, lastSig = "", draft = null, lastState = null;
 const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
+// «100 к 1» пока спрятан (решение владельца): { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true }
 const MODES = [
-  { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто быстрее", ready: true },
+  { id: "king", ico: "⛰️", name: "Царь горы", desc: "Кто первым наберёт 10 000 очков — 5 раундов по 3 вопроса", ready: true },
+  { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто больше наберёт", ready: true },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
-  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true },
 ];
+const KING_GOAL = 10000;
 const RULES = [
-  { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо. Ставка ×2 делается на весь раунд — до вопросов" },
+  { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
   { id: "sabotage", name: "Подлянки 😈", desc: "Последнее место между вопросами кидает любому игроку (по умолчанию лидеру) случайную подлянку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
-  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок может удвоить ставку: верно — очки ×2, неверно — минус 1000. В раундах по темам — ставка на весь раунд, когда известна только тема" },
+  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок ставит ×2 вслепую — между вопросами, на следующий: верно — очки ×2, ошибка или пропуск — минус 1000" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -724,7 +727,9 @@ function draw(s) {
   soundtrack(s);
 
   if (s.phase === "setup") {
-    if (!draft) draft = { ...s.settings, ...savedRules() };
+    // у «Царя горы» раунды и число вопросов заданы сервером — для других типов игры их не берём
+    if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : {}), ...savedRules() };
+    if (!MODES.some((m) => m.id === draft.mode)) draft.mode = MODES[0].id; // спрятанный тип игры («100 к 1») — на первый
     renderSetup(s);
   } else if (s.phase === "lobby") {
     draft = null;
@@ -739,6 +744,7 @@ function draw(s) {
       ...(levelsLabel(st) ? [levelsLabel(st)] : []),
       ...(st.themes && st.themes.length ? [`Темы: ${st.themes.join(", ")}`] : []),
       `${st.seconds} сек на ответ`,
+      ...(st.race ? [`⛰️ Царь горы: до ${st.race.toLocaleString("ru-RU")} очков`] : []),
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
     const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"} ${p.online ? "" : "off"}" data-kick="${esc(p.id)}" title="${p.online ? "" : "Не на связи"}">${avaP(p)}${esc(p.name)}${p.online ? "" : " · нет связи"}</button>`;
@@ -776,7 +782,7 @@ function draw(s) {
     const t = s.topic;
     $main.innerHTML = `
       <div class="qhead"><div><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div><h1 class="rise">Какую тему играем?</h1>
-        <p class="muted">Голосуйте на телефонах — чем больше голосов, тем больше сектор на колесе</p></div>
+        <p class="muted">Голосуйте на телефонах — на колесо попадут только темы с голосами</p></div>
         <span class="topic-time" id="topic-time"></span></div>
       <div class="topics">${t.options.map((o, i) => `<div class="topic pop" style="--c:var(--a${i});--i:${i}"><span class="ti">${QuizWheel.icon(o)}</span><b>${esc(o)}</b>
         <span class="who">${t.voters[i].map(avaP).join("")}</span></div>`).join("")}</div>
@@ -788,13 +794,11 @@ function draw(s) {
     if (!wheel || wheel.dataset.round !== String(t.round)) { // колесо рисуем один раз — иначе оно начнёт крутиться заново
       $main.innerHTML = `
         <div class="topic-stage"><div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 460)}</div>
-          <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · тема</div>
+          <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${t.unanimous ? "единогласно!" : "тема"}</div>
             <h1>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h1>
-            <p class="muted">${s.settings.doubles ? "Ставите ×2 на весь раунд? Решайте на телефонах: верно — очки ×2, ошибка или пропуск — минус 1000." : "Приготовьтесь!"}</p>
-            <div class="chips" id="topic-bets"></div></div></div>`;
+            <p class="muted">Приготовьтесь!</p></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
     }
-    document.getElementById("topic-bets").innerHTML = t.bets.map((p) => `<span class="chip said ok">×2 ${avaP(p)}${esc(p.name)}</span>`).join("");
     $actions.innerHTML = `<button class="btn" data-act="next">Начать раунд</button>`;
   } else if (s.phase === "question") {
     $main.innerHTML = `
@@ -805,7 +809,8 @@ function draw(s) {
       ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
       ${trickNow(s)}
       ${questionBody(s)}
-      <p class="muted" id="answered"></p>`;
+      <p class="muted" id="answered"></p>
+      ${(s.doubled_now || []).length ? `<p class="muted">×2 вслепую: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
     mountMap(s);
     const audio = document.querySelector(".qaudio audio");
     if (audio) audio.play().catch(() => {}); // если браузер не дал включить звук сам — есть кнопка ▶
@@ -824,22 +829,32 @@ function draw(s) {
     mountMap(s);
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
-    const label = last ? "Итоги игры" : s.settings.leaders ? "Таблица лидеров" : s.round_end ? "Следующий раунд" : "Следующий вопрос";
+    const label = s.race_winner ? "Кто на вершине? ⛰️" : last ? "Итоги игры" : s.round_end ? "Итоги раунда" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
     $actions.innerHTML = `<button class="btn" data-act="next">${label}</button>`;
   } else if (s.phase === "leaders") {
+    // верёвка: кто куда поднялся; итоги раунда и победа в гонке — крупно
+    const won = s.race_winner, roundDone = s.round_end && !won;
+    const eyebrow = won ? "Царь горы" : roundDone ? `Раунд ${s.round_no} из ${s.rounds_total} завершён` : `После вопроса ${s.index + 1} из ${s.total}`;
+    const title = won ? `👑 ${esc(won)} — царь горы!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
+    const rows = s.settings.teams
+      ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+      : s.players.slice(0, 14).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
     $main.innerHTML = `
-      <div><div class="eyebrow">После вопроса ${s.index + 1} из ${s.total}</div><h1>Таблица лидеров</h1></div>
-      <div class="leaders-wrap"><div>${s.settings.teams ? board(s.teams) + `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : board(s.players)}</div>
+      <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1></div>
+      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, mountain: true })}
+        ${s.settings.teams ? `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : ""}</div>
         <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
+    QuizRope.climb($main);
     countUp();
-    $actions.innerHTML = `<button class="btn" data-act="next">${s.round_end ? "Следующий раунд" : "Следующий вопрос"}</button>`;
+    $actions.innerHTML = `<button class="btn" data-act="next">${won || s.index + 1 >= s.total ? "К итогам" : s.round_end ? "Следующий раунд" : "Следующий вопрос"}</button>`;
   } else if (s.phase === "final") {
     const teamMode = !!s.settings.teams;
     const [p1, p2, p3] = teamMode ? s.teams : s.players;
     const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
     const mvp = s.players[0];
     $main.innerHTML = `
-      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1></div>
+      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
+        ${s.race_winner ? `<p class="muted">👑 Царь горы: ${esc(s.race_winner)} — первым на вершине</p>` : ""}</div>
       <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
       ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
@@ -1122,7 +1137,7 @@ let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
 const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
-function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify(Object.fromEntries(RULE_KEYS.filter((k) => k in d).map((k) => [k, d[k]])))); } catch {} }
+function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify({ ...savedRules(), ...Object.fromEntries(RULE_KEYS.filter((k) => k in d && !(d.mode === "king" && (k === "rounds" || k === "count"))).map((k) => [k, d[k]])) })); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "раундов")} по 3 вопроса`;
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
@@ -1140,11 +1155,14 @@ function themePicker(s, d) {
     ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}</button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
     <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="seg">${LEVELS.map(([v, n]) => `<button type="button" class="${levelsOf(d).includes(v) ? "on" : ""}" data-levelt="${v}">${n}</button>`).join("")}</span>` : ""}
-      <button type="button" class="theme-chip ${d.rounds ? "on" : ""}" data-rounds-toggle title="Голосование за тему перед каждыми 3 вопросами">🎡 Раунды по темам</button>
+      ${d.mode === "king" ? "" : `<button type="button" class="theme-chip ${d.rounds ? "on" : ""}" data-rounds-toggle title="Голосование за тему перед каждыми 3 вопросами">🎡 Раунды по темам</button>`}
       ${fits ? "" : `<span class="muted" style="color:var(--bad)">Таких вопросов нет — будет весь пакет</span>`}</div>`;
 }
 
 function rulesSummary(d) {
+  if (d.mode === "king") return ["5 раундов по 3 вопроса", `До ${KING_GOAL.toLocaleString("ru-RU")} очков`, d.teams ? `Команды: ${d.teams}` : "Каждый за себя", `${d.seconds} с на ответ`,
+    ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
+    ...RULES.filter((r) => d[r.id] && r.id !== "rounds").map((r) => r.name.replace(" 🔥", ""))];
   if (d.mode === "100to1") return ["2 команды", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   if (d.mode === "jeopardy") return [d.si_round_min ? `Раунд — ${d.si_round_min} мин` : "Раунд без ограничения", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.rounds ? roundsLabel(Math.max(1, Math.round((d.count || 30) / 3)))
@@ -1157,7 +1175,11 @@ function rulesModal(d) {
   const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
   const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
     <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
-  const body = d.mode === "100to1"
+  const king = `<div class="rule"><span class="txt"><b>⛰️ Царь горы</b><small>Цель — ${KING_GOAL.toLocaleString("ru-RU")} очков: кто первым дошёл до вершины, тот выиграл. Не дошёл никто — после 5 раундов по 3 вопроса побеждает тот, кто выше</small></span></div>
+       <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
+       <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       ${RULES.filter((r) => r.id !== "rounds").map(toggle).join("")}`;
+  const body = d.mode === "king" ? king : d.mode === "100to1"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
     : d.mode === "jeopardy"

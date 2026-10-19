@@ -47,11 +47,11 @@ VERSION = hashlib.md5(
 REVEAL_PAUSE = 0.8  # пауза перед показом ответа, когда все уже ответили
 REVEAL_SECONDS = 4  # автопереход: сколько показываем правильный ответ
 LEADERS_SECONDS = 5  # автопереход: сколько показываем таблицу лидеров
-# «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему, рулетка и ставка ×2 на весь раунд
+# «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему и колесо («×2» — как обычно, на один вопрос)
 ROUND_SIZE = 3
 VOTE_SECONDS = 10  # голосование за тему
 SPIN_SECONDS = 4.5  # колесо крутится
-BET_SECONDS = 8  # решить, ставить ли ×2 на раунд
+THEME_SHOW = 2.5  # после колеса — показать выпавшую тему
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
@@ -77,12 +77,14 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
-MODES = ["quiz", "jeopardy", "100to1"]
+MODES = ["king", "quiz", "jeopardy", "100to1"]  # «100 к 1» пока спрятан из меню (решение владельца), код оставлен
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
+KING_GOAL = 10000  # «Царь горы»: кто первым наберёт столько очков, тот выиграл
+KING_COUNT = 15  # «Царь горы»: 5 раундов по 3 вопроса — если до вершины никто не дошёл, побеждает тот, кто выше
 # «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
 TRICKS = [
     {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
@@ -531,13 +533,13 @@ def si_match(given, answers):
     return False
 
 DEFAULTS = {
-    "mode": "quiz",
+    "mode": "king",
     "pack": DEFAULT_PACK,
     "penalty": False,  # штраф за неверный ответ
     "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
     "speed": True,  # бонус за скорость ответа
     "streak": False,  # бонус за серию правильных ответов
-    "doubles": False,  # «Ставка ×2»: верно — очки ×2, неверно — минус 1000, два раза за игру
+    "doubles": False,  # «Ставка ×2» вслепую на следующий вопрос: верно — очки ×2, ошибка или пропуск — минус 1000, два раза за игру
     "leaders": True,  # таблица лидеров после каждого вопроса
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
@@ -545,6 +547,7 @@ DEFAULTS = {
     "themes": [],  # какие темы пакета играть (пусто — все)
     "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
     "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
+    "race": 0,  # цель в очках («Царь горы» — KING_GOAL): кто первым набрал, тот выиграл, игра заканчивается
     "sabotage": True,  # «Подлянки»: последнее место усложняет следующий вопрос любому игроку
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
@@ -1249,7 +1252,7 @@ class Game:
         self.touched = time.time()
         # id -> {"name", "device", "team", "score", "last_points", "prev_place", "streak"}
         self.players = {}
-        self.settings = dict(DEFAULTS)
+        self.settings = self.clean_settings({})  # по умолчанию «Царь горы» — с его раундами и целью
         self.custom = None  # свой пакет, загруженный ведущим
         self.media = {}  # файлы из своего пакета
         self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
@@ -1289,6 +1292,8 @@ class Game:
             s["si_pack"] = data["si_pack"]
         if data.get("fd_pack") in FD_PACKS or (data.get("fd_pack") == "custom" and self.fd_custom):
             s["fd_pack"] = data["fd_pack"]
+        if s["mode"] == "king":  # «Царь горы»: всё задано, выбирать нечего
+            s.update(rounds=True, count=KING_COUNT, race=KING_GOAL)
         if s["mode"] == "100to1":
             s["teams"] = 2  # «100 к 1» — всегда две команды
         return s
@@ -1321,7 +1326,7 @@ class Game:
 
     def reset(self, phase="setup"):
         for p in self.players.values():
-            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, marks={})
+            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, next_double=False, bet=False, marks={})
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
@@ -1333,7 +1338,6 @@ class Game:
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
-        self.round_bets = {}  # id -> поставил ли ×2 на текущий раунд
         self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
         self.active_trick = None  # подлянка на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
@@ -1414,12 +1418,14 @@ class Game:
             self.finish_vote()
 
     def finish_vote(self):
-        """Рулетка: сектор темы = 3 × голоса + 1 (голоса решают, но шанс есть у всех), победителя решает сервер."""
+        """Рулетка: на колесе только темы с голосами, сектор = число голосов (никто не голосовал — все поровну).
+        Все за одну тему — колесо не крутится. Победителя решает сервер."""
         opts = self.topic["options"]
         counts = [sum(1 for v in self.votes.values() if v == t) for t in opts]
-        weights = [3 * c + 1 for c in counts]
+        weights = counts if any(counts) else [1] * len(opts)
         winner = random.choices(range(len(opts)), weights=weights)[0]
-        self.topic.update(counts=counts, weights=weights, winner=winner)
+        spin = SPIN_SECONDS if sum(1 for w in weights if w) > 1 else 0  # единогласно — без колеса
+        self.topic.update(counts=counts, weights=weights, winner=winner, spin=spin)
         allq, used = self.pack["questions"], self.used.setdefault(self.settings["pack"], set())
         avail = self.round_themes()[opts[winner]]
         fresh = [i for i in avail if i not in used] or avail
@@ -1428,7 +1434,6 @@ class Game:
         chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
         used.update(chosen)
         self.selected += [allq[i] for i in chosen]
-        self.round_bets = {}
         self.set_phase("topic_bet")
 
     def topic_state(self, pid):
@@ -1441,13 +1446,10 @@ class Game:
             out["voters"] = [[{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
                               for v, th in self.votes.items() if th == o and v in self.players] for o in out["options"]]
         else:
-            out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(SPIN_SECONDS - el, 1)),
-                       left=max(0, round(SPIN_SECONDS + BET_SECONDS - el, 1)))
-            out["bets"] = [{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
-                           for v, b in self.round_bets.items() if b and v in self.players]
+            out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(t.get("spin", SPIN_SECONDS) - el, 1)),
+                       left=max(0, round(t.get("spin", SPIN_SECONDS) + THEME_SHOW - el, 1)), unanimous=not t.get("spin", SPIN_SECONDS))
         if pid:
             out["my_vote"] = self.votes.get(pid)
-            out["my_bet"] = self.round_bets.get(pid)
         return out
 
     def set_phase(self, phase):
@@ -1579,9 +1581,7 @@ class Game:
                 self.finish_vote()
             return
         if self.phase == "topic_bet":
-            el, online = now - self.phase_at, self.online()
-            decided = not self.settings.get("doubles") or (online and all(p in self.round_bets for p in online))
-            if el >= SPIN_SECONDS + BET_SECONDS or (el >= SPIN_SECONDS + 1.5 and decided):
+            if now - self.phase_at >= self.topic.get("spin", SPIN_SECONDS) + THEME_SHOW:
                 self.start_question()
             return
         if self.phase == "question":
@@ -1599,7 +1599,8 @@ class Game:
         """Кто может устроить подлянку: (последние места, лидер — цель по умолчанию) или None.
         Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
         if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.trick
-                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total):
+                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total
+                or self.race_winner()):
             return None
         online = set(self.online())
         board = [r for r in self.leaderboard() if r["id"] in online]
@@ -1612,7 +1613,8 @@ class Game:
         """Сколько секунд до автоперехода, или None, если его нет."""
         if not self.settings["auto"] or self.phase not in ("reveal", "leaders"):
             return None
-        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS
+        # верёвка: игроки лезут по очереди — дать досмотреть
+        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS + min(6, 0.7 * len(self.players))
         note = self.question().get("note") if self.phase == "reveal" and self.index >= 0 else None
         if note:
             wait += min(6, 2 + len(note) / 40)  # успеть прочитать пояснение
@@ -1635,8 +1637,7 @@ class Game:
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
-            rounds = self.settings.get("rounds")
-            p["doubled"] = bool(self.round_bets.get(pid)) if rounds else bool(a and a.get("double"))
+            p["doubled"] = bool(p.get("bet"))  # ставка ×2, сделанная вслепую до вопроса
             points = 0
             if frac > 0:
                 if rules["speed"]:
@@ -1653,7 +1654,7 @@ class Game:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
-            if p["doubled"]:  # ставка ×2: выигрыш удваивается, а промах (в раундах — и пропуск) стоит 1000
+            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах, пропуск или «не успел» — минус 1000
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
             a = a or {}
@@ -1665,13 +1666,27 @@ class Game:
             p.setdefault("marks", {})[self.index] = a["result"]  # для таблицы: кто как ответил
         self.set_phase("reveal")
 
+    def race_winner(self):
+        """«Гонка до вершины»: кто (игрок или команда) уже набрал нужные очки — или None."""
+        goal = self.settings.get("race")
+        if not goal or self.si or self.fd or self.index < 0:
+            return None
+        board = self.team_board() if self.settings["teams"] else self.leaderboard()
+        return board[0]["name"] if board and board[0]["score"] >= goal else None
+
+    def round_over(self):
+        """Раунды по темам: этот вопрос — последний в раунде."""
+        return bool(self.settings.get("rounds")) and self.index + 1 >= len(self.selected)
+
     def next(self):
         if self.phase == "topic_vote":
             return self.finish_vote()
         if self.phase == "topic_bet":
             return self.start_question()
-        last = self.index + 1 >= self.total
-        if self.phase == "reveal" and not last and self.settings["leaders"]:
+        won = self.race_winner() is not None
+        last = self.index + 1 >= self.total or won
+        # таблица (верёвка) после вопроса; итоги раунда и победу в гонке показываем всегда
+        if self.phase == "reveal" and (won or (not last and (self.settings["leaders"] or self.round_over()))):
             self.set_phase("leaders")
             return
         if last and self.phase in ("reveal", "leaders"):
@@ -1681,7 +1696,26 @@ class Game:
             return self.start_vote()  # вопросы раунда кончились — выбираем следующую тему
         self.start_question()
 
+    def can_bet(self):
+        """Ставку ×2 на следующий вопрос можно сделать между вопросами (и в лобби), пока он не начался."""
+        return (bool(self.settings.get("doubles")) and not self.si and not self.fd and not self.paused_at
+                and self.phase in ("lobby", "reveal", "leaders", "topic_vote", "topic_bet")
+                and self.index + 1 < self.total and not self.race_winner())
+
+    def bet_next(self, pid, on):
+        """Игрок ставит ×2 на следующий вопрос (или передумал, пока вопрос не начался) — ставка возвращается."""
+        p = self.players.get(pid)
+        if not p or not self.can_bet():
+            return False
+        if on and not p.get("next_double") and p.get("doubles", DOUBLES) > 0:
+            p["next_double"], p["doubles"] = True, p.get("doubles", DOUBLES) - 1
+        elif not on and p.get("next_double"):
+            p["next_double"], p["doubles"] = False, p.get("doubles", DOUBLES) + 1
+        return True
+
     def start_question(self):
+        for p in self.players.values():  # ставки ×2 «на следующий вопрос» начинают действовать
+            p["bet"], p["next_double"] = bool(p.get("next_double")), False
         self.index += 1
         n = len(self.question()["options"])
         self.display = list(range(n))
@@ -1793,10 +1827,15 @@ class Game:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("topic_vote", "topic_bet"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
+        if not self.si and not self.fd and self.phase in ("reveal", "leaders", "final"):
+            # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 1000 за вопрос)
+            s["rope_top"] = self.settings.get("race") or max(1000, self.total * 1000)
+            s["race_winner"] = self.race_winner()
         if self.settings.get("rounds") and self.topic and self.topic.get("winner") is not None:
             s["round_theme"] = self.topic["options"][self.topic["winner"]]
-            s["round_bets"] = [self.players[v]["name"] for v, b in self.round_bets.items() if b and v in self.players]
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
+            s["round_no"] = self.index // ROUND_SIZE + 1
+            s["rounds_total"] = -(-self.target // ROUND_SIZE)
         if self.settings.get("sabotage") and not self.si and not self.fd:
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()
@@ -1826,6 +1865,7 @@ class Game:
             s["emoji"] = q.get("emoji")
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
+            s["doubled_now"] = [p["name"] for p in self.players.values() if p.get("bet")]  # кто поставил ×2 на этот вопрос
         if self.phase in ("reveal", "leaders") and not self.si and not self.fd:
             # для комментариев в таблице лидеров: самый быстрый верный ответ и сколько ответили верно
             right = [(a["time"], who) for who, a in self.answers.items() if a.get("result") == "right" and who in self.players]
@@ -1888,8 +1928,9 @@ class Game:
                 "prev": me["prev_place"],
                 "streak": me["streak"],
                 "doubles": me.get("doubles", DOUBLES) if self.settings.get("doubles") else 0,
-                "doubled": bool(self.round_bets.get(pid)) if self.settings.get("rounds") else self.answers.get(pid, {}).get("double", False),
-                "round_bet": self.round_bets.get(pid),
+                "doubled": bool(me.get("bet")) if self.phase == "question" else me.get("doubled", False),
+                "next_double": bool(me.get("next_double")),
+                "can_bet": self.can_bet() and (me.get("doubles", DOUBLES) > 0 or bool(me.get("next_double"))),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
                 "answer_time": round(self.answers[pid]["time"], 1) if pid in self.answers and not self.answers[pid].get("skip") else None,
@@ -1963,7 +2004,7 @@ class Stats:
 
 STATS = Stats()
 STATS_KEY = os.environ.get("STATS_KEY", "")  # ключ к странице /stats (на Render — в Environment)
-MODE_NAMES = {"quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
+MODE_NAMES = {"king": "Царь горы", "quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
 
 
 def cleanup():
@@ -2202,13 +2243,13 @@ class Handler(BaseHTTPRequestHandler):
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
                     "name": name, "device": device, "team": team, "avatar": avatar, "seen": time.time(),
-                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False,
+                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False, "next_double": False, "bet": False,
                 }
                 game.balance_teams()
                 STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
-            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/bet") or path.startswith(("/api/fd/", "/api/si/"))):
+            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/double") or path.startswith(("/api/fd/", "/api/si/"))):
                 return self.send_json({"ok": False, "paused": True})  # на паузе ответы не принимаем
 
             if path.startswith("/api/fd/"):
@@ -2280,14 +2321,15 @@ class Handler(BaseHTTPRequestHandler):
                 ok = skip or value is not None
                 if ok:
                     STATS.counts["answers"] += 1
-                    me = game.players[pid]
-                    double = (not skip and data.get("double") is True and game.settings.get("doubles")
-                              and not game.settings.get("rounds") and me.get("doubles", DOUBLES) > 0)
-                    if double:
-                        me["doubles"] = me.get("doubles", DOUBLES) - 1
-                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
+                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
+
+            if path == "/api/double":  # ставка ×2 вслепую на следующий вопрос (можно передумать, пока он не начался)
+                pid = data.get("pid")
+                game.tick()
+                ok = game.owns(pid, device) and game.bet_next(pid, data.get("on") is True)
+                return self.send_json({"ok": bool(ok)})
 
             if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру); какая — случайно
                 pid, kind = data.get("pid"), random.choice(sorted(TRICK_IDS))
@@ -2305,20 +2347,6 @@ class Handler(BaseHTTPRequestHandler):
                 ok = game.phase == "topic_vote" and game.owns(pid, device) and theme in game.topic["options"]
                 if ok:
                     game.votes[pid] = theme
-                    game.tick()
-                return self.send_json({"ok": ok})
-
-            if path == "/api/bet":  # ставка ×2 на весь раунд — да или нет, один раз
-                pid = data.get("pid")
-                game.tick()
-                ok = (game.phase == "topic_bet" and game.owns(pid, device) and pid not in game.round_bets
-                      and time.time() - game.phase_at >= SPIN_SECONDS - 0.3)
-                if ok:
-                    me = game.players[pid]
-                    bet = data.get("double") is True and game.settings.get("doubles") and me.get("doubles", DOUBLES) > 0
-                    if bet:
-                        me["doubles"] = me.get("doubles", DOUBLES) - 1
-                    game.round_bets[pid] = bool(bet)
                     game.tick()
                 return self.send_json({"ok": ok})
 

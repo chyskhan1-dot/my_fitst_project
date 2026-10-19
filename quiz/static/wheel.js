@@ -1,5 +1,5 @@
 // Колесо выбора темы раунда — одно и то же у ведущего и на телефонах.
-// Сектор темы = 3 × голоса + 1 (шанс есть у каждой), победителя заранее выбирает сервер — колесо только показывает.
+// Сектор темы = число голосов (тем без голосов на колесе нет), победителя заранее выбирает сервер — колесо только показывает.
 (function () {
   const COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
   const ICONS = { "Космос": "🚀", "Искусство": "🎨", "География": "🗺️", "Литература": "📚", "Математика": "➗",
@@ -27,10 +27,11 @@
   function point(deg, r) { const t = (deg - 90) * Math.PI / 180; return [50 + r * Math.cos(t), 50 + r * Math.sin(t)]; }
   function html(options, weights, size) {
     if (!styled) { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); styled = true; }
-    const secs = sectors(weights);
+    const secs = sectors(weights), shown = weights.filter((w) => w > 0).length;
     const slices = secs.map(([s, e], i) => {
+      if (!(weights[i] > 0)) return ""; // за тему никто не голосовал — её нет на колесе
       const [x1, y1] = point(s, 48), [x2, y2] = point(e, 48), big = e - s > 180 ? 1 : 0;
-      const path = options.length === 1 ? `<circle cx="50" cy="50" r="48" fill="${COLORS[i % 4]}"/>`
+      const path = shown === 1 ? `<circle cx="50" cy="50" r="48" fill="${COLORS[i % 4]}"/>`
         : `<path d="M50 50 L${x1} ${y1} A48 48 0 ${big} 1 ${x2} ${y2} Z" fill="${COLORS[i % 4]}" stroke="rgba(255,255,255,.7)" stroke-width=".6"/>`;
       const mid = (s + e) / 2, [tx, ty] = point(mid, 30);
       const label = options[i].length > 14 ? options[i].slice(0, 13) + "…" : options[i];

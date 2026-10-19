@@ -26,7 +26,7 @@
     if (s.fastest) out.push(`⚡ Быстрее всех — ${b(s.fastest.name)}, ${String(s.fastest.time).replace(".", ",")} с`);
     if (s.answers_total && !s.right_total) out.push(pick(["😶 Этот вопрос не взял никто", "🤯 Вопрос оказался никому не по зубам"], "x"));
     else if (s.answers_total >= 2 && s.right_total === s.players.filter((p) => p.online).length) out.push("💯 Все ответили верно!");
-    if (rows.length >= 2 && rows[0].score > 0 && rows[0].score - rows[1].score <= 200) out.push(`🤏 Борьба за первое место: разрыв всего ${rows[0].score - rows[1].score} очков`);
+    if (rows.length >= 2 && rows[0].score > 0 && rows[0].score - rows[1].score <= 200) out.push(rows[0].score === rows[1].score ? `🤝 ${b(rows[0].name)} и ${b(rows[1].name)} делят первое место` : `🤏 Борьба за первое место: разрыв всего ${rows[0].score - rows[1].score} очков`);
     const big = rows.filter((r) => r.last >= 900 && !r.doubled).sort((a, c) => c.last - a.last)[0];
     if (out.length < 3 && big && big !== hot && (!s.fastest || s.fastest.name !== big.name)) out.push(`💥 ${b(big.name)} забирает +${big.last}`);
     return out.slice(0, 4);

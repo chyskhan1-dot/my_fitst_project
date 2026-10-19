@@ -108,6 +108,7 @@ input {
 .mini li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
 .mini li.me { outline: 2px solid var(--accent); }
 .mini .pos { width: 1.5em; color: var(--muted); font-family: var(--display); }
+.round-done { padding: 10px 16px; border-radius: 14px; background: rgba(255, 210, 63, .14); color: var(--accent); font-weight: 800; text-align: center; }
 .mini .t { flex: none; color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .mini .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
@@ -264,8 +265,10 @@ body.has-hostbar { padding-bottom: 84px; }
 .extra { display: flex; gap: 10px; }
 .extra .btn { flex: 1; padding: 12px; font-size: 15px; }
 .extra .btn small { display: block; font-weight: 700; color: var(--muted); font-size: 12px; }
-#double.on { background: var(--accent); color: var(--accent-ink); }
-#double.on small { color: var(--accent-ink); }
+.bet-next { width: 100%; display: flex; flex-direction: column; gap: 2px; }
+.bet-next small { font-weight: 600; font-size: 12px; color: var(--muted); }
+.bet-next.on { background: var(--accent); color: var(--accent-ink); }
+.bet-next.on small { color: var(--accent-ink); }
 .pill.x2 { background: var(--accent); color: var(--accent-ink); font-family: var(--display); }
 /* новости после вопроса */
 .news { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
@@ -297,6 +300,7 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/emoji.js"></script>
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
+<script src="/static/rope.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
@@ -483,7 +487,7 @@ function flash(text) {
   document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
 
-let draftQ = -1, picks = [], typed = "", lastQuestion = null, doubleOn = false, mapPick = null, draftTimer = null;
+let draftQ = -1, picks = [], typed = "", lastQuestion = null, mapPick = null, draftTimer = null;
 function sendDraft(s) {
   if (sending || draftQ !== s.index || !lastState || lastState.phase !== "question" || lastState.me.answered) return;
   if (s.qtype === "map" && mapPick) return send(mapPick);
@@ -512,6 +516,14 @@ function trickOrder(s) {
   for (let i = ids.length - 1; i > 0; i--) { seed = (seed * 16807) % 2147483647; const j = seed % (i + 1); [ids[i], ids[j]] = [ids[j], ids[i]]; }
   return ids;
 }
+// «Ставка ×2» вслепую: делается между вопросами, на следующий (его ещё никто не видел); передумать — до начала вопроса
+function betBox(me) {
+  if (!me.can_bet) return "";
+  return me.next_double
+    ? `<button class="btn bet-next on" data-bet-next="0" type="button">✓ ×2 на следующий вопрос<small>нажми, чтобы отменить</small></button>`
+    : `<button class="btn ghost bet-next" data-bet-next="1" type="button">×2 на следующий вопрос<small>вслепую: верно — очки ×2, ошибка или пропуск — минус 1000 · осталось ${me.doubles}</small></button>`;
+}
+
 function trickBox(s, me) {
   const t = s.trick_next;
   if (!t || !s.tricks) return "";
@@ -922,7 +934,8 @@ function hostBar(s) {
   if (!bar) { bar = document.createElement("div"); bar.id = "hostbar"; document.body.appendChild(bar); }
   let label = token && HOST_NEXT[s.phase];
   if (label && s.phase === "si_question" && s.si && s.si.cur && s.si.cur.buzz_open) label = "Никто не знает";
-  if (label && s.round_end && (s.phase === "leaders" || (s.phase === "reveal" && !s.settings.leaders)) && s.index + 1 < s.total) label = "Следующий раунд";
+  if (label && s.round_end && s.phase === "leaders" && s.index + 1 < s.total) label = "Следующий раунд";
+  if (label && s.phase === "leaders" && (s.race_winner || s.index + 1 >= s.total)) label = "К итогам";
   // ведущий тоже играет: пока сам не ответил, кнопки «Показать ответ» нет — чтобы не нажать её вместо «Ответить»
   if (label && s.phase === "question" && s.me && !s.me.answered) label = "";
   if (label && s.paused) label = ""; // на паузе «Дальше» не нажать — только «Продолжить»
@@ -945,8 +958,8 @@ const SKIP = {}; // «Пропустить вопрос»
 async function send(answer) {
   if (sending) return;
   sending = true; buzz(25);
-  document.querySelectorAll(".ans, #submit, #text-form button, #skip, #double, #map-send").forEach((x) => (x.disabled = true));
-  await api("/api/answer", answer === SKIP ? { pid, skip: true } : { pid, answer, double: doubleOn }).catch(() => {});
+  document.querySelectorAll(".ans, #submit, #text-form button, #skip, #map-send").forEach((x) => (x.disabled = true));
+  await api("/api/answer", answer === SKIP ? { pid, skip: true } : { pid, answer }).catch(() => {});
   sending = false; lastSig = ""; poll();
 }
 
@@ -968,6 +981,20 @@ function standings(s, me) {
 }
 
 const secs = (t) => (t == null ? "" : `${Number(t).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} с`); // за сколько ответил
+// верёвка на телефоне: лидеры и ты; конец раунда и победа в гонке — подписью
+function phoneRope(s, me) {
+  const rows = s.settings.teams
+    ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, me: t.team === me.team, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+    : (() => {
+      const top = s.players.slice(0, 7), mine = s.players.find((p) => p.name === me.name);
+      if (mine && !top.includes(mine)) top.push(mine);
+      return top.map((p) => ({ name: p.name, score: p.score, last: p.last, me: p.name === me.name, face: avaP(p) }));
+    })();
+  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "210px", compact: true, race: !!s.settings.race, mountain: true });
+}
+const roundTitle = (s) => (s.race_winner ? `👑 ${esc(s.race_winner)} — царь горы!`
+  : s.round_end ? `Раунд ${s.round_no} из ${s.rounds_total} завершён${s.round_theme ? ` · «${esc(s.round_theme)}»` : ""}` : "");
+
 // ответы всех игроков после вопроса: «кто ближе» — по точности, остальные — сначала верные
 function othersAnswers(s, me) {
   const mark = (r) => `<span class="gain ${r === "right" ? "up" : r === "partial" ? "" : "down"}">${r === "right" ? "✓" : r === "partial" ? "½" : "✗"}</span>`;
@@ -1046,6 +1073,7 @@ function draw(s) {
         <div class="lobby-people rise" style="--i:2"><div class="eyebrow">В игре: ${s.players.length}</div>
           <div class="people">${s.players.slice().sort((a, b) => (a.name === me.name ? -1 : b.name === me.name ? 1 : 0)).map((p) => `
             <span class="person ${p.name === me.name ? "me" : ""} ${p.online ? "" : "off"}" ${p.team != null && TEAM_COLORS[p.team] ? `style="--c:${TEAM_COLORS[p.team]}"` : ""}>${avaP(p)}${esc(p.name)}${p.name === me.name ? " (ты)" : ""}</span>`).join("")}</div></div>
+        ${betBox(me)}
         <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
         <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
         <button class="leave" id="leave">Сменить имя</button>
@@ -1058,28 +1086,22 @@ function draw(s) {
     $main.innerHTML = `
       <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · <span id="topic-left">${Math.ceil(t.left)} с</span></div>
       <h2>Какую тему играем?</h2>
-      <p class="hint">Чем больше голосов, тем больше шанс на колесе</p>
+      <p class="hint">На колесо попадут только темы с голосами</p>
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
-        <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>`;
+        <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
+      ${betBox(me)}`;
   } else if (s.phase === "topic_bet") {
     const t = s.topic, w = t.weights;
-    const canBet = s.settings.doubles && me.doubles > 0 && t.my_bet == null;
-    const betHtml = !s.settings.doubles ? `<p class="muted">Приготовься!</p>`
-      : t.my_bet === true ? `<span class="pill x2">×2 на весь раунд — удачи!</span>`
-      : t.my_bet === false ? `<p class="muted">Играешь без ставки</p>`
-      : canBet ? `<p class="muted">Ставишь ×2 на весь раунд? Верно — очки ×2, ошибка или пропуск — минус 1000. Осталось ставок: ${me.doubles}</p>
-        <div class="row2"><button class="btn ghost" data-rbet="0" type="button">Без ставки</button><button class="btn" data-rbet="1" type="button">×2 Ставлю</button></div>`
-      : `<p class="muted">Ставки ×2 закончились</p>`;
     const wheel = document.getElementById("topic-wheel");
     if (!wheel || wheel.dataset.round !== String(t.round)) {
       $main.innerHTML = `<div class="scene"><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div>
         <div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 300)}</div>
-        <div class="topic-res" id="topic-res"><h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><div id="topic-bet"></div></div></div>`;
+        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p><div id="bet-box"></div></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
     }
-    document.getElementById("topic-bet").innerHTML = betHtml;
+    document.getElementById("bet-box").innerHTML = betBox(me); // колесо не перерисовываем, а кнопку ставки — да
   } else if (s.phase === "question" && !me.answered) {
-    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; doubleOn = false; mapPick = null; }
+    if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; mapPick = null; }
     const trick = me.trick, waiting = me.trick_wait > 0, tn = s.trick_now;
     const trickName = trick && s.tricks ? (s.tricks.find((k) => k.id === trick) || {}).name : "";
     if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
@@ -1095,9 +1117,8 @@ function draw(s) {
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
       </div>
-      ${s.settings.rounds && me.doubled ? `<span class="pill x2">×2 на раунд</span>` : ""}
-      ${waiting ? "" : `<div class="extra">${me.doubles > 0 && !s.settings.rounds ? `<button class="btn ghost ${doubleOn ? "on" : ""}" id="double" type="button">×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} <small>осталось ${me.doubles}</small></button>` : ""}
-        <button class="btn ghost" id="skip" type="button">Пропустить</button></div>`}`;
+      ${me.doubled ? `<span class="pill x2">×2 ставка на этот вопрос</span>` : ""}
+      ${waiting ? "" : `<div class="extra"><button class="btn ghost" id="skip" type="button">Пропустить</button></div>`}`;
     if (!waiting && (s.qtype === "text" || s.qtype === "number")) {
       const input = document.getElementById("answer-text");
       input.value = typed;
@@ -1161,6 +1182,7 @@ function draw(s) {
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
         ${me.can_trick ? "" : trickBox(s, me)}
+        ${betBox(me)}
         ${othersAnswers(s, me)}
         ${s.settings.leaders ? "" : `<div class="others"><div class="eyebrow">Счёт</div>${standings(s, me)}</div>`}
       </div>`;
@@ -1176,6 +1198,7 @@ function draw(s) {
   } else if (s.phase === "leaders" && myTeam) {
     $main.innerHTML = `
       <div class="scene">
+        ${roundTitle(s) ? `<div class="round-done pop">${roundTitle(s)}</div>` : ""}
         <span class="teambadge" style="--c:${TEAM_COLORS[me.team]}">${esc(myTeam)}</span>
         <div class="eyebrow">Команда на месте</div>
         <span class="place pop">${me.team_place}</span>
@@ -1184,20 +1207,27 @@ function draw(s) {
             <span class="pos">${i + 1}</span><span class="n">${esc(t.name)}</span><span>${t.score}</span></li>`).join("")}
         </ol>
         <p class="muted">Ты лично: ${me.place} место · ${me.score} очков</p>
+        ${betBox(me)}
+        ${phoneRope(s, me)}
         ${news(s)}
       </div>`;
+    QuizRope.climb($main);
   } else if (s.phase === "leaders") {
     $main.innerHTML = `
       <div class="scene">
         ${me.can_trick ? trickBox(s, me) : ""}
+        ${roundTitle(s) ? `<div class="round-done pop">${roundTitle(s)}</div>` : ""}
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
         ${moveText(me)}
+        ${phoneRope(s, me)}
         ${me.can_trick ? "" : trickBox(s, me)}
+        ${betBox(me)}
         ${news(s)}
         ${standings(s, me)}
       </div>`;
+    QuizRope.climb($main);
   } else if (s.phase === "final") {
     const place = myTeam ? me.team_place : me.place;
     const medal = ["🥇", "🥈", "🥉"][place - 1] || "🎉";
@@ -1205,6 +1235,7 @@ function draw(s) {
       <div class="scene">
         <span class="big pop">${medal}</span>
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
+        ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
         ${standings(s, me)}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>
@@ -1392,19 +1423,12 @@ document.addEventListener("click", async (e) => {
   if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
   const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер
   if (trk) { buzz([20, 40, 20]); trk.disabled = true; await api("/api/trick", { pid, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
-  const rbet = e.target.closest("[data-rbet]"); // ставка ×2 на раунд (не путать с [data-bet] — ставкой «Своей игры»)
-  if (rbet) { buzz(rbet.dataset.rbet === "1" ? [30, 50, 30] : 15); document.querySelectorAll("[data-rbet]").forEach((b) => (b.disabled = true)); await api("/api/bet", { pid, double: rbet.dataset.rbet === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");
   if (snd && window.QuizMusic) { snd.textContent = QuizMusic.toggle() ? "🔇" : "🔊"; return; }
   const here = e.target.closest("[data-play-here]");
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
-  const db = e.target.closest("#double");
-  if (db) {
-    doubleOn = !doubleOn; buzz(15);
-    db.classList.toggle("on", doubleOn);
-    db.firstChild.textContent = `×2 ${doubleOn ? "Ставка удвоена" : "Удвоить"} `;
-    return;
-  }
+  const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)
+  if (bn) { buzz(bn.dataset.betNext === "1" ? [30, 50, 30] : 15); bn.disabled = true; await api("/api/double", { pid, on: bn.dataset.betNext === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const choice = e.target.closest("[data-choice]");
   if (choice) return send(Number(choice.dataset.choice));
   const pick = e.target.closest("[data-pick]");

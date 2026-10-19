@@ -63,7 +63,9 @@
   ведущего-игрока (`speaker()` = есть host_token) играет как экран ведущего (`soundtrack()`), остальные молчат —
   мелодию вопроса можно включить кнопкой «Послушать здесь» (`listen()`). iPhone: `navigator.audioSession.type =
   "playback"`, иначе беззвучный переключатель глушит звук; скрытая вкладка — музыка на паузе.
-- `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); флаги и столицы —
+- `packs/*.json` — пакеты викторины (`general.csv`, `football.csv` — копии для таблиц); футбол — и отдельный квиз `football.json`
+  (временно, решение владельца), и тема «Футбол» в `general.json`: правят `football.json`, потом копируют скриптом
+  `.claude/skills/quiz-questions/scripts/sync_football.py`; флаги и столицы —
   темы внутри `general.json`; простые флаги рисует `tools/make_flags.py` (SVG), флаги с гербами — PNG с Wikimedia Commons
   (владелец разрешил; источники — `media/flags/CREDITS.md`). Нет флагов Афганистана и Сирии (спорные/сменились).
   Выбор вопросов в игре — `balanced_sample()`: поровну из каждой темы. Картинки к вопросам: `media/signs/`

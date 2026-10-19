@@ -25,6 +25,8 @@ description: Добавить, поправить или удалить вопр
 3. **Добавь:** `python3 .claude/skills/quiz-questions/scripts/add_questions.py <файл.json>`.
    Скрипт сам разложит верные ответы по позициям поровну, скачает смайлики, не пустит чужую тему и повторы.
    Строки «ПРОВЕРЬ, не повтор ли» — прочитай и удали свой вопрос, если это тот же вопрос другими словами.
+   **Футбол** добавляй в `football.json` (`add_questions.py <файл> quiz/packs/football.json`, темы — как в этом пакете), затем
+   `python3 .claude/skills/quiz-questions/scripts/sync_football.py` — он скопирует весь футбол в general.json темой «Футбол».
 4. **Проверь и пересобери CSV:** `node .claude/skills/quiz-questions/scripts/check_pack.js` (или `… check_pack.js football`).
 5. Перезапусти сервер, сыграй пару вопросов в браузере (экран ведущего и телефон 390×800), затем коммит и PR
    по правилам из `CLAUDE.md` (ветка, описание по-русски, предупреждение «не сливать посреди игры»).

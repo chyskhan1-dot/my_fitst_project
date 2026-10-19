@@ -990,9 +990,9 @@ function phoneRope(s, me) {
       if (mine && !top.includes(mine)) top.push(mine);
       return top.map((p) => ({ name: p.name, score: p.score, last: p.last, me: p.name === me.name, face: avaP(p) }));
     })();
-  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "210px", compact: true, race: !!s.settings.race });
+  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "210px", compact: true, race: !!s.settings.race, mountain: true });
 }
-const roundTitle = (s) => (s.race_winner ? `🏆 Вершина взята: ${esc(s.race_winner)}!`
+const roundTitle = (s) => (s.race_winner ? `👑 ${esc(s.race_winner)} — царь горы!`
   : s.round_end ? `Раунд ${s.round_no} из ${s.rounds_total} завершён${s.round_theme ? ` · «${esc(s.round_theme)}»` : ""}` : "");
 
 // ответы всех игроков после вопроса: «кто ближе» — по точности, остальные — сначала верные
@@ -1235,7 +1235,7 @@ function draw(s) {
       <div class="scene">
         <span class="big pop">${medal}</span>
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
-        ${s.race_winner ? `<p class="muted rise">🏁 Первым до вершины: ${esc(s.race_winner)}</p>` : ""}
+        ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
         ${standings(s, me)}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>

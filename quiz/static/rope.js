@@ -1,5 +1,5 @@
 // Верёвка вместо таблицы лидеров: у каждого своя верёвка, после вопроса игроки по очереди лезут вверх
-// на заработанные очки. Вершина — цель «Гонки до вершины» или максимум очков за игру. Общая для ТВ и телефонов.
+// на заработанные очки. Вершина — цель «Царя горы» или максимум очков за игру. За верёвками — гора. Общая для ТВ и телефонов.
 (function () {
   const CSS = `
 .rope-stage { width: 100%; display: flex; flex-direction: column; gap: 8px; }
@@ -7,7 +7,10 @@
 .rope-top b { color: var(--accent); }
 .ropes { position: relative; display: flex; justify-content: center; gap: 10px; width: 100%; padding-top: 34px; }
 .ropes::before { content: ""; position: absolute; left: 0; right: 0; top: 34px; border-top: 3px dashed rgba(255, 210, 63, .55); } /* финиш */
-.rope-col { flex: 1; min-width: 0; max-width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.mount { position: absolute; left: 0; right: 0; top: 34px; height: var(--h, 46vh); width: 100%; z-index: 0; pointer-events: none; }
+.summit { position: absolute; left: 50%; top: 2px; transform: translateX(-35%); font-size: 26px; z-index: 0; line-height: 1; }
+.rope-stage.compact .summit { font-size: 20px; top: 8px; }
+.rope-col { position: relative; z-index: 1; flex: 1; min-width: 0; max-width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .rope { position: relative; width: 100%; height: var(--h, 46vh); }
 .rope::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 6px; transform: translateX(-50%); border-radius: 3px;
   background: repeating-linear-gradient(to bottom, #c9a26b 0 12px, #8d6a3c 12px 16px); opacity: .85; }
@@ -30,6 +33,14 @@
 .rope-stage.compact .ropes { gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .climber { transition: none; } }
 `;
+  // гора за верёвками: дальний хребет, главная вершина со снежной шапкой — пик ровно на финишной черте
+  const MOUNTAIN = `<svg class="mount" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="mnt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b5f9c"/><stop offset="1" stop-color="#1d2050"/></linearGradient>
+      <linearGradient id="mnt2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34386e"/><stop offset="1" stop-color="#161936"/></linearGradient></defs>
+    <polygon points="0,100 0,52 9,40 18,50 30,26 40,40 50,14 60,34 71,22 82,44 91,32 100,46 100,100" fill="url(#mnt2)" opacity=".75"/>
+    <polygon points="0,100 0,80 14,62 27,72 50,0 73,68 86,58 100,76 100,100" fill="url(#mnt)" opacity=".9"/>
+    <polygon points="50,0 42,20 46,18 49,24 52,17 55,22 58,19" fill="#eef1ff" opacity=".9"/>
+  </svg><span class="summit">🚩</span>`;
   let styled = false;
   const shown = new Set(); // какие подъёмы уже показали: при перерисовке экрана не лезем заново
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -37,7 +48,7 @@
   const clamp = (v) => Math.max(0, Math.min(1, v));
 
   // rows: [{name, score, last, face (готовый HTML аватарки), me}] — по местам; top — сколько очков у вершины;
-  // key — один подъём на вопрос (по нему не повторяем); opts: {height, compact, race}
+  // key — один подъём на вопрос (по нему не повторяем); opts: {height, compact, race, mountain}
   function html(rows, top, key, opts = {}) {
     if (!styled) { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); styled = true; }
     const order = rows.map((r, i) => i).sort((a, b) => (rows[a].last - rows[b].last) || (rows[a].score - rows[b].score)); // большой рывок — в конце
@@ -52,8 +63,8 @@
         <div class="rope-name"><span>${esc(r.name)}</span><b>${num(again ? r.score : r.score - (r.last || 0))}</b></div></div>`;
     }).join("");
     return `<div class="rope-stage ${opts.compact ? "compact" : ""}" data-key="${esc(key)}" style="--h:${opts.height || "46vh"}">
-      <div class="rope-top"><span>🏁 ${opts.race ? "Гонка до вершины" : "Вершина"}</span><b>${num(top)}</b></div>
-      <div class="ropes">${cols}</div></div>`;
+      <div class="rope-top"><span>⛰️ ${opts.race ? "Вершина — царь горы" : "Вершина"}</span><b>${num(top)}</b></div>
+      <div class="ropes">${opts.mountain ? MOUNTAIN : ""}${cols}</div></div>`;
   }
 
   // по очереди: каждый поднимается на свои очки; уже показанный подъём — сразу в конечном положении

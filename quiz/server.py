@@ -77,13 +77,14 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
-MODES = ["quiz", "jeopardy", "100to1"]
+MODES = ["king", "quiz", "jeopardy", "100to1"]  # «100 к 1» пока спрятан из меню (решение владельца), код оставлен
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
-RACE_GOALS = (0, 5000, 10000, 15000)  # «Гонка до вершины»: варианты цели (0 — выключено)
+KING_GOAL = 10000  # «Царь горы»: кто первым наберёт столько очков, тот выиграл
+KING_COUNT = 15  # «Царь горы»: 5 раундов по 3 вопроса — если до вершины никто не дошёл, побеждает тот, кто выше
 # «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
 TRICKS = [
     {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
@@ -532,7 +533,7 @@ def si_match(given, answers):
     return False
 
 DEFAULTS = {
-    "mode": "quiz",
+    "mode": "king",
     "pack": DEFAULT_PACK,
     "penalty": False,  # штраф за неверный ответ
     "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
@@ -546,7 +547,7 @@ DEFAULTS = {
     "themes": [],  # какие темы пакета играть (пусто — все)
     "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
     "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
-    "race": 0,  # «Гонка до вершины»: сколько очков нужно набрать первым (0 — выключено), тогда игра сразу заканчивается
+    "race": 0,  # цель в очках («Царь горы» — KING_GOAL): кто первым набрал, тот выиграл, игра заканчивается
     "sabotage": True,  # «Подлянки»: последнее место усложняет следующий вопрос любому игроку
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
@@ -1251,7 +1252,7 @@ class Game:
         self.touched = time.time()
         # id -> {"name", "device", "team", "score", "last_points", "prev_place", "streak"}
         self.players = {}
-        self.settings = dict(DEFAULTS)
+        self.settings = self.clean_settings({})  # по умолчанию «Царь горы» — с его раундами и целью
         self.custom = None  # свой пакет, загруженный ведущим
         self.media = {}  # файлы из своего пакета
         self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
@@ -1285,14 +1286,14 @@ class Game:
             s["levels"] = [lv for lv in LEVELS if lv in levels]
         if data.get("si_round_min") in (0, 5, 10, 15):
             s["si_round_min"] = data["si_round_min"]
-        if data.get("race") in RACE_GOALS:
-            s["race"] = data["race"]
         if data.get("count") in (0, 10, 20, 30):
             s["count"] = data["count"]
         if data.get("si_pack") in SI_PACKS or data.get("si_pack") == SI_AUTO or (data.get("si_pack") == "custom" and self.si_custom):
             s["si_pack"] = data["si_pack"]
         if data.get("fd_pack") in FD_PACKS or (data.get("fd_pack") == "custom" and self.fd_custom):
             s["fd_pack"] = data["fd_pack"]
+        if s["mode"] == "king":  # «Царь горы»: всё задано, выбирать нечего
+            s.update(rounds=True, count=KING_COUNT, race=KING_GOAL)
         if s["mode"] == "100to1":
             s["teams"] = 2  # «100 к 1» — всегда две команды
         return s
@@ -2003,7 +2004,7 @@ class Stats:
 
 STATS = Stats()
 STATS_KEY = os.environ.get("STATS_KEY", "")  # ключ к странице /stats (на Render — в Environment)
-MODE_NAMES = {"quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
+MODE_NAMES = {"king": "Царь горы", "quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
 
 
 def cleanup():

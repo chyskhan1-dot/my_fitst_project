@@ -36,8 +36,9 @@
     верно — ×2, ошибка/пропуск/не успел — `-DOUBLE_LOSS` (владелец решил). Время на вопрос — `Game.seconds` (`TYPE_TIME`,
     поле вопроса `seconds`). Картинка с эффектом: `image_fx` (`blur`/`zoom`) + `focus`, `fxImg()` в host/play.
     Таблица лидеров — верёвка `static/rope.js` (`QuizRope.html/climb`, ТВ и телефоны): игроки по очереди лезут на свои очки,
-    вершина `rope_top` = цель гонки или `total`×1000. «Гонка до вершины» (`race`: `RACE_GOALS`) — `race_winner()`: кто набрал
-    цель, тот выиграл → лидеры → `final`. В раундах после последнего вопроса раунда (`round_over()`) лидеры показываются всегда
+    вершина `rope_top` = цель гонки или `total`×1000, за верёвками гора (`mountain`). Режим «Царь горы» (`mode` `king`, первый
+    и по умолчанию): `clean_settings` ставит `rounds`, `count`=`KING_COUNT` (5×3), `race`=`KING_GOAL` (10 000) — выбирать нечего;
+    `race_winner()`: кто набрал цель, тот выиграл → лидеры → `final`. В «Викторине» цели нет (`race`=0). В раундах после последнего вопроса раунда (`round_over()`) лидеры показываются всегда
     («Итоги раунда», `round_no`/`rounds_total`).
     Комментарии к таблице лидеров — `static/comments.js` (общие для ведущего и телефонов).
     «Подлянки» (`sabotage`, по умолчанию вкл., только «каждый за себя»): между вопросами последнее место (`trick_roles()`)
@@ -52,7 +53,7 @@
     В таблице лидеров у каждого `marks` — как ответил (в раундах — все вопросы раунда), `marks_range()`.
     После вопроса видны ответы всех: `number_answers`/`map_answers` (по точности), `text_answers`, `player_answers`
     (choice/multi/order: сначала верные) — на телефоне `othersAnswers()`, у ведущего — аватарки у вариантов.
-  - `FeudEngine` — «100 к 1» (две команды): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
+  - `FeudEngine` — «100 к 1» (две команды; пока спрятан из меню — владелец решил, код оставлен): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
     (простая, двойная, тройная, наоборот) → `fd_big_intro → fd_big_q × 5 → fd_big_result → final`.
   - `SiEngine` — «Своя игра»: `si_round → si_board → [si_cat_give|si_stake] → si_question ⇄ si_answer
     → si_reveal … → si_final_bet → si_final_q → si_final_reveal → final`.

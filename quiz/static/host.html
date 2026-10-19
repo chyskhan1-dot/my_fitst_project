@@ -457,11 +457,13 @@ const $actions = document.getElementById("actions");
 const seen = new Set();
 let version = null, lastSig = "", draft = null, lastState = null;
 const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
+// «100 к 1» пока спрятан (решение владельца): { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true }
 const MODES = [
-  { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто быстрее", ready: true },
+  { id: "king", ico: "⛰️", name: "Царь горы", desc: "Кто первым наберёт 10 000 очков — 5 раундов по 3 вопроса", ready: true },
+  { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто больше наберёт", ready: true },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
-  { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true },
 ];
+const KING_GOAL = 10000;
 const RULES = [
   { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
   { id: "sabotage", name: "Подлянки 😈", desc: "Последнее место между вопросами кидает любому игроку (по умолчанию лидеру) случайную подлянку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
@@ -725,7 +727,9 @@ function draw(s) {
   soundtrack(s);
 
   if (s.phase === "setup") {
-    if (!draft) draft = { ...s.settings, ...savedRules() };
+    // у «Царя горы» раунды и число вопросов заданы сервером — для других типов игры их не берём
+    if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : {}), ...savedRules() };
+    if (!MODES.some((m) => m.id === draft.mode)) draft.mode = MODES[0].id; // спрятанный тип игры («100 к 1») — на первый
     renderSetup(s);
   } else if (s.phase === "lobby") {
     draft = null;
@@ -740,7 +744,7 @@ function draw(s) {
       ...(levelsLabel(st) ? [levelsLabel(st)] : []),
       ...(st.themes && st.themes.length ? [`Темы: ${st.themes.join(", ")}`] : []),
       `${st.seconds} сек на ответ`,
-      ...(st.race ? [`🏁 Гонка до ${st.race.toLocaleString("ru-RU")}`] : []),
+      ...(st.race ? [`⛰️ Царь горы: до ${st.race.toLocaleString("ru-RU")} очков`] : []),
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
     const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"} ${p.online ? "" : "off"}" data-kick="${esc(p.id)}" title="${p.online ? "" : "Не на связи"}">${avaP(p)}${esc(p.name)}${p.online ? "" : " · нет связи"}</button>`;
@@ -825,19 +829,19 @@ function draw(s) {
     mountMap(s);
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
-    const label = s.race_winner ? "Кто на вершине? 🏁" : last ? "Итоги игры" : s.round_end ? "Итоги раунда" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
+    const label = s.race_winner ? "Кто на вершине? ⛰️" : last ? "Итоги игры" : s.round_end ? "Итоги раунда" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
     $actions.innerHTML = `<button class="btn" data-act="next">${label}</button>`;
   } else if (s.phase === "leaders") {
     // верёвка: кто куда поднялся; итоги раунда и победа в гонке — крупно
     const won = s.race_winner, roundDone = s.round_end && !won;
-    const eyebrow = won ? "Гонка до вершины" : roundDone ? `Раунд ${s.round_no} из ${s.rounds_total} завершён` : `После вопроса ${s.index + 1} из ${s.total}`;
-    const title = won ? `🏆 Вершина взята: ${esc(won)}!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
+    const eyebrow = won ? "Царь горы" : roundDone ? `Раунд ${s.round_no} из ${s.rounds_total} завершён` : `После вопроса ${s.index + 1} из ${s.total}`;
+    const title = won ? `👑 ${esc(won)} — царь горы!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
     const rows = s.settings.teams
       ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
       : s.players.slice(0, 14).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
     $main.innerHTML = `
       <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1></div>
-      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race })}
+      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, mountain: true })}
         ${s.settings.teams ? `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : ""}</div>
         <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
     QuizRope.climb($main);
@@ -850,7 +854,7 @@ function draw(s) {
     const mvp = s.players[0];
     $main.innerHTML = `
       <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
-        ${s.race_winner ? `<p class="muted">🏁 Первым до вершины: ${esc(s.race_winner)}</p>` : ""}</div>
+        ${s.race_winner ? `<p class="muted">👑 Царь горы: ${esc(s.race_winner)} — первым на вершине</p>` : ""}</div>
       <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
       ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
@@ -1131,9 +1135,9 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
-const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "race", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
-function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify(Object.fromEntries(RULE_KEYS.filter((k) => k in d).map((k) => [k, d[k]])))); } catch {} }
+function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify({ ...savedRules(), ...Object.fromEntries(RULE_KEYS.filter((k) => k in d && !(d.mode === "king" && (k === "rounds" || k === "count"))).map((k) => [k, d[k]])) })); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "раундов")} по 3 вопроса`;
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
@@ -1151,24 +1155,31 @@ function themePicker(s, d) {
     ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}</button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
     <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="seg">${LEVELS.map(([v, n]) => `<button type="button" class="${levelsOf(d).includes(v) ? "on" : ""}" data-levelt="${v}">${n}</button>`).join("")}</span>` : ""}
-      <button type="button" class="theme-chip ${d.rounds ? "on" : ""}" data-rounds-toggle title="Голосование за тему перед каждыми 3 вопросами">🎡 Раунды по темам</button>
+      ${d.mode === "king" ? "" : `<button type="button" class="theme-chip ${d.rounds ? "on" : ""}" data-rounds-toggle title="Голосование за тему перед каждыми 3 вопросами">🎡 Раунды по темам</button>`}
       ${fits ? "" : `<span class="muted" style="color:var(--bad)">Таких вопросов нет — будет весь пакет</span>`}</div>`;
 }
 
 function rulesSummary(d) {
+  if (d.mode === "king") return ["5 раундов по 3 вопроса", `До ${KING_GOAL.toLocaleString("ru-RU")} очков`, d.teams ? `Команды: ${d.teams}` : "Каждый за себя", `${d.seconds} с на ответ`,
+    ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
+    ...RULES.filter((r) => d[r.id] && r.id !== "rounds").map((r) => r.name.replace(" 🔥", ""))];
   if (d.mode === "100to1") return ["2 команды", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   if (d.mode === "jeopardy") return [d.si_round_min ? `Раунд — ${d.si_round_min} мин` : "Раунд без ограничения", `${d.seconds} с на ответ`, d.auto ? "Автопереход" : "Ведущий листает сам"];
   return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.rounds ? roundsLabel(Math.max(1, Math.round((d.count || 30) / 3)))
     : d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
-    ...(d.race ? [`Гонка до ${d.race.toLocaleString("ru-RU")}`] : []), ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
+    ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
 }
 
 function rulesModal(d) {
   const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
   const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
     <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
-  const body = d.mode === "100to1"
+  const king = `<div class="rule"><span class="txt"><b>⛰️ Царь горы</b><small>Цель — ${KING_GOAL.toLocaleString("ru-RU")} очков: кто первым дошёл до вершины, тот выиграл. Не дошёл никто — после 5 раундов по 3 вопроса побеждает тот, кто выше</small></span></div>
+       <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
+       <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       ${RULES.filter((r) => r.id !== "rounds").map(toggle).join("")}`;
+  const body = d.mode === "king" ? king : d.mode === "100to1"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
     : d.mode === "jeopardy"
@@ -1178,7 +1189,6 @@ function rulesModal(d) {
     : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
-       <div class="rule wrap"><span class="txt"><b>Гонка до вершины 🏁</b><small>Кто первым наберёт столько очков, тот сразу выиграл — игра заканчивается. Иначе — до последнего вопроса</small></span>${seg("race", [0, 5000, 10000, 15000], d.race || 0, (v) => (v ? v.toLocaleString("ru-RU") : "Выкл"))}</div>
        ${RULES.map(toggle).join("")}`;
   return `<div class="modal-back" data-close-rules></div>
     <div class="modal" role="dialog" aria-modal="true" aria-label="Правила">
@@ -1293,7 +1303,7 @@ document.addEventListener("click", (e) => {
     return renderSetup(lastState);
   }
   if (e.target.closest("[data-rounds-toggle]")) { draft.rounds = !draft.rounds; return renderSetup(lastState); }
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround], [data-race]");
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
@@ -1304,7 +1314,6 @@ document.addEventListener("click", (e) => {
   if (t.dataset.pack && t.dataset.pack !== draft.pack) { draft.pack = t.dataset.pack; draft.themes = []; }
   if (t.dataset.count) draft.count = Number(t.dataset.count);
   if (t.dataset.siround) draft.si_round_min = Number(t.dataset.siround);
-  if (t.dataset.race) draft.race = Number(t.dataset.race);
   renderSetup(lastState);
 });
 

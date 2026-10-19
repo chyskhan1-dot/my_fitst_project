@@ -36,8 +36,8 @@ def lights(top, mid, bottom, blink=False, arrow=False):
     xs = 150 if not arrow else 115
     for name, cy, on in (("top", 70, top), ("mid", 150, mid), ("bottom", 230, bottom)):
         color = lit[name] if on else dim[name]
-        anim = ('<animate attributeName="fill" values="#ffc400;#4a3d12;#ffc400" keyTimes="0;0.5;1" dur="1.2s" '
-                'calcMode="discrete" repeatCount="indefinite"/>' if blink and name == "mid" else "")
+        anim = (f'<animate attributeName="fill" values="{lit[name]};{dim[name]};{lit[name]}" keyTimes="0;0.5;1" dur="1.2s" '
+                'calcMode="discrete" repeatCount="indefinite"/>' if blink and on else "")
         glow = f' filter="url(#glow)"' if on else ""
         body += f'<circle cx="{xs}" cy="{cy}" r="31" fill="{color}"{glow}>{anim}</circle>'
     if arrow:  # справа от нижней секции — секция с зелёной стрелкой вправо
@@ -78,6 +78,13 @@ def blue_disc():
 def slash():
     """Красная полоса «запрещено» поверх символа."""
     return f'<line x1="78" y1="78" x2="222" y2="222" stroke="{RED}" stroke-width="20"/>'
+
+
+def bike(color):
+    """Велосипед: два колеса, рама, руль и седло."""
+    return (f'<g fill="none" stroke="{color}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">'
+            '<circle cx="104" cy="178" r="30"/><circle cx="196" cy="178" r="30"/>'
+            '<path d="M104 178 L136 124 H184 L196 178 M136 124 L150 178 L184 124 M128 110 H148 M184 124 L176 104 H192"/></g>')
 
 
 def triangle_warn():
@@ -166,10 +173,54 @@ SIGNS = {
                       '<path d="M150 66 L238 228 H62 Z" fill="#fff"/>'
                       + "".join(f'<rect x="{x}" y="206" width="14" height="14" fill="{BLACK}"/>' for x in (96, 120, 144, 168, 192))
                       + f'<circle cx="152" cy="112" r="11" fill="{BLACK}"/><path d="M146 126 L136 168 L120 200 M140 150 L164 178 L172 202 M144 132 L126 150 M150 130 L174 146" stroke="{BLACK}" stroke-width="9" stroke-linecap="round" fill="none"/>'),
+    # «Поворот направо запрещён»
+    "no-right": card(disc(WHITE) + '<path d="M104 214 V138 H174 V112 L216 150 L174 188 V162 H128 V214 Z" fill="' + BLACK + '"/>' + slash()),
+    # «Движение налево»
+    "turn-left": card(blue_disc() + '<path d="M188 236 V146 a26 26 0 0 0 -26 -26 H124 V92 L78 134 L124 176 V148 H160 V236 Z" fill="#fff"/>'),
+    # «Объезд препятствия справа»: стрелка вниз-вправо
+    "keep-right": card(blue_disc() + '<path d="M78 106 L104 80 L184 160 L184 120 L220 120 L220 220 L120 220 L120 184 L160 184 Z" fill="#fff"/>'),
+    # «Конец ограничения скорости 60»: серые цифры, чёрные полосы
+    "end-speed-60": card('<circle cx="150" cy="150" r="128" fill="#fff" stroke="#555" stroke-width="5"/>' + number("60", "#9a9a9a")
+                         + '<clipPath id="c"><circle cx="150" cy="150" r="124"/></clipPath><g clip-path="url(#c)" stroke="#222" stroke-width="6">'
+                         + "".join(f'<line x1="{60 + d}" y1="270" x2="{240 + d}" y2="30"/>' for d in (-16, 0, 16)) + '</g>'),
+    # «Искусственная неровность»: треугольник с «горбом»
+    "bumps": card(triangle_warn() + f'<path d="M92 214 H118 Q150 150 182 214 H208 V224 H92 Z" fill="{BLACK}"/>'),
+    # «Сужение дороги»: края дороги сходятся
+    "road-narrows": card(triangle_warn() + f'<path d="M112 224 V186 L134 150 V112 H146 V154 L124 190 V224 Z M188 224 V186 L166 150 V112 H154 V154 L176 190 V224 Z" fill="{BLACK}"/>'),
+    # «Крутой спуск»: склон и «10%»
+    "steep-descent": card(triangle_warn() + f'<path d="M80 222 L220 222 L80 150 Z" fill="{BLACK}"/>'
+                          '<text x="190" y="180" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" font-size="32" fill="#1b1b1b">10%</text>'),
+    # «Опасный поворот направо»
+    "bend-right": card(triangle_warn() + f'<path d="M136 224 V164 a26 26 0 0 1 26 -26 H168 V116 L200 148 L168 180 V158 H162 a6 6 0 0 0 -6 6 V224 Z" fill="{BLACK}"/>'),
+    # «Светофорное регулирование»: треугольник с красным, жёлтым и зелёным
+    "signals-ahead": card(triangle_warn() + f'<rect x="132" y="104" width="36" height="120" rx="8" fill="{BLACK}"/>'
+                          '<circle cx="150" cy="124" r="12" fill="#ff3b30"/><circle cx="150" cy="164" r="12" fill="#ffc400"/><circle cx="150" cy="204" r="12" fill="#2ee66b"/>'),
+    # «Ограничение высоты 3,5 м»
+    "height-limit": card(disc(WHITE) + f'<path d="M150 60 L166 80 H134 Z M150 240 L166 220 H134 Z" fill="{BLACK}"/>'
+                         '<text x="150" y="168" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" font-size="48" fill="#1b1b1b">3,5 м</text>'),
+    # «Ограничение массы 5 т»
+    "weight-limit": card(disc(WHITE) + number("5 т")),
+    # «Больница»: синий прямоугольник, белый квадрат, красный крест
+    "hospital": card(f'<rect x="64" y="34" width="172" height="232" rx="14" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="74" y="44" width="152" height="212" rx="10" fill="{BLUE}"/>'
+                     f'<rect x="96" y="74" width="108" height="108" fill="#fff"/><path d="M138 86 H162 V116 H192 V140 H162 V170 H138 V140 H108 V116 H138 Z" fill="{RED}"/>'),
+    # «Автозаправочная станция»: синий прямоугольник, белый квадрат, колонка
+    "fuel": card(f'<rect x="64" y="34" width="172" height="232" rx="14" fill="#fff" stroke="#9aa5b1" stroke-width="2"/><rect x="74" y="44" width="152" height="212" rx="10" fill="{BLUE}"/>'
+                 f'<rect x="96" y="74" width="108" height="108" fill="#fff"/><path d="M116 170 V92 a6 6 0 0 1 6 -6 H156 a6 6 0 0 1 6 6 V170 Z M124 96 V118 H154 V96 Z" fill="{BLACK}" fill-rule="evenodd"/>'
+                 f'<path d="M162 112 H172 a8 8 0 0 1 8 8 V156 a6 6 0 0 0 12 0 V110 L180 98" fill="none" stroke="{BLACK}" stroke-width="7" stroke-linejoin="round"/>'),
+    # «Велосипедная дорожка»: синий круг с белым велосипедом
+    "bike-path": card(blue_disc() + bike("#fff")),
+    # «Движение на велосипедах запрещено»
+    "no-bikes": card(disc(WHITE) + bike(BLACK)),
+    # «Конец зоны запрещения обгона»: серые машины, чёрные полосы
+    "end-no-overtaking": card('<circle cx="150" cy="150" r="128" fill="#fff" stroke="#555" stroke-width="5"/>' + car(112, "#9a9a9a") + car(188, "#9a9a9a")
+                              + '<clipPath id="c"><circle cx="150" cy="150" r="124"/></clipPath><g clip-path="url(#c)" stroke="#222" stroke-width="6">'
+                              + "".join(f'<line x1="{60 + d}" y1="270" x2="{240 + d}" y2="30"/>' for d in (-16, 0, 16)) + '</g>'),
     # светофоры
     "lights-yellow-blink": lights(False, True, False, blink=True),
     "lights-red-yellow": lights(True, True, False),
     "lights-arrow": lights(True, False, False, arrow=True),
+    "lights-green-blink": lights(False, False, True, blink=True),
+    "lights-red": lights(True, False, False),
 }
 
 os.makedirs(OUT, exist_ok=True)

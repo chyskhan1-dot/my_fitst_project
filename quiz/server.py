@@ -1990,7 +1990,8 @@ class Handler(BaseHTTPRequestHandler):
         if set_device and not device:
             device = secrets.token_urlsafe(12)
             extra["Set-Cookie"] = f"{DEVICE_COOKIE}={device}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax"
-        mime = "text/html; charset=utf-8" if name.endswith(".html") else "text/javascript; charset=utf-8"
+        mime = ("text/html; charset=utf-8" if name.endswith(".html") else "application/manifest+json"
+                if name.endswith(".webmanifest") else "text/javascript; charset=utf-8")
         self.send_bytes((STATIC / name).read_bytes(), mime, extra=extra)
         return device
 
@@ -2024,6 +2025,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(STATS.report())
         elif parts[0] == "static" and len(parts) == 2 and parts[1].endswith(".js") and (STATIC / parts[1]).is_file():
             self.send_file(parts[1])
+        elif url.path in ("/manifest.webmanifest", "/sw.js"):  # установка на телефон значком (PWA)
+            self.send_file(url.path[1:])
         elif url.path == "/healthz":
             self.send_json({"ok": True})
         elif parts[0] == "media" and len(parts) > 1:

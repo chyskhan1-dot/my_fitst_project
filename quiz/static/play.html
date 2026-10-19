@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1330">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/media/app/icon-192.png">
+<link rel="apple-touch-icon" href="/media/app/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Квиз">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Квиз</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@500;700;800&display=swap">
 <style>
@@ -226,6 +233,7 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .buzz:disabled { opacity: .55; }
 .btn.wide { width: 100%; }
 .leave { background: none; border: 0; color: var(--muted); font: 600 14px var(--body); text-decoration: underline; cursor: pointer; }
+.install-help { font-size: 15px; margin: 6px 0 0; }
 #confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }
@@ -332,7 +340,10 @@ function startScreen() {
       </div>
       <div class="error" id="err"></div>
       <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
+      <button class="leave" type="button" data-install hidden>📲 Установить на телефон</button>
+      <p class="muted install-help" id="install-help" hidden></p>
     </div>`;
+  showInstall();
   const choose = (btn) => document.querySelectorAll(".role").forEach((r) => r.classList.toggle("on", r === btn));
   document.getElementById("as-player").onclick = (e) => {
     choose(e.currentTarget);
@@ -800,6 +811,33 @@ async function shareSite(btn) {
   btn.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
 }
 
+// ---------- значок на телефоне (PWA) ----------
+// Android/Chrome сам предлагает установку (beforeinstallprompt) — показываем кнопку; на iPhone такого нет, поэтому подсказка.
+let installPrompt = null;
+const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isPhone = () => isIOS() || /Android/.test(navigator.userAgent);
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; showInstall(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; showInstall(); });
+function showInstall() {
+  const btn = document.querySelector("[data-install]");
+  if (btn) btn.hidden = installed() || !(installPrompt || isPhone());
+}
+async function install(btn) {
+  const help = document.getElementById("install-help");
+  if (installPrompt) {
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice.catch(() => ({}));
+    if (outcome === "accepted") { installPrompt = null; btn.hidden = true; }
+    return;
+  }
+  help.hidden = false;
+  help.innerHTML = isIOS()
+    ? "В Safari нажми «Поделиться» <b>⬆️</b> (внизу или в меню «…»), затем «На экран „Домой“»."
+    : "Открой меню браузера <b>⋮</b> и выбери «Установить приложение» или «Добавить на главный экран».";
+}
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+
 async function invite(btn, s) {
   const url = (s.join || location.origin) + "/?room=" + room;
   if (navigator.share) return navigator.share({ title: "Квиз", text: `Заходи в игру! Код комнаты ${room}`, url }).catch(() => {});
@@ -1238,6 +1276,8 @@ document.addEventListener("click", (e) => { // обычный «клик» по�
 document.addEventListener("click", async (e) => {
   const ss = e.target.closest("[data-share-site]");
   if (ss) return shareSite(ss);
+  const ib = e.target.closest("[data-install]");
+  if (ib) return install(ib);
   const hb = e.target.closest("[data-host]");
   if (hb) {
     hb.disabled = true;

@@ -83,6 +83,7 @@ FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
+RACE_GOALS = (0, 5000, 10000, 15000)  # «Гонка до вершины»: варианты цели (0 — выключено)
 # «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
 TRICKS = [
     {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
@@ -545,6 +546,7 @@ DEFAULTS = {
     "themes": [],  # какие темы пакета играть (пусто — все)
     "levels": ["normal", "hard"],  # какие сложности играть (лёгкие — по желанию)
     "rounds": False,  # «Раунды по темам»: голосование за тему перед каждыми ROUND_SIZE вопросами
+    "race": 0,  # «Гонка до вершины»: сколько очков нужно набрать первым (0 — выключено), тогда игра сразу заканчивается
     "sabotage": True,  # «Подлянки»: последнее место усложняет следующий вопрос любому игроку
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
@@ -1283,6 +1285,8 @@ class Game:
             s["levels"] = [lv for lv in LEVELS if lv in levels]
         if data.get("si_round_min") in (0, 5, 10, 15):
             s["si_round_min"] = data["si_round_min"]
+        if data.get("race") in RACE_GOALS:
+            s["race"] = data["race"]
         if data.get("count") in (0, 10, 20, 30):
             s["count"] = data["count"]
         if data.get("si_pack") in SI_PACKS or data.get("si_pack") == SI_AUTO or (data.get("si_pack") == "custom" and self.si_custom):
@@ -1413,12 +1417,14 @@ class Game:
             self.finish_vote()
 
     def finish_vote(self):
-        """Рулетка: сектор темы = 3 × голоса + 1 (голоса решают, но шанс есть у всех), победителя решает сервер."""
+        """Рулетка: на колесе только темы с голосами, сектор = число голосов (никто не голосовал — все поровну).
+        Все за одну тему — колесо не крутится. Победителя решает сервер."""
         opts = self.topic["options"]
         counts = [sum(1 for v in self.votes.values() if v == t) for t in opts]
-        weights = [3 * c + 1 for c in counts]
+        weights = counts if any(counts) else [1] * len(opts)
         winner = random.choices(range(len(opts)), weights=weights)[0]
-        self.topic.update(counts=counts, weights=weights, winner=winner)
+        spin = SPIN_SECONDS if sum(1 for w in weights if w) > 1 else 0  # единогласно — без колеса
+        self.topic.update(counts=counts, weights=weights, winner=winner, spin=spin)
         allq, used = self.pack["questions"], self.used.setdefault(self.settings["pack"], set())
         avail = self.round_themes()[opts[winner]]
         fresh = [i for i in avail if i not in used] or avail
@@ -1439,8 +1445,8 @@ class Game:
             out["voters"] = [[{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
                               for v, th in self.votes.items() if th == o and v in self.players] for o in out["options"]]
         else:
-            out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(SPIN_SECONDS - el, 1)),
-                       left=max(0, round(SPIN_SECONDS + THEME_SHOW - el, 1)))
+            out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(t.get("spin", SPIN_SECONDS) - el, 1)),
+                       left=max(0, round(t.get("spin", SPIN_SECONDS) + THEME_SHOW - el, 1)), unanimous=not t.get("spin", SPIN_SECONDS))
         if pid:
             out["my_vote"] = self.votes.get(pid)
         return out
@@ -1574,7 +1580,7 @@ class Game:
                 self.finish_vote()
             return
         if self.phase == "topic_bet":
-            if now - self.phase_at >= SPIN_SECONDS + THEME_SHOW:
+            if now - self.phase_at >= self.topic.get("spin", SPIN_SECONDS) + THEME_SHOW:
                 self.start_question()
             return
         if self.phase == "question":
@@ -1592,7 +1598,8 @@ class Game:
         """Кто может устроить подлянку: (последние места, лидер — цель по умолчанию) или None.
         Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
         if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.trick
-                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total):
+                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total
+                or self.race_winner()):
             return None
         online = set(self.online())
         board = [r for r in self.leaderboard() if r["id"] in online]
@@ -1605,7 +1612,8 @@ class Game:
         """Сколько секунд до автоперехода, или None, если его нет."""
         if not self.settings["auto"] or self.phase not in ("reveal", "leaders"):
             return None
-        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS
+        # верёвка: игроки лезут по очереди — дать досмотреть
+        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS + min(6, 0.7 * len(self.players))
         note = self.question().get("note") if self.phase == "reveal" and self.index >= 0 else None
         if note:
             wait += min(6, 2 + len(note) / 40)  # успеть прочитать пояснение
@@ -1657,13 +1665,27 @@ class Game:
             p.setdefault("marks", {})[self.index] = a["result"]  # для таблицы: кто как ответил
         self.set_phase("reveal")
 
+    def race_winner(self):
+        """«Гонка до вершины»: кто (игрок или команда) уже набрал нужные очки — или None."""
+        goal = self.settings.get("race")
+        if not goal or self.si or self.fd or self.index < 0:
+            return None
+        board = self.team_board() if self.settings["teams"] else self.leaderboard()
+        return board[0]["name"] if board and board[0]["score"] >= goal else None
+
+    def round_over(self):
+        """Раунды по темам: этот вопрос — последний в раунде."""
+        return bool(self.settings.get("rounds")) and self.index + 1 >= len(self.selected)
+
     def next(self):
         if self.phase == "topic_vote":
             return self.finish_vote()
         if self.phase == "topic_bet":
             return self.start_question()
-        last = self.index + 1 >= self.total
-        if self.phase == "reveal" and not last and self.settings["leaders"]:
+        won = self.race_winner() is not None
+        last = self.index + 1 >= self.total or won
+        # таблица (верёвка) после вопроса; итоги раунда и победу в гонке показываем всегда
+        if self.phase == "reveal" and (won or (not last and (self.settings["leaders"] or self.round_over()))):
             self.set_phase("leaders")
             return
         if last and self.phase in ("reveal", "leaders"):
@@ -1785,9 +1807,15 @@ class Game:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("topic_vote", "topic_bet"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
+        if not self.si and not self.fd and self.phase in ("reveal", "leaders", "final"):
+            # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 1000 за вопрос)
+            s["rope_top"] = self.settings.get("race") or max(1000, self.total * 1000)
+            s["race_winner"] = self.race_winner()
         if self.settings.get("rounds") and self.topic and self.topic.get("winner") is not None:
             s["round_theme"] = self.topic["options"][self.topic["winner"]]
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
+            s["round_no"] = self.index // ROUND_SIZE + 1
+            s["rounds_total"] = -(-self.target // ROUND_SIZE)
         if self.settings.get("sabotage") and not self.si and not self.fd:
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()

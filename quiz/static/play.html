@@ -108,6 +108,7 @@ input {
 .mini li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
 .mini li.me { outline: 2px solid var(--accent); }
 .mini .pos { width: 1.5em; color: var(--muted); font-family: var(--display); }
+.round-done { padding: 10px 16px; border-radius: 14px; background: rgba(255, 210, 63, .14); color: var(--accent); font-weight: 800; text-align: center; }
 .mini .t { flex: none; color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .mini .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
@@ -297,6 +298,7 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/emoji.js"></script>
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
+<script src="/static/rope.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
@@ -922,7 +924,8 @@ function hostBar(s) {
   if (!bar) { bar = document.createElement("div"); bar.id = "hostbar"; document.body.appendChild(bar); }
   let label = token && HOST_NEXT[s.phase];
   if (label && s.phase === "si_question" && s.si && s.si.cur && s.si.cur.buzz_open) label = "Никто не знает";
-  if (label && s.round_end && (s.phase === "leaders" || (s.phase === "reveal" && !s.settings.leaders)) && s.index + 1 < s.total) label = "Следующий раунд";
+  if (label && s.round_end && s.phase === "leaders" && s.index + 1 < s.total) label = "Следующий раунд";
+  if (label && s.phase === "leaders" && (s.race_winner || s.index + 1 >= s.total)) label = "К итогам";
   // ведущий тоже играет: пока сам не ответил, кнопки «Показать ответ» нет — чтобы не нажать её вместо «Ответить»
   if (label && s.phase === "question" && s.me && !s.me.answered) label = "";
   if (label && s.paused) label = ""; // на паузе «Дальше» не нажать — только «Продолжить»
@@ -968,6 +971,20 @@ function standings(s, me) {
 }
 
 const secs = (t) => (t == null ? "" : `${Number(t).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} с`); // за сколько ответил
+// верёвка на телефоне: лидеры и ты; конец раунда и победа в гонке — подписью
+function phoneRope(s, me) {
+  const rows = s.settings.teams
+    ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, me: t.team === me.team, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+    : (() => {
+      const top = s.players.slice(0, 7), mine = s.players.find((p) => p.name === me.name);
+      if (mine && !top.includes(mine)) top.push(mine);
+      return top.map((p) => ({ name: p.name, score: p.score, last: p.last, me: p.name === me.name, face: avaP(p) }));
+    })();
+  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "210px", compact: true, race: !!s.settings.race });
+}
+const roundTitle = (s) => (s.race_winner ? `🏆 Вершина взята: ${esc(s.race_winner)}!`
+  : s.round_end ? `Раунд ${s.round_no} из ${s.rounds_total} завершён${s.round_theme ? ` · «${esc(s.round_theme)}»` : ""}` : "");
+
 // ответы всех игроков после вопроса: «кто ближе» — по точности, остальные — сначала верные
 function othersAnswers(s, me) {
   const mark = (r) => `<span class="gain ${r === "right" ? "up" : r === "partial" ? "" : "down"}">${r === "right" ? "✓" : r === "partial" ? "½" : "✗"}</span>`;
@@ -1058,7 +1075,7 @@ function draw(s) {
     $main.innerHTML = `
       <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · <span id="topic-left">${Math.ceil(t.left)} с</span></div>
       <h2>Какую тему играем?</h2>
-      <p class="hint">Чем больше голосов, тем больше шанс на колесе</p>
+      <p class="hint">На колесо попадут только темы с голосами</p>
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>`;
   } else if (s.phase === "topic_bet") {
@@ -1067,7 +1084,7 @@ function draw(s) {
     if (!wheel || wheel.dataset.round !== String(t.round)) {
       $main.innerHTML = `<div class="scene"><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div>
         <div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 300)}</div>
-        <div class="topic-res" id="topic-res"><h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p></div></div>`;
+        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
     }
   } else if (s.phase === "question" && !me.answered) {
@@ -1167,6 +1184,7 @@ function draw(s) {
   } else if (s.phase === "leaders" && myTeam) {
     $main.innerHTML = `
       <div class="scene">
+        ${roundTitle(s) ? `<div class="round-done pop">${roundTitle(s)}</div>` : ""}
         <span class="teambadge" style="--c:${TEAM_COLORS[me.team]}">${esc(myTeam)}</span>
         <div class="eyebrow">Команда на месте</div>
         <span class="place pop">${me.team_place}</span>
@@ -1175,20 +1193,25 @@ function draw(s) {
             <span class="pos">${i + 1}</span><span class="n">${esc(t.name)}</span><span>${t.score}</span></li>`).join("")}
         </ol>
         <p class="muted">Ты лично: ${me.place} место · ${me.score} очков</p>
+        ${phoneRope(s, me)}
         ${news(s)}
       </div>`;
+    QuizRope.climb($main);
   } else if (s.phase === "leaders") {
     $main.innerHTML = `
       <div class="scene">
         ${me.can_trick ? trickBox(s, me) : ""}
+        ${roundTitle(s) ? `<div class="round-done pop">${roundTitle(s)}</div>` : ""}
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
         ${moveText(me)}
+        ${phoneRope(s, me)}
         ${me.can_trick ? "" : trickBox(s, me)}
         ${news(s)}
         ${standings(s, me)}
       </div>`;
+    QuizRope.climb($main);
   } else if (s.phase === "final") {
     const place = myTeam ? me.team_place : me.place;
     const medal = ["🥇", "🥈", "🥉"][place - 1] || "🎉";
@@ -1196,6 +1219,7 @@ function draw(s) {
       <div class="scene">
         <span class="big pop">${medal}</span>
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
+        ${s.race_winner ? `<p class="muted rise">🏁 Первым до вершины: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
         ${standings(s, me)}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>

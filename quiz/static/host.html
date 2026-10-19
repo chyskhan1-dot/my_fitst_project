@@ -447,6 +447,7 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script src="/static/wheel.js"></script>
+<script src="/static/rope.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const room = new URLSearchParams(location.search).get("room") || "";
@@ -739,6 +740,7 @@ function draw(s) {
       ...(levelsLabel(st) ? [levelsLabel(st)] : []),
       ...(st.themes && st.themes.length ? [`Темы: ${st.themes.join(", ")}`] : []),
       `${st.seconds} сек на ответ`,
+      ...(st.race ? [`🏁 Гонка до ${st.race.toLocaleString("ru-RU")}`] : []),
       ...RULES.filter((r) => st[r.id]).map((r) => r.name.replace(" 🔥", "")),
     ];
     const chip = (p) => `<button class="chip ${seen.has(p.id) ? "" : "pop"} ${p.online ? "" : "off"}" data-kick="${esc(p.id)}" title="${p.online ? "" : "Не на связи"}">${avaP(p)}${esc(p.name)}${p.online ? "" : " · нет связи"}</button>`;
@@ -776,7 +778,7 @@ function draw(s) {
     const t = s.topic;
     $main.innerHTML = `
       <div class="qhead"><div><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div><h1 class="rise">Какую тему играем?</h1>
-        <p class="muted">Голосуйте на телефонах — чем больше голосов, тем больше сектор на колесе</p></div>
+        <p class="muted">Голосуйте на телефонах — на колесо попадут только темы с голосами</p></div>
         <span class="topic-time" id="topic-time"></span></div>
       <div class="topics">${t.options.map((o, i) => `<div class="topic pop" style="--c:var(--a${i});--i:${i}"><span class="ti">${QuizWheel.icon(o)}</span><b>${esc(o)}</b>
         <span class="who">${t.voters[i].map(avaP).join("")}</span></div>`).join("")}</div>
@@ -788,7 +790,7 @@ function draw(s) {
     if (!wheel || wheel.dataset.round !== String(t.round)) { // колесо рисуем один раз — иначе оно начнёт крутиться заново
       $main.innerHTML = `
         <div class="topic-stage"><div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 460)}</div>
-          <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · тема</div>
+          <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${t.unanimous ? "единогласно!" : "тема"}</div>
             <h1>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h1>
             <p class="muted">Приготовьтесь!</p></div></div>`;
       QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
@@ -822,22 +824,32 @@ function draw(s) {
     mountMap(s);
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.querySelectorAll(".fill").forEach((f) => f.style.setProperty("--w", f.dataset.w))));
-    const label = last ? "Итоги игры" : s.settings.leaders ? "Таблица лидеров" : s.round_end ? "Следующий раунд" : "Следующий вопрос";
+    const label = s.race_winner ? "Кто на вершине? 🏁" : last ? "Итоги игры" : s.round_end ? "Итоги раунда" : s.settings.leaders ? "Таблица лидеров" : "Следующий вопрос";
     $actions.innerHTML = `<button class="btn" data-act="next">${label}</button>`;
   } else if (s.phase === "leaders") {
+    // верёвка: кто куда поднялся; итоги раунда и победа в гонке — крупно
+    const won = s.race_winner, roundDone = s.round_end && !won;
+    const eyebrow = won ? "Гонка до вершины" : roundDone ? `Раунд ${s.round_no} из ${s.rounds_total} завершён` : `После вопроса ${s.index + 1} из ${s.total}`;
+    const title = won ? `🏆 Вершина взята: ${esc(won)}!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
+    const rows = s.settings.teams
+      ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+      : s.players.slice(0, 14).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
     $main.innerHTML = `
-      <div><div class="eyebrow">После вопроса ${s.index + 1} из ${s.total}</div><h1>Таблица лидеров</h1></div>
-      <div class="leaders-wrap"><div>${s.settings.teams ? board(s.teams) + `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : board(s.players)}</div>
+      <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1></div>
+      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race })}
+        ${s.settings.teams ? `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : ""}</div>
         <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
+    QuizRope.climb($main);
     countUp();
-    $actions.innerHTML = `<button class="btn" data-act="next">${s.round_end ? "Следующий раунд" : "Следующий вопрос"}</button>`;
+    $actions.innerHTML = `<button class="btn" data-act="next">${won || s.index + 1 >= s.total ? "К итогам" : s.round_end ? "Следующий раунд" : "Следующий вопрос"}</button>`;
   } else if (s.phase === "final") {
     const teamMode = !!s.settings.teams;
     const [p1, p2, p3] = teamMode ? s.teams : s.players;
     const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
     const mvp = s.players[0];
     $main.innerHTML = `
-      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1></div>
+      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
+        ${s.race_winner ? `<p class="muted">🏁 Первым до вершины: ${esc(s.race_winner)}</p>` : ""}</div>
       <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
       ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
@@ -1118,7 +1130,7 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
-const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "race", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
 function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify(Object.fromEntries(RULE_KEYS.filter((k) => k in d).map((k) => [k, d[k]])))); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
@@ -1148,7 +1160,7 @@ function rulesSummary(d) {
   return [d.teams ? `Команды: ${d.teams}` : "Каждый за себя", d.rounds ? roundsLabel(Math.max(1, Math.round((d.count || 30) / 3)))
     : d.count ? `${d.count} вопросов` : "Все вопросы", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
-    ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
+    ...(d.race ? [`Гонка до ${d.race.toLocaleString("ru-RU")}`] : []), ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
 }
 
 function rulesModal(d) {
@@ -1165,6 +1177,7 @@ function rulesModal(d) {
     : `<div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
+       <div class="rule wrap"><span class="txt"><b>Гонка до вершины 🏁</b><small>Кто первым наберёт столько очков, тот сразу выиграл — игра заканчивается. Иначе — до последнего вопроса</small></span>${seg("race", [0, 5000, 10000, 15000], d.race || 0, (v) => (v ? v.toLocaleString("ru-RU") : "Выкл"))}</div>
        ${RULES.map(toggle).join("")}`;
   return `<div class="modal-back" data-close-rules></div>
     <div class="modal" role="dialog" aria-modal="true" aria-label="Правила">
@@ -1279,7 +1292,7 @@ document.addEventListener("click", (e) => {
     return renderSetup(lastState);
   }
   if (e.target.closest("[data-rounds-toggle]")) { draft.rounds = !draft.rounds; return renderSetup(lastState); }
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
+  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround], [data-race]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
@@ -1290,6 +1303,7 @@ document.addEventListener("click", (e) => {
   if (t.dataset.pack && t.dataset.pack !== draft.pack) { draft.pack = t.dataset.pack; draft.themes = []; }
   if (t.dataset.count) draft.count = Number(t.dataset.count);
   if (t.dataset.siround) draft.si_round_min = Number(t.dataset.siround);
+  if (t.dataset.race) draft.race = Number(t.dataset.race);
   renderSetup(lastState);
 });
 

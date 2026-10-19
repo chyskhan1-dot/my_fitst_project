@@ -108,6 +108,7 @@ input {
 .mini li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); font-weight: 700; font-variant-numeric: tabular-nums; text-align: left; }
 .mini li.me { outline: 2px solid var(--accent); }
 .mini .pos { width: 1.5em; color: var(--muted); font-family: var(--display); }
+.mini .t { flex: none; color: var(--muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .mini .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini .gain { color: var(--muted); font-size: 13px; min-width: 4.5ch; text-align: right; }
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
@@ -207,9 +208,9 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .trick-wait { padding: 40px 10px; text-align: center; font-weight: 800; font-size: 18px; border-radius: 16px; background: var(--panel); }
 .trick-wait b { font-family: var(--display); font-size: 1.4em; color: var(--accent); }
 .ans.plain { background: #4a4f72; }
-.trick-flip h2, .trick-flip .ans .tx { display: inline-block; transform: rotate(180deg); }
-.trick-mirror h2, .trick-mirror .ans .tx { display: inline-block; transform: scaleX(-1); }
-.trick-fog h2, .trick-fog .answers, .trick-fog .text-form { animation: defog 14s linear both; animation-delay: var(--fog-d, 0s); }
+.trick-flip .ans .tx { display: inline-block; transform: rotate(180deg); }
+.trick-mirror .ans .tx { display: inline-block; transform: scaleX(-1); }
+.trick-fog .answers, .trick-fog .text-form { animation: defog 14s linear both; animation-delay: var(--fog-d, 0s); }
 @keyframes defog { from { filter: blur(9px); } 70% { filter: blur(3px); } to { filter: blur(0); } }
 .lobby-people { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .people { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
@@ -245,6 +246,16 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 #hostbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; align-items: center; justify-content: center;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(14, 19, 48, .92); backdrop-filter: blur(8px); border-top: 1px solid var(--line); z-index: 5; }
 #hostbar:empty { display: none; }
+#hostbar { z-index: 16; }
+#hostbar .btn.pz { flex: none; max-width: none; }
+/* пауза: полоски времени и проявление картинок замирают (появление элементов — нет), поверх — табличка */
+body.paused .timebar i, body.paused .fx-blur .qimg, body.paused .fx-zoom .qimg, body.paused .trick-fog .answers,
+body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: paused !important; }
+#paused { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; align-content: center; gap: 6px;
+  background: rgba(5, 8, 25, .72); text-align: center; padding: 16px; }
+#paused b { font: 800 clamp(34px, 8vw, 72px) var(--display); }
+#paused span { color: var(--muted); font-weight: 700; }
+body.paused #main { pointer-events: none; }
 #hostbar .btn { flex: 1; max-width: 320px; padding: 12px 16px; }
 #hostbar .hb-note { flex: none; color: var(--muted); font-weight: 700; font-size: 13px; }
 #hostbar .tv { flex: none; color: var(--muted); text-decoration: none; font-size: 22px; padding: 6px; }
@@ -315,7 +326,7 @@ const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch
 const mood = (m) => { document.body.dataset.mood = m || ""; };
 
 async function api(path, body) {
-  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room, ...body }) });
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room, ...body }), signal: timeout(10000) });
   return r.json();
 }
 
@@ -867,9 +878,10 @@ function listen(s) { // проиграть звук вопроса на этом
   else if (s.audio) { hereSound = new Audio(mediaSrc(s.audio)); hereSound.play().catch(() => {}); }
 }
 function soundtrack(s) {
-  const M = window.QuizMusic, key = s.phase + ":" + s.index;
+  const M = window.QuizMusic, key = s.phase + ":" + s.index + (s.paused ? ":пауза" : "");
   if (!M || key === musicKey) return;
   musicKey = key;
+  if (s.paused) { stopHere(); if (M.styleName) M.stop(0.3); return; }
   if (s.phase !== "question") stopHere();
   if (!speaker(s) || s.phase.startsWith("si_") || s.phase.startsWith("fd_")) { if (M.styleName) M.stop(0.3); return; }
   if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
@@ -885,6 +897,21 @@ function soundtrack(s) {
 // браузер включает звук только после нажатия — открываем его при первом касании
 ["pointerdown", "touchend", "click"].forEach((t) => document.addEventListener(t, () => { if (window.QuizMusic) QuizMusic.unlock(); }, true));
 
+// Пауза: таймеры на сервере стоят, на экране — табличка поверх всего
+const PAUSABLE = (s) => !["setup", "lobby", "final"].includes(s.phase);
+function pauseView(s) {
+  document.body.classList.toggle("paused", !!s.paused);
+  let ov = document.getElementById("paused");
+  if (s.paused && !ov) {
+    ov = document.createElement("div"); ov.id = "paused";
+    ov.innerHTML = "<b>⏸ Пауза</b><span>Время не идёт — ведущий скоро продолжит игру</span>";
+    document.body.appendChild(ov);
+  } else if (!s.paused && ov) ov.remove();
+  // звук и видео вопроса тоже ставим на паузу, а после — продолжаем
+  if (s.paused) document.querySelectorAll("audio, video").forEach((m) => { if (!m.paused) { m.dataset.pz = "1"; m.pause(); } });
+  else document.querySelectorAll("audio[data-pz], video[data-pz]").forEach((m) => { delete m.dataset.pz; m.play().catch(() => {}); });
+}
+
 function hostBar(s) {
   let bar = document.getElementById("hostbar");
   const token = s.me ? hostToken() : "";
@@ -894,13 +921,17 @@ function hostBar(s) {
   if (label && s.round_end && (s.phase === "leaders" || (s.phase === "reveal" && !s.settings.leaders)) && s.index + 1 < s.total) label = "Следующий раунд";
   // ведущий тоже играет: пока сам не ответил, кнопки «Показать ответ» нет — чтобы не нажать её вместо «Ответить»
   if (label && s.phase === "question" && s.me && !s.me.answered) label = "";
-  document.body.classList.toggle("has-hostbar", !!label);
+  if (label && s.paused) label = ""; // на паузе «Дальше» не нажать — только «Продолжить»
+  const pz = token && PAUSABLE(s);
+  document.body.classList.toggle("has-hostbar", !!(label || pz));
   const disabled = s.phase === "lobby" && !s.players.length;
   const note = s.phase === "question" ? `Ответили ${s.answered} из ${s.players.length}`
     : s.auto_left != null ? `Дальше через ${Math.ceil(s.auto_left)} с` : "";
   // кнопку пересоздаём, только когда она меняется, — счётчик обновляем текстом, чтобы не терялось нажатие
-  const html = !label ? "" : `<a class="tv" href="/host?room=${room}" title="Экран ведущего">🖥</a><span class="hb-note"></span>
-    <button class="btn ${s.phase === "question" ? "ghost" : ""}" type="button" data-host="${s.phase === "final" ? "reset" : "next"}" ${disabled ? "disabled" : ""}>${label}</button>`;
+  const html = !label && !pz ? "" : `<a class="tv" href="/host?room=${room}" title="Экран ведущего">🖥</a>
+    ${pz ? `<button class="btn ghost pz" type="button" data-host="pause" data-on="${s.paused ? 0 : 1}" title="${s.paused ? "Продолжить" : "Пауза"}">${s.paused ? "▶ Продолжить" : "⏸"}</button>` : ""}
+    <span class="hb-note"></span>
+    ${label ? `<button class="btn ${s.phase === "question" ? "ghost" : ""}" type="button" data-host="${s.phase === "final" ? "reset" : "next"}" ${disabled ? "disabled" : ""}>${label}</button>` : ""}`;
   if (bar.dataset.html !== html) { bar.dataset.html = html; bar.innerHTML = html; }
   const nt = bar.querySelector(".hb-note");
   if (nt && nt.textContent !== note) nt.textContent = note;
@@ -932,11 +963,12 @@ function standings(s, me) {
       <span class="sc">${p.score}</span></li>`).join("")}</ol>`;
 }
 
+const secs = (t) => (t == null ? "" : `${Number(t).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} с`); // за сколько ответил
 // ответы всех игроков после вопроса: «кто ближе» — по точности, остальные — сначала верные
 function othersAnswers(s, me) {
   const mark = (r) => `<span class="gain ${r === "right" ? "up" : r === "partial" ? "" : "down"}">${r === "right" ? "✓" : r === "partial" ? "½" : "✗"}</span>`;
   const row = (a, i, mid, end) => `<li class="rise ${a.name === me.name ? "me" : ""}" style="--i:${Math.min(i + 3, 12)}">
-    <span class="pos">${i + 1}</span>${avaP(a)}<span class="n">${esc(a.name)}${mid ? `<small>${mid}</small>` : ""}</span>${end}</li>`;
+    <span class="pos">${i + 1}</span>${avaP(a)}<span class="n">${esc(a.name)}${mid ? `<small>${mid}</small>` : ""}</span><span class="t">⏱ ${secs(a.time)}</span>${end}</li>`;
   const num = (n) => Number(n).toLocaleString("ru-RU");
   let rows = [];
   if (s.qtype === "number") rows = (s.number_answers || []).map((a, i) => row(a, i, "",
@@ -1052,7 +1084,7 @@ function draw(s) {
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}</div>` : ""}
       <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
-      <h2>${esc(trickText(s, s.question))}</h2>
+      <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
@@ -1094,6 +1126,7 @@ function draw(s) {
       <div class="scene">
         <div class="spinner"></div>
         <h1>${me.answer == null ? "Пропускаешь" : "Ответ принят"}</h1>
+        ${me.answer_time != null ? `<p class="muted">⏱ за ${secs(me.answer_time)}</p>` : ""}
         ${me.answer == null ? "" : answerSummary(s, me.answer)}
         ${me.doubled ? `<span class="pill x2">×2 ставка</span>` : ""}
         <p class="muted">Ждём остальных…</p>
@@ -1113,6 +1146,7 @@ function draw(s) {
         ${me.can_trick ? trickBox(s, me) : ""}
         <span class="big pop ${res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad"}">${text}</span>
         ${me.doubled ? `<span class="pill x2 rise">×2 ${me.last > 0 ? "сыграла!" : "не сыграла"}</span>` : ""}
+        ${me.answer_time != null ? `<span class="muted rise" style="--i:1">⏱ твой ответ — за ${secs(me.answer_time)}</span>` : ""}
         ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
@@ -1177,23 +1211,44 @@ function draw(s) {
 
 // Опрос сервера: следующий запрос — только когда пришёл ответ на прошлый (на медленной сети
 // запросы иначе копятся и ответы приходят вперемешку), зависший запрос обрывается через 5 с.
-let polling = false, pollAgain = false, fails = 0;
+// Свернули приложение — телефон рвёт связь, и запрос может так и не вернуться: такой считаем потерянным
+// через STALE мс (ответ на него потом выбрасываем), а при возвращении на экран сразу спрашиваем заново.
+const STALE = 6000;
+let polling = 0, pollAgain = false, fails = 0, pollSeq = 0; // polling — когда ушёл текущий запрос (0 — не ждём)
 async function poll() {
-  if (polling) { pollAgain = true; return; }
-  polling = true;
-  try { await pollOnce(); } finally {
-    polling = false;
-    if (pollAgain) { pollAgain = false; poll(); }
+  if (polling && Date.now() - polling < STALE) { pollAgain = true; return; }
+  const seq = ++pollSeq;
+  polling = Date.now();
+  try { await pollOnce(seq); } finally {
+    if (seq === pollSeq) {
+      polling = 0;
+      if (pollAgain) { pollAgain = false; poll(); }
+    }
   }
 }
-const pollTick = () => { if (!polling) poll(); };
-const timeout = (ms) => (window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+const pollTick = () => { if (!polling || Date.now() - polling >= STALE) poll(); };
+// обрыв запроса по времени; на старых iPhone нет AbortSignal.timeout — обрываем сами
+function timeout(ms) {
+  if (window.AbortSignal && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  if (!window.AbortController) return undefined;
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+function wake() {
+  if (document.visibilityState !== "visible") return;
+  polling = 0; pollSeq++; pollAgain = false;
+  poll();
+}
+document.addEventListener("visibilitychange", wake);
+window.addEventListener("pageshow", (e) => { if (e.persisted) wake(); });
 
-async function pollOnce() {
+async function pollOnce(seq) {
   try {
     if (!room) return;
     const asked = pid; // ответ на запрос, отправленный до входа (или до выхода), уже устарел
     const s = await (await fetch(`/api/state?room=${encodeURIComponent(room)}&pid=${encodeURIComponent(pid || "")}`, { cache: "no-store", signal: timeout(5000) })).json();
+    if (seq !== pollSeq) return; // запрос устарел — уже ушёл новый
     fails = 0;
     if (asked !== pid) { pollAgain = true; return; } // иначе только что вошедшего выкинет обратно на форму входа
     if (s.phase === "gone") {
@@ -1219,15 +1274,17 @@ async function pollOnce() {
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" || k === "voters" ? undefined : v)) : "";
     const meKey = s.me ? JSON.stringify(s.me, (k, v) => (k === "trick_wait" ? v > 0 : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, meKey, s.trick_next, s.trick_now, s.players.length, s.phase === "lobby" && s.teams,
+    const sig = JSON.stringify([s.phase, s.index, s.paused, meKey, s.trick_next, s.trick_now, s.players.length, s.phase === "lobby" && s.teams,
       s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
+    pauseView(s);
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     const tw = document.getElementById("trick-left"); if (tw && s.me) tw.textContent = Math.ceil(s.me.trick_wait || 0);
     const tl = document.getElementById("topic-left"); if (tl && s.topic) tl.textContent = `${Math.ceil(s.topic.left)} с`;
     const tres = document.getElementById("topic-res"); if (tres && s.topic) tres.classList.toggle("shown", s.topic.spin_left <= 0);
     hostBar(s);
   } catch {
+    if (seq !== pollSeq) return;
     if (++fails >= 3 && !document.getElementById("join")) {
       $main.innerHTML = `<div class="scene"><div class="spinner"></div><p class="error">Нет связи с сервером…</p></div>`; lastSig = "";
     }
@@ -1281,7 +1338,7 @@ document.addEventListener("click", async (e) => {
   const hb = e.target.closest("[data-host]");
   if (hb) {
     hb.disabled = true;
-    await api("/api/host/" + hb.dataset.host, { token: hostToken() }).catch(() => {});
+    await api("/api/host/" + hb.dataset.host, { token: hostToken(), on: hb.dataset.on !== "0" }).catch(() => {});
     delete document.getElementById("hostbar").dataset.html; // перерисовать панель (если не получилось — кнопка снова активна)
     lastSig = ""; return poll();
   }

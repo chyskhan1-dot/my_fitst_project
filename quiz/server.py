@@ -86,10 +86,10 @@ DOUBLE_LOSS = 1000  # сколько теряет удвоивший при не
 # «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
 TRICKS = [
     {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
-    {"id": "vowels", "name": "🔤 Без гласных", "desc": "в тексте пропадут гласные"},
-    {"id": "flip", "name": "🙃 Вверх ногами", "desc": "вопрос и ответы перевёрнуты"},
-    {"id": "mirror", "name": "🪞 Зеркало", "desc": "текст отражён зеркально"},
-    {"id": "fog", "name": "🌫 Туман", "desc": "всё в тумане, проясняется не сразу"},
+    {"id": "vowels", "name": "🔤 Без гласных", "desc": "в вариантах ответа пропадут гласные"},
+    {"id": "flip", "name": "🙃 Вверх ногами", "desc": "варианты ответа перевёрнуты"},
+    {"id": "mirror", "name": "🪞 Зеркало", "desc": "варианты ответа отражены зеркально"},
+    {"id": "fog", "name": "🌫 Туман", "desc": "ответы в тумане, проясняются не сразу"},
 ]
 TRICK_IDS = {t["id"] for t in TRICKS}  # какая подлянка — решает случай, игрок выбирает только кому
 TRICK_DELAY = 6  # «Ответы позже»: столько секунд нельзя ответить
@@ -609,7 +609,17 @@ class SiEngine:
         return self.rounds[self.r]
 
     def time_up(self):
-        return self.round_end is not None and time.time() >= self.round_end
+        return self.round_end is not None and self.g.clock() >= self.round_end
+
+    def shift(self, dt):
+        """Игра стояла на паузе dt секунд — сдвигаем все сроки."""
+        if self.round_end is not None:
+            self.round_end += dt
+        for k in ("buzz_at", "deadline"):
+            if self.cur and self.cur.get(k):
+                self.cur[k] += dt
+        if self.cur and self.cur.get("false_start"):
+            self.cur["false_start"] = {p: t + dt for p, t in self.cur["false_start"].items()}
 
     def round_done(self):
         return self.time_up() or all((ti, qi) in self.played for ti, t in enumerate(self.round()["themes"]) for qi in range(len(t["questions"])))
@@ -823,7 +833,7 @@ class SiEngine:
 
     # ---------- время и ведущий ----------
     def tick(self):
-        ph, now = self.g.phase, time.time()
+        ph, now = self.g.phase, self.g.clock()
         waited = now - self.g.phase_at
         if ph == "si_round" and waited >= self.ROUND_SECONDS:
             self.to_board()
@@ -878,7 +888,7 @@ class SiEngine:
         return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
 
     def state(self, pid):
-        ph, now = self.g.phase, time.time()
+        ph, now = self.g.phase, self.g.clock()
         s = {"round_index": self.r, "rounds_total": len(self.rounds), "chooser": self.name(self.chooser)}
         if 0 <= self.r < len(self.rounds):
             s["round_name"] = self.round()["name"]
@@ -1141,9 +1151,16 @@ class FeudEngine:
         self.big_next()
         return True
 
+    def shift(self, dt):
+        """Игра стояла на паузе dt секунд — сдвигаем все сроки."""
+        if self.cur and self.cur.get("deadline"):
+            self.cur["deadline"] += dt
+        if self.big and self.big.get("deadline"):
+            self.big["deadline"] += dt
+
     # ---------- время и ведущий ----------
     def tick(self):
-        ph, now = self.g.phase, time.time()
+        ph, now = self.g.phase, self.g.clock()
         waited = now - self.g.phase_at
         if ph == "fd_round" and waited >= self.ROUND_SECONDS:
             self.begin_play()
@@ -1188,7 +1205,7 @@ class FeudEngine:
         return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
 
     def state(self, pid):
-        ph, now = self.g.phase, time.time()
+        ph, now = self.g.phase, self.g.clock()
         s = {"team_scores": self.scores, "rounds_total": len(self.round_qs), "round_index": self.r,
              "has_big": bool(self.big_qs), "note": self.note}
         c = self.cur
@@ -1308,6 +1325,7 @@ class Game:
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
+        self.paused_at = 0.0  # пауза: когда поставили (0 — игра идёт)
         self.index = -1
         self.started_at = 0.0
         self.answers = {}  # id -> {"value", "time"}
@@ -1415,7 +1433,7 @@ class Game:
 
     def topic_state(self, pid):
         t = self.topic or {}
-        el = time.time() - self.phase_at
+        el = self.clock() - self.phase_at
         out = {"options": t.get("options", []), "round": t.get("round"), "rounds": t.get("rounds")}
         if self.phase == "topic_vote":
             out["left"] = max(0, round(VOTE_SECONDS - el, 1))
@@ -1435,6 +1453,31 @@ class Game:
     def set_phase(self, phase):
         self.phase = phase
         self.phase_at = time.time()
+
+    def clock(self):
+        """Игровое время: на паузе оно стоит."""
+        return self.paused_at or time.time()
+
+    def can_pause(self):
+        return self.phase not in ("setup", "lobby", "final")
+
+    def pause(self, on):
+        """Пауза: таймеры и автопереходы стоят, ответы не принимаются; после паузы время идёт с того же места."""
+        if on and not self.paused_at and self.can_pause():
+            self.tick()
+            if self.can_pause():
+                self.paused_at = time.time()
+        elif not on and self.paused_at:
+            dt = time.time() - self.paused_at
+            self.paused_at = 0.0
+            self.phase_at += dt
+            if self.started_at:
+                self.started_at += dt
+            if self.all_answered_at is not None:
+                self.all_answered_at += dt
+            for engine in (self.si, self.fd):
+                if engine:
+                    engine.shift(dt)
 
     def configure(self, data):
         self.settings = self.clean_settings(data)
@@ -1523,11 +1566,13 @@ class Game:
 
     def tick(self):
         """Двигает игру по времени: конец вопроса и автопереход."""
+        if self.paused_at:
+            return
         if self.si and self.phase.startswith("si_"):
             return self.si.tick()
         if self.fd and self.phase.startswith("fd_"):
             return self.fd.tick()
-        now = time.time()
+        now = self.clock()
         if self.phase == "topic_vote":
             online = self.online()
             if now - self.phase_at >= VOTE_SECONDS or (online and all(p in self.votes for p in online)):
@@ -1573,7 +1618,7 @@ class Game:
             wait += min(6, 2 + len(note) / 40)  # успеть прочитать пояснение
         if self.phase == ("leaders" if self.settings["leaders"] else "reveal") and self.trick_roles():
             wait += 3  # последнему месту — время выбрать подлянку
-        return max(0, round(wait - (time.time() - self.phase_at), 1))
+        return max(0, round(wait - (self.clock() - self.phase_at), 1))
 
     def finish_question(self):
         rules = self.settings
@@ -1714,6 +1759,7 @@ class Game:
         s = {
             "title": self.pack["title"] if self.phase != "setup" else "Квиз",
             "phase": self.phase,
+            "paused": bool(self.paused_at),
             "index": self.index,
             "total": self.total if self.phase != "setup" else len(self.pack["questions"]),
             "seconds": self.seconds,
@@ -1779,7 +1825,7 @@ class Game:
             s["tempo"] = q.get("tempo")
             s["emoji"] = q.get("emoji")
             s["instrument"] = q.get("instrument")
-            s["left"] = max(0, round(self.seconds - (time.time() - self.started_at), 1))
+            s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
         if self.phase in ("reveal", "leaders") and not self.si and not self.fd:
             # для комментариев в таблице лидеров: самый быстрый верный ответ и сколько ответили верно
             right = [(a["time"], who) for who, a in self.answers.items() if a.get("result") == "right" and who in self.players]
@@ -1799,7 +1845,7 @@ class Game:
                 rows = sorted(((rank.get(a.get("result"), 2), a["time"], pid, a) for pid, a in self.answers.items()
                                if pid in self.players and a["value"] is not None), key=lambda r: r[:2])
                 s["player_answers"] = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"),
-                                        "pick": a["value"], "result": a.get("result")} for _, _, pid, a in rows]
+                                        "pick": a["value"], "result": a.get("result"), "time": round(a["time"], 1)} for _, _, pid, a in rows]
             if q["type"] in ("choice", "multi"):
                 s["correct"] = q["answer"]
                 counts = [0] * len(q["options"])
@@ -1812,21 +1858,21 @@ class Game:
             elif q["type"] == "number":
                 s["correct_number"] = q["answer"]
                 rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "value": a["value"],
-                         "diff": a["value"] - q["answer"], "best": a.get("result") == "right"}
+                         "diff": a["value"] - q["answer"], "best": a.get("result") == "right", "time": round(a["time"], 1)}
                         for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["number_answers"] = sorted(rows, key=lambda r: abs(r["diff"]))
             elif q["type"] == "map":
                 s["correct_point"] = q["answer"]
                 s["place"] = q.get("place")
                 rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "point": a["value"],
-                         "km": round(distance_km(a["value"], q["answer"])), "best": a.get("result") == "right"}
+                         "km": round(distance_km(a["value"], q["answer"])), "best": a.get("result") == "right", "time": round(a["time"], 1)}
                         for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["map_answers"] = sorted(rows, key=lambda r: r["km"])
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [
                     {"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "text": a["value"],
-                     "ok": a.get("result") == "right"}
+                     "ok": a.get("result") == "right", "time": round(a["time"], 1)}
                     for pid, a in sorted(self.answers.items(), key=lambda x: (x[1].get("result") != "right", x[1]["time"]))
                     if pid in self.players and a["value"] is not None
                 ]
@@ -1846,6 +1892,7 @@ class Game:
                 "round_bet": self.round_bets.get(pid),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
+                "answer_time": round(self.answers[pid]["time"], 1) if pid in self.answers and not self.answers[pid].get("skip") else None,
                 "result": self.answers.get(pid, {}).get("result"),
                 "place": [r["id"] for r in s["players"]].index(pid) + 1,
             }
@@ -1857,7 +1904,7 @@ class Game:
             t = self.active_trick
             if t and t["to"] == pid and self.phase == "question":
                 s["me"]["trick"] = t["kind"]
-                s["me"]["trick_wait"] = max(0, round(TRICK_DELAY - (time.time() - self.started_at), 1)) if t["kind"] == "delay" else 0
+                s["me"]["trick_wait"] = max(0, round(TRICK_DELAY - (self.clock() - self.started_at), 1)) if t["kind"] == "delay" else 0
             if me.get("team") is not None:
                 s["me"]["team_place"] = [t["team"] for t in s["teams"]].index(me["team"]) + 1
         return s
@@ -2161,6 +2208,9 @@ class Handler(BaseHTTPRequestHandler):
                 STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
+            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/bet") or path.startswith(("/api/fd/", "/api/si/"))):
+                return self.send_json({"ok": False, "paused": True})  # на паузе ответы не принимаем
+
             if path.startswith("/api/fd/"):
                 pid, fd = data.get("pid"), game.fd
                 if not fd or not game.owns(pid, device):
@@ -2293,6 +2343,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def host_action(self, game, action, data):
         """Действие ведущего; вызывается под lock."""
+        if game.paused_at and action in ("next", "fd_open", "fd_unstrike", "si_pick", "si_override"):
+            return self.send_json({"error": "Игра на паузе — сначала нажми «Продолжить»"}, 400)
         if action == "upload":
             if game.phase != "setup":
                 return self.send_json({"error": "Пакет можно сменить только в главном меню"}, 400)
@@ -2340,6 +2392,8 @@ class Handler(BaseHTTPRequestHandler):
                 game.finish_question()  # ведущий может показать ответ досрочно
             else:
                 game.next()
+        elif action == "pause":
+            game.pause(data.get("on") is not False)
         elif action == "reset":
             game.reset("lobby")  # та же игра с теми же правилами ещё раз
         elif action == "kick":

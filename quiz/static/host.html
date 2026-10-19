@@ -180,6 +180,9 @@ a.btn { text-decoration: none; display: inline-block; }
 .num-list li.best { outline: 2px solid var(--good); background: rgba(61, 220, 132, .12); }
 .num-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .num-list .v { font-family: var(--display); }
+.num-list .t, .speed .chip { color: var(--muted); font-size: .85em; white-space: nowrap; }
+.chips.speed { margin-top: 12px; }
+.chips.speed .chip.ok { color: var(--ink); }
 .num-list .d { color: var(--muted); min-width: 7ch; text-align: right; font-variant-numeric: tabular-nums; }
 .host-map { width: 100%; height: min(56vh, 46vw); }
 .map-row { display: flex; gap: 18px; align-items: stretch; }
@@ -390,7 +393,15 @@ button.fd-slot:hover { background: #2a3bb0; }
 .mvp b { color: var(--ink); }
 @media (max-width: 900px) { .setup { grid-template-columns: 1fr; } }
 
-.actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; position: relative; z-index: 16; }
+/* пауза: полоски времени и проявление картинок замирают (появление элементов — нет), поверх — табличка */
+body.paused .timebar i, body.paused .fx-blur .qimg, body.paused .fx-zoom .qimg, body.paused .trick-fog .answers,
+body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: paused !important; }
+#paused { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; align-content: center; gap: 6px;
+  background: rgba(5, 8, 25, .72); pointer-events: none; text-align: center; padding: 16px; }
+#paused b { font: 800 clamp(34px, 8vw, 72px) var(--display); }
+#paused span { color: var(--muted); font-weight: 700; }
+
 .btn {
   font: 800 1.05em var(--body); padding: 16px 30px; border-radius: 16px; border: 0; cursor: pointer;
   background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 24px rgba(255, 210, 63, .25), inset 0 -4px 0 rgba(0, 0, 0, .15);
@@ -482,7 +493,7 @@ async function copyText(text) {
 
 async function post(action, extra = {}) {
   const r = await fetch("/api/host/" + action, {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" }, signal: timeout(10000),
     body: JSON.stringify({ room, token, ...extra }),
   });
   return r.json();
@@ -542,6 +553,7 @@ function questionBody(s) {
   return hint + options(s, false);
 }
 
+const secs = (t) => (t == null ? "" : `${Number(t).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} с`); // за сколько ответил
 function revealBody(s) {
   if (s.qtype === "map") {
     return `${s.place ? `<div class="place rise">📍 ${esc(s.place)}</div>` : ""}
@@ -549,28 +561,31 @@ function revealBody(s) {
       <div class="map-reveal"><div class="host-map" id="host-map"></div>
       ${s.map_answers.length ? `<ol class="num-list">${s.map_answers.map((a, i) => `
         <li class="${a.best ? "best" : ""}" style="--i:${i}"><span class="pos">${i + 1}</span>${avaP(a)}<span class="nm">${esc(a.name)}${a.best ? " 🎯" : ""}</span>
-          <span class="d">${QuizMap.km(a.km)}</span></li>`).join("")}</ol>` : `<p class="muted">Никто не ответил</p>`}</div>`;
+          <span class="t">⏱ ${secs(a.time)}</span><span class="d">${QuizMap.km(a.km)}</span></li>`).join("")}</ol>` : `<p class="muted">Никто не ответил</p>`}</div>`;
   }
   if (s.qtype === "number") {
     const unit = s.unit ? " " + esc(s.unit) : "";
     return `<div class="text-answer rise">${fmtNum(s.correct_number)}${unit}</div>
       ${s.number_answers.length ? `<ol class="num-list">${s.number_answers.map((a, i) => `
         <li class="${a.best ? "best" : ""}" style="--i:${i}"><span class="pos">${i + 1}</span>${avaP(a)}<span class="nm">${esc(a.name)}${a.best ? " 🎯" : ""}</span>
-          <span class="v">${fmtNum(a.value)}</span><span class="d">${a.diff === 0 ? "в точку!" : (a.diff > 0 ? "+" : "−") + fmtNum(Math.abs(a.diff))}</span></li>`).join("")}</ol>`
+          <span class="t">⏱ ${secs(a.time)}</span><span class="v">${fmtNum(a.value)}</span><span class="d">${a.diff === 0 ? "в точку!" : (a.diff > 0 ? "+" : "−") + fmtNum(Math.abs(a.diff))}</span></li>`).join("")}</ol>`
         : `<p class="muted">Никто не ответил</p>`}`;
   }
   if (s.qtype === "order") {
     const mark = { right: "✓", partial: "½" };
     return `<ol class="order-list">${s.correct_order.map((o, i) => `<li class="rise" style="--i:${i}"><span class="num">${i + 1}</span>${esc(o)}</li>`).join("")}</ol>
       ${(s.player_answers || []).length ? `<div class="chips">${s.player_answers.map((a) =>
-        `<span class="chip said ${a.result === "right" ? "ok" : a.result === "partial" ? "" : "no"}">${mark[a.result] || "✗"} ${esc(a.name)}</span>`).join("")}</div>` : ""}`;
+        `<span class="chip said ${a.result === "right" ? "ok" : a.result === "partial" ? "" : "no"}">${mark[a.result] || "✗"} ${esc(a.name)} · ${secs(a.time)}</span>`).join("")}</div>` : ""}`;
   }
   if (s.qtype === "text") {
     return `<div class="text-answer rise">${esc(s.correct_text)}</div>
       ${s.text_answers.length ? `<div class="chips">${s.text_answers.map((a) =>
-        `<span class="chip said ${a.ok ? "ok" : "no"}">${a.ok ? "✓" : "✗"} ${esc(a.name)}: «${esc(a.text)}»</span>`).join("")}</div>` : ""}`;
+        `<span class="chip said ${a.ok ? "ok" : "no"}">${a.ok ? "✓" : "✗"} ${esc(a.name)}: «${esc(a.text)}» · ${secs(a.time)}</span>`).join("")}</div>` : ""}`;
   }
-  return options(s, true);
+  // кто как быстро ответил: сначала верные, среди них — по времени
+  const said = s.player_answers || [];
+  return options(s, true) + (said.length ? `<div class="chips speed">${said.map((a) =>
+    `<span class="chip said ${a.result === "right" ? "ok" : a.result === "partial" ? "" : "no"}">${avaP(a)}${esc(a.name)} · ⏱ ${secs(a.time)}</span>`).join("")}</div>` : "");
 }
 
 function options(s, reveal) {
@@ -632,11 +647,12 @@ let musicKey = "";
 // у каждой мелодии свой инструмент: указанный в пакете или по очереди
 const instrumentFor = (s) => s.instrument || QuizMusic.MELODY_INSTRUMENTS[s.index % QuizMusic.MELODY_INSTRUMENTS.length];
 function soundtrack(s) {
-  const key = s.phase + ":" + s.index;
+  const key = s.phase + ":" + s.index + (s.paused ? ":пауза" : "");
   if (key === musicKey) return;
   musicKey = key;
   const M = window.QuizMusic;
   if (!M) return;
+  if (s.paused) { M.stopMelody(); M.stop(0.3); return; }
   if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
   else if (s.phase === "question") {
     if (s.audio || s.melody) M.stop(0.3); else M.play("question");
@@ -656,6 +672,21 @@ function soundButton() {
   b.classList.toggle("blocked", blocked);
 }
 
+// Пауза: таймеры на сервере стоят, на экране — табличка поверх всего
+const PAUSABLE = (s) => !["setup", "lobby", "final"].includes(s.phase);
+function pauseView(s) {
+  document.body.classList.toggle("paused", !!s.paused);
+  let ov = document.getElementById("paused");
+  if (s.paused && !ov) {
+    ov = document.createElement("div"); ov.id = "paused";
+    ov.innerHTML = "<b>⏸ Пауза</b><span>Время не идёт — ведущий скоро продолжит игру</span>";
+    document.body.appendChild(ov);
+  } else if (!s.paused && ov) ov.remove();
+  // звук и видео вопроса тоже ставим на паузу, а после — продолжаем
+  if (s.paused) document.querySelectorAll("audio, video").forEach((m) => { if (!m.paused) { m.dataset.pz = "1"; m.pause(); } });
+  else document.querySelectorAll("audio[data-pz], video[data-pz]").forEach((m) => { delete m.dataset.pz; m.play().catch(() => {}); });
+}
+
 // Экран перерисовывается целиком; если этап тот же — держим прокрутку на месте (картинки
 // подгружаются не сразу, поэтому до их загрузки не даём странице стать короче), новый этап — с начала.
 let settleTimer = 0, lastDrawn = "";
@@ -665,6 +696,12 @@ function render(s) {
   clearTimeout(settleTimer);
   $main.style.minHeight = same ? $main.offsetHeight + "px" : "";
   draw(s);
+  pauseView(s);
+  $actions.querySelector("[data-pause]")?.remove();
+  if (PAUSABLE(s)) {
+    $actions.insertAdjacentHTML("afterbegin", `<button class="btn ghost" data-pause="${s.paused ? 0 : 1}" type="button">${s.paused ? "▶ Продолжить" : "⏸ Пауза"}</button>`);
+    if (s.paused) $actions.querySelectorAll("[data-act=next]").forEach((b) => { b.disabled = true; });
+  }
   if (same) {
     window.scrollTo(0, y);
     settleTimer = setTimeout(() => { $main.style.minHeight = ""; }, 1500);
@@ -1138,7 +1175,18 @@ function rulesModal(d) {
     </div>`;
 }
 
+// Меню перерисовывается целиком при каждом нажатии — прокрутку страницы и окна правил держим на месте
 function renderSetup(s) {
+  const y = window.scrollY, box = document.querySelector(".modal"), boxY = box ? box.scrollTop : 0;
+  $main.style.minHeight = $main.offsetHeight + "px";
+  drawSetup(s);
+  $main.style.minHeight = "";
+  window.scrollTo(0, y);
+  const nb = document.querySelector(".modal");
+  if (nb && box) nb.scrollTop = boxY;
+}
+
+function drawSetup(s) {
   const d = draft;
   $main.innerHTML = `
     <div><div class="eyebrow">Главное меню</div><h1>Новая игра</h1></div>
@@ -1291,21 +1339,42 @@ function live(s) {
 
 // Опрос сервера: следующий запрос — только когда пришёл ответ на прошлый (на медленной сети
 // запросы иначе копятся и ответы приходят вперемешку), зависший запрос обрывается через 5 с.
-let polling = false, pollAgain = false, fails = 0;
+// Свернули приложение — телефон рвёт связь, и запрос может так и не вернуться: такой считаем потерянным
+// через STALE мс (ответ на него потом выбрасываем), а при возвращении на экран сразу спрашиваем заново.
+const STALE = 6000;
+let polling = 0, pollAgain = false, fails = 0, pollSeq = 0; // polling — когда ушёл текущий запрос (0 — не ждём)
 async function poll() {
-  if (polling) { pollAgain = true; return; }
-  polling = true;
-  try { await pollOnce(); } finally {
-    polling = false;
-    if (pollAgain) { pollAgain = false; poll(); }
+  if (polling && Date.now() - polling < STALE) { pollAgain = true; return; }
+  const seq = ++pollSeq;
+  polling = Date.now();
+  try { await pollOnce(seq); } finally {
+    if (seq === pollSeq) {
+      polling = 0;
+      if (pollAgain) { pollAgain = false; poll(); }
+    }
   }
 }
-const pollTick = () => { if (!polling) poll(); };
-const timeout = (ms) => (window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+const pollTick = () => { if (!polling || Date.now() - polling >= STALE) poll(); };
+// обрыв запроса по времени; на старых iPhone нет AbortSignal.timeout — обрываем сами
+function timeout(ms) {
+  if (window.AbortSignal && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  if (!window.AbortController) return undefined;
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+function wake() {
+  if (document.visibilityState !== "visible") return;
+  polling = 0; pollSeq++; pollAgain = false;
+  poll();
+}
+document.addEventListener("visibilitychange", wake);
+window.addEventListener("pageshow", (e) => { if (e.persisted) wake(); });
 
-async function pollOnce() {
+async function pollOnce(seq) {
   try {
     const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store", signal: timeout(5000) })).json();
+    if (seq !== pollSeq) return; // запрос устарел — уже ушёл новый
     fails = 0;
     if (s.phase === "gone") return stop("Эта комната закрылась", "Комнаты без активности удаляются через 3 часа, а при обновлении сервера — сразу.");
     if (version && s.version !== version) return location.reload(); // сервер обновился
@@ -1314,10 +1383,11 @@ async function pollOnce() {
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + topicKey;
+    const sig = JSON.stringify([s.phase, s.index, s.paused, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {
+    if (seq !== pollSeq) return;
     if (++fails < 3) return; // одна-две неудачи подряд — не пугаем, ждём следующего ответа
     $main.innerHTML = `<h2 class="error">Нет связи с сервером. Проверь, что он запущен.</h2>`;
     $actions.innerHTML = ""; lastSig = "";
@@ -1350,6 +1420,10 @@ function confetti(on) {
   })(t0);
 }
 
+// Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
+const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
+const roomInvite = (code) => `🎉 Заходи ко мне в «Квиз»! Код комнаты ${code} — отвечаем с телефонов 👇`;
+
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
   if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
@@ -1361,12 +1435,12 @@ document.addEventListener("click", async (e) => {
   const ss = e.target.closest("[data-share-site]");
   if (ss) { // ссылка на сам сайт, а не на комнату
     const url = location.origin + "/";
-    if (navigator.share) navigator.share({ title: "Квиз", text: "Квиз для компании: вопросы на большом экране, ответы с телефонов. Ведущим может быть любой — заходи!", url }).catch(() => {});
-    else ss.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
+    if (navigator.share) navigator.share({ title: "Квиз", text: SITE_INVITE, url }).catch(() => {});
+    else ss.textContent = (await copyText(SITE_INVITE + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
     return;
   }
   const sh = e.target.closest("[data-share]");
-  if (sh) { navigator.share({ title: "Квиз", text: "Заходи в игру!", url: sh.dataset.share }).catch(() => {}); return; }
+  if (sh) { navigator.share({ title: "Квиз", text: roomInvite(room), url: sh.dataset.share }).catch(() => {}); return; }
   const fdo = e.target.closest("[data-fd-open]");
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");
@@ -1379,6 +1453,8 @@ document.addEventListener("click", async (e) => {
     const a = document.querySelector(".si-media audio, .si-media video"); if (a) { a.currentTime = 0; a.play().catch(() => {}); }
     return;
   }
+  const pz = e.target.closest("[data-pause]");
+  if (pz) { pz.disabled = true; await post("pause", { on: pz.dataset.pause === "1" }).catch(() => {}); lastSig = ""; return poll(); }
   const act = e.target.closest("[data-act]");
   const kick = e.target.closest("[data-kick]");
   try {

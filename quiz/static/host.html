@@ -1420,6 +1420,10 @@ function confetti(on) {
   })(t0);
 }
 
+// Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
+const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
+const roomInvite = (code) => `🎉 Заходи ко мне в «Квиз»! Код комнаты ${code} — отвечаем с телефонов 👇`;
+
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
   if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
@@ -1431,12 +1435,12 @@ document.addEventListener("click", async (e) => {
   const ss = e.target.closest("[data-share-site]");
   if (ss) { // ссылка на сам сайт, а не на комнату
     const url = location.origin + "/";
-    if (navigator.share) navigator.share({ title: "Квиз", text: "Квиз для компании: вопросы на большом экране, ответы с телефонов. Ведущим может быть любой — заходи!", url }).catch(() => {});
-    else ss.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
+    if (navigator.share) navigator.share({ title: "Квиз", text: SITE_INVITE, url }).catch(() => {});
+    else ss.textContent = (await copyText(SITE_INVITE + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
     return;
   }
   const sh = e.target.closest("[data-share]");
-  if (sh) { navigator.share({ title: "Квиз", text: "Заходи в игру!", url: sh.dataset.share }).catch(() => {}); return; }
+  if (sh) { navigator.share({ title: "Квиз", text: roomInvite(room), url: sh.dataset.share }).catch(() => {}); return; }
   const fdo = e.target.closest("[data-fd-open]");
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");

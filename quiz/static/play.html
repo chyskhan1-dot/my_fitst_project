@@ -815,11 +815,15 @@ async function copyText(text) {
   return ok;
 }
 
+// Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
+const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
+const roomInvite = (code) => `🎉 Заходи ко мне в «Квиз»! Код комнаты ${code} — отвечаем с телефонов 👇`;
+
 // ссылка на сам сайт (не на комнату): чтобы друзья устроили свою игру
 async function shareSite(btn) {
   const url = location.origin + "/";
-  if (navigator.share) return navigator.share({ title: "Квиз", text: "Квиз для компании: вопросы на большом экране, ответы с телефонов. Ведущим может быть любой — заходи!", url }).catch(() => {});
-  btn.textContent = (await copyText(url)) ? "✓ Ссылка на сайт скопирована" : url;
+  if (navigator.share) return navigator.share({ title: "Квиз", text: SITE_INVITE, url }).catch(() => {});
+  btn.textContent = (await copyText(SITE_INVITE + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
 }
 
 // ---------- значок на телефоне (PWA) ----------
@@ -851,8 +855,8 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").cat
 
 async function invite(btn, s) {
   const url = (s.join || location.origin) + "/?room=" + room;
-  if (navigator.share) return navigator.share({ title: "Квиз", text: `Заходи в игру! Код комнаты ${room}`, url }).catch(() => {});
-  btn.textContent = (await copyText(url)) ? "✓ Ссылка скопирована" : url;
+  if (navigator.share) return navigator.share({ title: "Квиз", text: roomInvite(room), url }).catch(() => {});
+  btn.textContent = (await copyText(roomInvite(room) + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
 }
 
 // ---------- ведущий играет сам: управление с телефона ----------

@@ -538,7 +538,7 @@ DEFAULTS = {
     "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
     "speed": True,  # бонус за скорость ответа
     "streak": False,  # бонус за серию правильных ответов
-    "doubles": False,  # «Ставка ×2»: верно — очки ×2, неверно — минус 1000, два раза за игру
+    "doubles": False,  # «Ставка ×2» вслепую на следующий вопрос: верно — очки ×2, ошибка или пропуск — минус 1000, два раза за игру
     "leaders": True,  # таблица лидеров после каждого вопроса
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
@@ -1325,7 +1325,7 @@ class Game:
 
     def reset(self, phase="setup"):
         for p in self.players.values():
-            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, marks={})
+            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, next_double=False, bet=False, marks={})
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
@@ -1636,7 +1636,7 @@ class Game:
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
-            p["doubled"] = bool(a and a.get("double"))
+            p["doubled"] = bool(p.get("bet"))  # ставка ×2, сделанная вслепую до вопроса
             points = 0
             if frac > 0:
                 if rules["speed"]:
@@ -1653,7 +1653,7 @@ class Game:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
-            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах стоит 1000
+            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах, пропуск или «не успел» — минус 1000
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
             a = a or {}
@@ -1695,7 +1695,26 @@ class Game:
             return self.start_vote()  # вопросы раунда кончились — выбираем следующую тему
         self.start_question()
 
+    def can_bet(self):
+        """Ставку ×2 на следующий вопрос можно сделать между вопросами (и в лобби), пока он не начался."""
+        return (bool(self.settings.get("doubles")) and not self.si and not self.fd and not self.paused_at
+                and self.phase in ("lobby", "reveal", "leaders", "topic_vote", "topic_bet")
+                and self.index + 1 < self.total and not self.race_winner())
+
+    def bet_next(self, pid, on):
+        """Игрок ставит ×2 на следующий вопрос (или передумал, пока вопрос не начался) — ставка возвращается."""
+        p = self.players.get(pid)
+        if not p or not self.can_bet():
+            return False
+        if on and not p.get("next_double") and p.get("doubles", DOUBLES) > 0:
+            p["next_double"], p["doubles"] = True, p.get("doubles", DOUBLES) - 1
+        elif not on and p.get("next_double"):
+            p["next_double"], p["doubles"] = False, p.get("doubles", DOUBLES) + 1
+        return True
+
     def start_question(self):
+        for p in self.players.values():  # ставки ×2 «на следующий вопрос» начинают действовать
+            p["bet"], p["next_double"] = bool(p.get("next_double")), False
         self.index += 1
         n = len(self.question()["options"])
         self.display = list(range(n))
@@ -1845,6 +1864,7 @@ class Game:
             s["emoji"] = q.get("emoji")
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
+            s["doubled_now"] = [p["name"] for p in self.players.values() if p.get("bet")]  # кто поставил ×2 на этот вопрос
         if self.phase in ("reveal", "leaders") and not self.si and not self.fd:
             # для комментариев в таблице лидеров: самый быстрый верный ответ и сколько ответили верно
             right = [(a["time"], who) for who, a in self.answers.items() if a.get("result") == "right" and who in self.players]
@@ -1907,7 +1927,9 @@ class Game:
                 "prev": me["prev_place"],
                 "streak": me["streak"],
                 "doubles": me.get("doubles", DOUBLES) if self.settings.get("doubles") else 0,
-                "doubled": self.answers.get(pid, {}).get("double", False),
+                "doubled": bool(me.get("bet")) if self.phase == "question" else me.get("doubled", False),
+                "next_double": bool(me.get("next_double")),
+                "can_bet": self.can_bet() and (me.get("doubles", DOUBLES) > 0 or bool(me.get("next_double"))),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
                 "answer_time": round(self.answers[pid]["time"], 1) if pid in self.answers and not self.answers[pid].get("skip") else None,
@@ -2220,13 +2242,13 @@ class Handler(BaseHTTPRequestHandler):
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
                     "name": name, "device": device, "team": team, "avatar": avatar, "seen": time.time(),
-                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False,
+                    "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False, "next_double": False, "bet": False,
                 }
                 game.balance_teams()
                 STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
-            if game.paused_at and (path in ("/api/answer", "/api/vote") or path.startswith(("/api/fd/", "/api/si/"))):
+            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/double") or path.startswith(("/api/fd/", "/api/si/"))):
                 return self.send_json({"ok": False, "paused": True})  # на паузе ответы не принимаем
 
             if path.startswith("/api/fd/"):
@@ -2298,14 +2320,15 @@ class Handler(BaseHTTPRequestHandler):
                 ok = skip or value is not None
                 if ok:
                     STATS.counts["answers"] += 1
-                    me = game.players[pid]
-                    double = (not skip and data.get("double") is True and game.settings.get("doubles")
-                              and me.get("doubles", DOUBLES) > 0)
-                    if double:
-                        me["doubles"] = me.get("doubles", DOUBLES) - 1
-                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip, "double": bool(double)}
+                    game.answers[pid] = {"value": value, "time": time.time() - game.started_at, "skip": skip}
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
+
+            if path == "/api/double":  # ставка ×2 вслепую на следующий вопрос (можно передумать, пока он не начался)
+                pid = data.get("pid")
+                game.tick()
+                ok = game.owns(pid, device) and game.bet_next(pid, data.get("on") is True)
+                return self.send_json({"ok": bool(ok)})
 
             if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру); какая — случайно
                 pid, kind = data.get("pid"), random.choice(sorted(TRICK_IDS))

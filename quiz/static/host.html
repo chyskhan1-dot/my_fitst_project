@@ -468,7 +468,7 @@ const RULES = [
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
-  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок может удвоить ставку на вопрос: верно — очки ×2, неверно — минус 1000" },
+  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок ставит ×2 вслепую — между вопросами, на следующий: верно — очки ×2, ошибка или пропуск — минус 1000" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -805,7 +805,8 @@ function draw(s) {
       ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
       ${trickNow(s)}
       ${questionBody(s)}
-      <p class="muted" id="answered"></p>`;
+      <p class="muted" id="answered"></p>
+      ${(s.doubled_now || []).length ? `<p class="muted">×2 вслепую: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
     mountMap(s);
     const audio = document.querySelector(".qaudio audio");
     if (audio) audio.play().catch(() => {}); // если браузер не дал включить звук сам — есть кнопка ▶

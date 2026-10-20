@@ -331,19 +331,23 @@ button.fd-slot:hover { background: #2a3bb0; }
 .fd-target i { display: block; height: 100%; width: var(--w); background: linear-gradient(90deg, var(--accent), var(--good)); transition: width .8s; }
 @media (max-width: 900px) { .fd-board { grid-template-columns: 1fr; grid-auto-flow: row; } .fd-teams { grid-template-columns: 1fr 1fr; } .fd-bank { grid-column: 1 / -1; order: -1; } .fd-big-row { grid-template-columns: 1fr auto; } }
 
-/* главное меню v2 */
+/* главное меню v2: шаги */
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.wstep { display: flex; align-items: center; gap: 8px; padding: 8px 16px 8px 8px; border-radius: 999px; border: 2px solid var(--line);
+  background: var(--panel); color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+.wstep .num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--line); color: var(--ink); font-size: .9em; }
+.wstep.on { border-color: var(--accent); color: var(--ink); }
+.wstep.on .num { background: var(--accent); color: var(--accent-ink); }
+.wstep.done .num { background: var(--good); color: #0e1330; }
+.mode-row .mode { min-height: 120px; }
+.rules .seg { flex-wrap: wrap; max-width: 100%; }
+@media (max-width: 500px) { .wstep { padding: 5px 10px 5px 5px; font-size: .78em; gap: 6px; } .wstep .num { width: 24px; height: 24px; } }
 .mode-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .mode-row .mode { padding: 14px 16px; }
 .pack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
 .pack-grid .mode { padding: 12px 16px; }
 .pack-tools { margin-top: 10px; }
 .rules-line { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-.modal-back { position: fixed; inset: 0; background: rgba(5, 8, 25, .7); z-index: 20; }
-.modal { position: fixed; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(720px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px); overflow-y: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 24px; padding: 22px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .5); display: flex; flex-direction: column; gap: 16px; }
-.modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.modal-head h2 { font-size: 1.4em; }
 @media (max-width: 760px) { .mode-row { grid-template-columns: 1fr; } }
 
 /* главное меню */
@@ -728,6 +732,7 @@ function draw(s) {
 
   if (s.phase === "setup") {
     // у «Царя горы» раунды и число вопросов заданы сервером — для других типов игры их не берём
+    if (!draft) setupStep = 1;
     if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : {}), ...savedRules() };
     if (!MODES.some((m) => m.id === draft.mode)) draft.mode = MODES[0].id; // спрятанный тип игры («100 к 1») — на первый
     renderSetup(s);
@@ -1102,7 +1107,9 @@ function fdBig(b, result) {
     <div class="fd-big-row"><b>Итого</b><div class="fd-target"><i style="--w:${Math.min(100, (b.total / b.target) * 100)}%"></i></div><span class="p">${b.total} / ${b.target}</span></div></div>`;
 }
 
-let rulesOpen = false;
+// меню по шагам: 1 — тип игры, 2 — вопросы, 3 — правила (запоминаются на устройстве, можно не открывать)
+let setupStep = 1;
+const STEPS = ["Тип игры", "Вопросы", "Правила"];
 
 function packCards(s, d) {
   if (d.mode === "100to1") {
@@ -1171,7 +1178,7 @@ function rulesSummary(d) {
     ...RULES.filter((r) => d[r.id]).map((r) => r.name.replace(" 🔥", ""))];
 }
 
-function rulesModal(d) {
+function rulesList(d) {
   const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
   const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
     <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
@@ -1190,39 +1197,39 @@ function rulesModal(d) {
        <div class="rule wrap"><span class="txt"><b>Сколько вопросов</b><small>Случайные из пакета, без повторов в следующей игре</small></span>${seg("count", [10, 20, 30, 0], d.count, (v) => v || "Все")}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${RULES.map(toggle).join("")}`;
-  return `<div class="modal-back" data-close-rules></div>
-    <div class="modal" role="dialog" aria-modal="true" aria-label="Правила">
-      <div class="modal-head"><h2>Правила</h2><button class="btn small" data-close-rules type="button">Готово</button></div>
-      <div class="rules">${body}</div>
-    </div>`;
+  return `<div class="rules">${body}</div>`;
 }
 
-// Меню перерисовывается целиком при каждом нажатии — прокрутку страницы и окна правил держим на месте
-function renderSetup(s) {
-  const y = window.scrollY, box = document.querySelector(".modal"), boxY = box ? box.scrollTop : 0;
-  $main.style.minHeight = $main.offsetHeight + "px";
+// Меню перерисовывается целиком при каждом нажатии — прокрутку держим на месте (новый шаг — с начала)
+function renderSetup(s, top = false) {
+  const y = top ? 0 : window.scrollY;
+  $main.style.minHeight = top ? "" : $main.offsetHeight + "px";
   drawSetup(s);
   $main.style.minHeight = "";
   window.scrollTo(0, y);
-  const nb = document.querySelector(".modal");
-  if (nb && box) nb.scrollTop = boxY;
 }
+const goStep = (n) => { setupStep = n; renderSetup(lastState, true); };
 
 function drawSetup(s) {
-  const d = draft;
-  $main.innerHTML = `
-    <div><div class="eyebrow">Главное меню</div><h1>Новая игра</h1></div>
-    <section><p class="section-title">1 · Тип игры</p>
-      <div class="mode-row">${MODES.map((m) => `
+  const d = draft, mode = MODES.find((m) => m.id === d.mode) || MODES[0];
+  const steps = `<nav class="steps">${STEPS.map((n, i) => `<button type="button" class="wstep ${setupStep === i + 1 ? "on" : ""} ${setupStep > i + 1 ? "done" : ""}"
+    data-step="${i + 1}" ${i === 2 ? "data-open-rules" : ""}><span class="num">${setupStep > i + 1 ? "✓" : i + 1}</span>${n}</button>`).join("")}</nav>`;
+  const tags = `<span class="tags">${rulesSummary(d).map((x) => `<span class="tag">${esc(x)}</span>`).join("")}</span>`;
+  const body = setupStep === 1
+    ? `<section><div class="mode-row">${MODES.map((m) => `
         <button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${m.ready ? "" : "disabled"}>
-          <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span></button>`).join("")}</div>
-    </section>
-    <section><p class="section-title">2 · Вопросы</p>${packCards(s, d)}</section>
-    <section class="rules-line"><button class="btn ghost small" data-open-rules type="button">⚙ Правила</button>
-      <span class="tags">${rulesSummary(d).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</span></section>
-    ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}
-    ${rulesOpen ? rulesModal(d) : ""}`;
-  $actions.innerHTML = `<button class="btn" data-act="configure">Создать игру →</button>`;
+          <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span></button>`).join("")}</div></section>`
+    : setupStep === 2
+    ? `<section><p class="section-title">${mode.ico} ${mode.name}: какие вопросы?</p>${packCards(s, d)}</section>
+       <section class="rules-line"><button class="btn ghost small" data-step="3" type="button">⚙ Правила</button>${tags}</section>`
+    : `<section><p class="section-title">${mode.ico} ${mode.name}: правила</p>${rulesList(d)}</section>`;
+  $main.innerHTML = `
+    <div><div class="eyebrow">Новая игра</div><h1>${["Во что играем?", "Вопросы", "Правила"][setupStep - 1]}</h1></div>
+    ${steps}${body}
+    ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}`;
+  const back = setupStep > 1 ? `<button class="btn ghost" data-step="${setupStep - 1}">← Назад</button>` : "";
+  $actions.innerHTML = setupStep === 1 ? `<button class="btn" data-step="2">Дальше →</button>`
+    : `${back}<button class="btn" data-act="configure">Создать игру →</button>`;
 }
 
 document.addEventListener("change", async (e) => {
@@ -1280,8 +1287,8 @@ document.addEventListener("change", async (e) => {
 });
 document.addEventListener("click", (e) => {
   if (!draft) return;
-  if (e.target.closest("[data-open-rules]")) { rulesOpen = true; return renderSetup(lastState); }
-  if (e.target.closest("[data-close-rules]")) { rulesOpen = false; return renderSetup(lastState); }
+  const st = e.target.closest("[data-step]");
+  if (st) return goStep(Number(st.dataset.step));
   if (e.target.closest("[data-themes-open]")) { themesOpen = !themesOpen; return renderSetup(lastState); }
   const tt = e.target.closest("[data-theme-toggle], [data-themes-all]");
   if (tt) {
@@ -1310,16 +1317,13 @@ document.addEventListener("click", (e) => {
   if (t.dataset.fdpack) draft.fd_pack = t.dataset.fdpack;
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
-  if (t.dataset.mode) draft.mode = t.dataset.mode;
+  if (t.dataset.mode) { draft.mode = t.dataset.mode; return goStep(2); } // выбрал тип игры — сразу к вопросам
   if (t.dataset.pack && t.dataset.pack !== draft.pack) { draft.pack = t.dataset.pack; draft.themes = []; }
   if (t.dataset.count) draft.count = Number(t.dataset.count);
   if (t.dataset.siround) draft.si_round_min = Number(t.dataset.siround);
   renderSetup(lastState);
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && rulesOpen) { rulesOpen = false; renderSetup(lastState); }
-});
 
 function live(s) {
   const rt = document.getElementById("si-round-time"), rl = s.si && s.si.round_left;

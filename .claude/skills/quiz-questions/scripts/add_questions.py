@@ -10,12 +10,17 @@
 # Другие типы — как в пакете (type: number/text/multi/order/map, answer, unit, place…), их скрипт добавляет как есть.
 # <картинка> — путь в media/ (media/flags/italy.svg) или «emoji:Название папки Fluent» (emoji:Red apple):
 # такой смайлик скачивается с GitHub microsoft/fluentui-emoji (лицензия MIT) в media/pics/ans-<имя>.png.
+# --new-theme "Тема" — разрешить новую тему (только когда владелец попросил новый раздел).
 import collections, json, os, random, subprocess, sys, urllib.parse, urllib.request
 
 ROOT = os.getcwd()
 QUIZ = os.path.join(ROOT, "quiz")
-new_path = sys.argv[1]
-pack_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(QUIZ, "packs", "general.json")
+args = sys.argv[1:]
+new_theme = None
+if "--new-theme" in args:
+    k = args.index("--new-theme"); new_theme = args[k + 1]; del args[k:k + 2]
+new_path = args[0]
+pack_path = args[1] if len(args) > 1 else os.path.join(QUIZ, "packs", "general.json")
 LEVELS = {"easy", "normal", "hard"}
 TYPES = {"choice", "multi", "order", "text", "number", "map"}
 
@@ -57,7 +62,7 @@ def picture(v):
 
 pack = json.load(open(pack_path, encoding="utf-8"))
 Q = pack["questions"]
-themes = {q.get("theme") for q in Q if q.get("theme")}
+themes = {q.get("theme") for q in Q if q.get("theme")} | ({new_theme} if new_theme else set())
 qkey = lambda text, image: text.strip().lower() + "|" + (image or "")  # один текст с разными картинками — разные вопросы
 have = {qkey(q["q"], q.get("image")) for q in Q}
 counts = collections.Counter(q["answer"] for q in Q if q.get("type", "choice") == "choice")

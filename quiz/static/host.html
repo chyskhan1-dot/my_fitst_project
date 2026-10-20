@@ -343,6 +343,13 @@ button.fd-slot:hover { background: #2a3bb0; }
 .hd-mark { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; animation: pop .3s ease both; }
 .hd-mark.ok { background: var(--good); color: #0e1330; }
 .hd-mark.no { background: var(--line); color: var(--muted); }
+.hd-team { display: inline-block; padding: 6px 16px; border-radius: 999px; background: var(--c); color: #fff; font-weight: 800; margin: 6px 0; }
+.hd-teams { display: flex; flex-direction: column; gap: 10px; }
+.hd-trow { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 2px solid var(--c); font-size: 1.2em; }
+.hd-trow .tdot { width: 18px; height: 18px; border-radius: 50%; background: var(--c); }
+.hd-trow .plus { margin-left: auto; color: var(--good); font-weight: 800; }
+.hd-trow .sc { margin-left: auto; font: 800 1.4em var(--display); }
+.hd-trow .plus + .sc { margin-left: 12px; }
 .hd-result { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .hd-words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
 .hd-words li { padding: 10px 18px; border-radius: 999px; font-weight: 800; font-size: 1.15em; animation: rise .4s calc(var(--i) * 60ms) both; }
@@ -756,7 +763,7 @@ function draw(s) {
   if (s.phase === "setup") {
     // у «Царя горы» раунды и число вопросов заданы сервером — для других типов игры их не берём
     if (!draft) setupStep = 1;
-    if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : {}), ...savedRules() };
+    if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : s.settings.mode === "heads" ? { teams: 0 } : {}), ...savedRules() };
     if (!MODES.some((m) => m.id === draft.mode)) draft.mode = MODES[0].id; // спрятанный тип игры («100 к 1») — на первый
     renderSetup(s);
   } else if (s.phase === "lobby") {
@@ -885,7 +892,7 @@ function draw(s) {
       <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
         ${s.race_winner ? `<p class="muted">👑 Царь горы: ${esc(s.race_winner)} — первым на вершине</p>` : ""}</div>
       <div class="podium">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
-      ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${mvp.score} очков</p>` : ""}`;
+      ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${s.settings.mode === "heads" ? wordsN(mvp.score) : mvp.score + " очков"}</p>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
       <button class="btn ghost" data-share-site type="button">📤 Поделиться сайтом</button>
       <button class="btn" data-act="reset">Сыграть ещё раз</button>`;
@@ -1076,17 +1083,19 @@ function hdSound(s) {
 function renderHd(s) {
   const hd = s.hd, c = hd.cur || {};
   hdSound(s);
-  document.getElementById("progress").innerHTML = `Слово на лбу · ход ${hd.turn + 1} из ${hd.turns}`;
+  const teamMode = !!s.settings.teams, team = teamMode && c.team != null ? `<span class="hd-team" style="--c:${TEAM_COLORS[c.team]}">${esc(s.team_names[c.team])}</span>` : "";
+  const turnLabel = teamMode ? `Круг ${hd.round} из ${hd.rounds}` : `Ход ${hd.turn + 1} из ${hd.turns}`;
+  document.getElementById("progress").innerHTML = `Слово на лбу · ${turnLabel.toLowerCase()}`;
   const marks = (c.marks || []).map((ok, i) => `<span class="hd-mark ${ok ? "ok" : "no"}" style="--i:${i}">${ok ? "✓" : "✗"}</span>`).join("");
   if (s.phase === "hd_turn") {
-    $main.innerHTML = `<div class="si-splash"><div class="eyebrow">Ход ${hd.turn + 1} из ${hd.turns}</div>
+    $main.innerHTML = `<div class="si-splash"><div class="eyebrow">${turnLabel}</div>${team}
       <h1 class="hd-name">${avaP(c)} ${esc(c.name)}, твой ход!</h1>
-      <p class="lead">Нажми «Старт» на телефоне и приложи его ко лбу — экраном к друзьям</p>
-      <p class="muted">Друзья объясняют слова, не называя их. Угадал — наклони телефон вниз, не знаешь — вверх. ${hd.seconds} секунд</p></div>`;
+      <p class="lead">Нажми «Старт» на телефоне и приложи его ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</p>
+      <p class="muted">${teamMode ? "Объясняет только своя команда, соперники следят, чтобы не называли слово" : "Друзья объясняют слова, не называя их"}. Угадал — наклони телефон вниз, не знаешь — вверх. ${hd.seconds} секунд</p></div>`;
     $actions.innerHTML = `<button class="btn ghost" data-act="next">Пропустить ход</button>`;
   } else if (s.phase === "hd_play") {
     $main.innerHTML = `<div class="hd-play">
-      <div class="eyebrow">Угадывает</div><h1 class="hd-name">${avaP(c)} ${esc(c.name)}</h1>
+      <div class="eyebrow">Угадывает</div>${team}<h1 class="hd-name">${avaP(c)} ${esc(c.name)}</h1>
       <div class="hd-timer" id="hd-timer"></div>
       <div class="hd-count"><b>${c.ok}</b><span>угадано</span></div>
       <div class="hd-marks">${marks}</div>
@@ -1094,9 +1103,11 @@ function renderHd(s) {
     $actions.innerHTML = `<button class="btn ghost" data-act="next">Закончить ход</button>`;
   } else if (s.phase === "hd_result") {
     const words = (c.words || []).map((w, i) => `<li class="${w.ok ? "ok" : "no"}" style="--i:${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
-    $main.innerHTML = `<div><div class="eyebrow">Ход ${hd.turn + 1} из ${hd.turns}</div><h1 class="pop hd-name" style="justify-content:flex-start">${avaP(c)} ${esc(c.name)}: ${wordsN(c.ok)}</h1></div>
+    const teams = s.teams.map((x) => `<div class="hd-trow" style="--c:${TEAM_COLORS[x.team]}"><span class="tdot"></span><b>${esc(x.name)}</b>
+      ${x.last ? `<span class="plus">+${x.last}</span>` : ""}<span class="sc">${x.score}</span></div>`).join("");
+    $main.innerHTML = `<div><div class="eyebrow">${turnLabel}</div>${team}<h1 class="pop hd-name" style="justify-content:flex-start">${avaP(c)} ${esc(c.name)}: ${wordsN(c.ok)}</h1></div>
       <div class="hd-result">${words ? `<ul class="hd-words">${words}</ul>` : `<p class="muted">Ни одного слова — бывает!</p>`}
-        <aside>${board(s.players.slice(0, 6))}</aside></div>`;
+        <aside>${teamMode ? `<div class="hd-teams">${teams}</div>` : board(s.players.slice(0, 6))}</aside></div>`;
     $actions.innerHTML = `<button class="btn" data-act="next">${hd.next ? `Следующий: ${esc(hd.next)}` : "К итогам"}</button>`;
     countUp();
   }
@@ -1218,9 +1229,9 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
-const RULE_KEYS = ["mode", "hd_themes", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+const RULE_KEYS = ["mode", "hd_themes", "hd_teams", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
-function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify({ ...savedRules(), ...Object.fromEntries(RULE_KEYS.filter((k) => k in d && !(d.mode === "king" && (k === "rounds" || k === "count"))).map((k) => [k, d[k]])) })); } catch {} }
+function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify({ ...savedRules(), ...Object.fromEntries(RULE_KEYS.filter((k) => k in d && !(d.mode === "king" && (k === "rounds" || k === "count")) && !(d.mode === "heads" && k === "teams")).map((k) => [k, d[k]])) })); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
 const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "раундов")} по 3 вопроса`;
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
@@ -1243,7 +1254,7 @@ function themePicker(s, d) {
 }
 
 function rulesSummary(d) {
-  if (d.mode === "heads") return ["60 секунд на ход", "Каждый угадывает по разу", d.hd_themes && d.hd_themes.length ? `Тем: ${d.hd_themes.length}` : "Все темы"];
+  if (d.mode === "heads") return [d.hd_teams ? `Команды: ${d.hd_teams}` : "Каждый за себя", "60 секунд на ход", d.hd_themes && d.hd_themes.length ? `Тем: ${d.hd_themes.length}` : "Все темы"];
   if (d.mode === "king") return ["5 раундов по 3 вопроса", `До ${KING_GOAL.toLocaleString("ru-RU")} очков`, d.teams ? `Команды: ${d.teams}` : "Каждый за себя", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
     ...RULES.filter((r) => d[r.id] && r.id !== "rounds").map((r) => r.name.replace(" 🔥", ""))];
@@ -1263,7 +1274,8 @@ function rulesList(d) {
        <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${RULES.filter((r) => r.id !== "rounds").map(toggle).join("")}`;
-  const heads = `<div class="rule"><span class="txt"><b>🙆 Слово на лбу</b><small>Каждый по очереди угадывает слова 60 секунд: телефон у лба экраном к друзьям, они объясняют словами, не называя само слово. Угадал — наклони телефон вниз, не знаешь — вверх. Очко — за каждое угаданное слово. Настраивать больше нечего</small></span></div>`;
+  const heads = `<div class="rule"><span class="txt"><b>🙆 Слово на лбу</b><small>Игроки по очереди угадывают слова 60 секунд: телефон у лба экраном к друзьям, они объясняют словами, не называя само слово. Угадал — наклони телефон вниз, не знаешь — вверх. Очко — за каждое угаданное слово</small></span></div>
+       <div class="rule wrap"><span class="txt"><b>Команды</b><small>Команды ходят по очереди, угадывает каждый раз новый игрок, объясняют свои. Очки — команде</small></span>${seg("hdteams", [2, 3, 4, 0], d.hd_teams ?? 2, (v) => (v ? v + " команды" : "Каждый за себя"))}</div>`;
   const body = d.mode === "heads" ? heads : d.mode === "king" ? king : d.mode === "100to1"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
@@ -1401,12 +1413,13 @@ document.addEventListener("click", (e) => {
     return renderSetup(lastState);
   }
   if (e.target.closest("[data-rounds-toggle]")) { draft.rounds = !draft.rounds; return renderSetup(lastState); }
-  const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
+  const t = e.target.closest("[data-teams], [data-hdteams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
   if (!t || t.disabled) return;
   e.preventDefault();
   if (t.dataset.sipack) draft.si_pack = t.dataset.sipack;
   if (t.dataset.fdpack) draft.fd_pack = t.dataset.fdpack;
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
+  if (t.dataset.hdteams) draft.hd_teams = Number(t.dataset.hdteams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
   if (t.dataset.mode) { draft.mode = t.dataset.mode; return goStep(2); } // выбрал тип игры — сразу к вопросам
   if (t.dataset.pack && t.dataset.pack !== draft.pack) { draft.pack = t.dataset.pack; draft.themes = []; }

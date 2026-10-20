@@ -58,7 +58,7 @@ p { margin: 0; line-height: 1.5; }
 #hd-face[data-flash="ok"] { background: #1f9d57; }
 #hd-face[data-flash="pass"] { background: #c77a12; }
 #hd-face .hd-word { width: 92vw; height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
-  font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; overflow-wrap: anywhere; pointer-events: none; }
+  font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; pointer-events: none; }
 #hd-face .hd-bar { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: rgba(255, 255, 255, .15); }
 #hd-face .hd-bar i { display: block; height: 100%; background: var(--accent); transition: width .2s linear; }
 #hd-face .hd-left { position: absolute; top: 18px; right: 20px; font: 800 28px var(--display); opacity: .8; pointer-events: none; }
@@ -70,7 +70,8 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
 .hd-howto { text-align: left; margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; }
 .big-btn { font-size: 24px; padding: 18px 44px; }
 .hd-card { width: 100%; padding: 36px 16px; border-radius: 22px; background: var(--panel); border: 2px solid var(--accent);
-  font: 800 clamp(30px, 10vw, 54px) var(--display); overflow-wrap: anywhere; }
+  font: 800 54px var(--display); overflow-wrap: anywhere; }
+.hd-card.rival { border-color: var(--line); }
 .hd-card.wait { border-color: var(--line); color: var(--muted); font-size: 24px; }
 .hd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .hd-list li { padding: 8px 14px; border-radius: 999px; font-weight: 800; }
@@ -1138,19 +1139,26 @@ function hdFace(c, me, seconds) {
   hdPaint();
 }
 
+// размер слова на карточке: самое длинное слово фразы — в одну строку, без переноса посреди слова
+const cardSize = (w) => Math.round(Math.min(54, (Math.min(innerWidth, 560) - 70) / (0.66 * Math.max(...w.split(" ").map((x) => x.length)))));
+
 function renderHd(s, me) {
   const h = s.hd, c = h.cur || {}, m = h.me || {};
   mood("");
-  const who = `${avaP(c)} <b>${esc(c.name)}</b>`;
+  const teamMode = !!s.settings.teams, ours = !teamMode || m.team === c.team;
+  const tb = teamMode && c.team != null ? ` <span class="teambadge" style="--c:${TEAM_COLORS[c.team]}">${esc(s.team_names[c.team])}</span>` : "";
+  const who = `${avaP(c)} <b>${esc(c.name)}</b>${tb}`;
+  const turnLabel = teamMode ? `Круг ${h.round} из ${h.rounds}` : `Ход ${h.turn + 1} из ${h.turns}`;
   if (s.phase === "hd_turn") {
     $main.innerHTML = m.is_guesser
-      ? `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div><h1>Твой ход! 🙆</h1>
-          <ol class="hd-howto"><li>Нажми «Старт» и приложи телефон ко лбу — экраном к друзьям</li>
-            <li>Друзья объясняют слово, не называя его</li><li>Угадал — наклони телефон <b>вниз</b>, не знаешь — <b>вверх</b></li></ol>
+      ? `<div class="scene"><div class="eyebrow">${turnLabel}</div><h1>Твой ход! 🙆</h1>
+          <ol class="hd-howto"><li>Нажми «Старт» и приложи телефон ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</li>
+            <li>${teamMode ? "Команда объясняет" : "Друзья объясняют"} слово, не называя его</li><li>Угадал — наклони телефон <b>вниз</b>, не знаешь — <b>вверх</b></li></ol>
           <p class="muted">${h.seconds} секунд. Если наклоны не срабатывают — касайся верха или низа экрана</p>
           <button class="btn big-btn" id="hd-start" type="button">▶ Старт</button></div>`
-      : `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div><h2>Угадывает ${who}</h2>
-          <p class="muted">Сейчас приложит телефон ко лбу. Объясняй слова, не называя их, — слово будет и у тебя на экране</p></div>`;
+      : `<div class="scene"><div class="eyebrow">${turnLabel}</div><h2>Угадывает ${who}</h2>
+          <p class="muted">${ours ? "Сейчас приложит телефон ко лбу. Объясняй слова, не называя их, — слово будет и у тебя на экране"
+            : "Ход соперников: объясняют они, а ты следи, чтобы не называли само слово"}</p></div>`;
     const b = document.getElementById("hd-start");
     if (b) b.addEventListener("click", () => { b.disabled = true; b.textContent = "…"; hdStart().finally(() => { b.disabled = false; b.textContent = "▶ Старт"; }); });
   } else if (s.phase === "hd_play") {
@@ -1159,14 +1167,15 @@ function renderHd(s, me) {
       return hdFace(c, m, h.seconds);
     }
     const timebar = c.left != null ? `<div class="timebar" style="width:100%"><i style="animation-duration:${c.left}s"></i></div>` : "";
-    $main.innerHTML = `<div class="scene"><div class="eyebrow">Угадывает ${esc(c.name)} · угадано ${c.ok}</div>${timebar}
-      ${m.word ? `<div class="hd-card">${esc(m.word)}</div><p class="muted">Объясняй, не называя слово и однокоренные</p>`
+    $main.innerHTML = `<div class="scene"><div class="eyebrow">Угадывает ${esc(c.name)} · угадано ${c.ok}</div>${tb}${timebar}
+      ${m.word ? `<div class="hd-card ${ours ? "" : "rival"}" style="font-size:${cardSize(m.word)}px">${esc(m.word)}</div><p class="muted">${ours ? "Объясняй, не называя слово и однокоренные" : "Объясняют соперники — следи, чтобы не называли слово"}</p>`
         : `<div class="hd-card wait">Приготовьтесь…</div>`}</div>`;
   } else if (s.phase === "hd_result") {
     const words = (c.words || []).map((w) => `<li class="${w.ok ? "ok" : "no"}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
     const mineNext = h.next && h.next === me.name;
-    $main.innerHTML = `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div>
+    $main.innerHTML = `<div class="scene"><div class="eyebrow">${turnLabel}</div>
       <h2>${who}: ${wordsN(c.ok)}</h2>${words ? `<ul class="hd-list">${words}</ul>` : ""}
+      ${teamMode ? `<p class="muted">Счёт: ${s.teams.map((x) => `<span class="teambadge" style="--c:${TEAM_COLORS[x.team]}">${esc(x.name)} ${x.score}</span>`).join(" ")}</p>` : ""}
       ${mineNext ? `<p class="pill">Следующий ход — твой! Готовься 🙆</p>` : h.next ? `<p class="muted">Следующий: ${esc(h.next)}</p>` : `<p class="muted">Это был последний ход</p>`}</div>`;
   }
 }

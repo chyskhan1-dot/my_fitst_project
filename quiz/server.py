@@ -560,6 +560,7 @@ DEFAULTS = {
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
     "hd_themes": [],  # «Слово на лбу»: темы слов (пусто — все)
+    "hd_teams": 2,  # «Слово на лбу»: команды (0 — каждый за себя), по умолчанию две — так решил владелец
 }
 
 
@@ -1254,7 +1255,9 @@ class FeudEngine:
 
 class HeadsEngine:
     """«Слово на лбу»: игрок держит телефон у лба, друзья объясняют слово словами.
-    Угадал — наклоняет телефон вниз, не знает — вверх (пропуск). Каждый игрок угадывает по разу, TURN_SECONDS на ход.
+    Угадал — наклоняет телефон вниз, не знает — вверх (пропуск). TURN_SECONDS на ход.
+    Каждый за себя: каждый угадывает по разу, очко — угадавшему. Команды: ходят по очереди, угадывает каждый раз
+    следующий из команды, кругов — по самой большой команде (маленькая начинает сначала), очки — команде.
 
     Этапы: hd_turn (готовится, на телефоне «Старт») → hd_play (READY_SECONDS на «приложи ко лбу», потом слова)
     → hd_result → следующий игрок … → final. Очки — число угаданных слов.
@@ -1271,6 +1274,7 @@ class HeadsEngine:
         self.order = list(game.players)  # по порядку входа
         self.turn = -1
         self.cur = None
+        self.team_scores, self.team_last = {}, {}
 
     def draw(self):
         if not self.deck:  # слова кончились — тасуем заново
@@ -1278,12 +1282,23 @@ class HeadsEngine:
             random.shuffle(self.deck)
         return self.deck.pop()
 
+    @property
+    def teams(self):
+        return self.g.settings["teams"]
+
     def start(self):
         self.order = [pid for pid in self.order if pid in self.g.players] + [pid for pid in self.g.players if pid not in self.order]
+        if self.teams:  # команды по очереди: А1, Б1, А2, Б2…
+            online = set(self.g.online())
+            members = [[pid for pid in self.order if self.g.players[pid].get("team") == t] for t in range(self.teams)]
+            members = [[pid for pid in m if pid in online] or m for m in members if m]
+            rounds = max((len(m) for m in members), default=0)
+            self.order = [m[r % len(m)] for r in range(rounds) for m in members]
         self.next_turn()
 
     def next_turn(self):
-        self.order += [pid for pid in self.g.players if pid not in self.order]  # пришёл позже — тоже сыграет
+        if not self.teams:
+            self.order += [pid for pid in self.g.players if pid not in self.order]  # пришёл позже — тоже сыграет
         self.turn += 1
         while self.turn < len(self.order) and self.order[self.turn] not in self.g.players:
             self.turn += 1  # игрок ушёл — ход следующему
@@ -1292,6 +1307,7 @@ class HeadsEngine:
             return self.g.set_phase("final")
         for p in self.g.players.values():
             p["last_points"] = 0
+        self.team_last = {}
         self.cur = {"pid": self.order[self.turn], "words": [], "word": None, "ready_at": 0.0, "deadline": 0.0}
         self.g.set_phase("hd_turn")
 
@@ -1316,6 +1332,10 @@ class HeadsEngine:
             if p:
                 p["score"] += 1
                 p["last_points"] += 1
+                team = p.get("team")
+                if self.teams and team is not None:
+                    self.team_scores[team] = self.team_scores.get(team, 0) + 1
+                    self.team_last[team] = self.team_last.get(team, 0) + 1
         c["word"] = self.draw()
         return True
 
@@ -1343,12 +1363,14 @@ class HeadsEngine:
 
     def state(self, pid):
         c, ph, now = self.cur, self.g.phase, self.g.clock()
+        n = len({self.g.players[pid].get("team") for pid in self.order if pid in self.g.players}) if self.teams else 0
         s = {"turn": self.turn, "turns": len(self.order), "seconds": self.TURN_SECONDS,
+             "round": self.turn // n + 1 if n else None, "rounds": -(-len(self.order) // n) if n else None,
              "next": self.g.players[self.order[self.turn + 1]]["name"]
              if self.turn + 1 < len(self.order) and self.order[self.turn + 1] in self.g.players else None}
         if c:
             p = self.g.players.get(c["pid"]) or {}
-            s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"),
+            s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"), "team": p.get("team"),
                         "ok": sum(w["ok"] for w in c["words"]), "n": len(c["words"]),
                         "marks": [w["ok"] for w in c["words"]],
                         # слова целиком — только после хода: на ТВ во время хода может посмотреть тот, кто угадывает
@@ -1357,7 +1379,7 @@ class HeadsEngine:
                         "left": max(0, round(c["deadline"] - now, 1)) if ph == "hd_play" else None}
         if pid in self.g.players and c:
             ready = ph == "hd_play" and now >= c["ready_at"]
-            s["me"] = {"is_guesser": pid == c["pid"],
+            s["me"] = {"is_guesser": pid == c["pid"], "team": self.g.players[pid].get("team"),
                        # слово видят телефон у лба и те, кто объясняет (ТВ — нет)
                        "word": c["word"] if ready else None, "n": len(c["words"])}
         return s
@@ -1419,8 +1441,10 @@ class Game:
         names = [th["name"] for th in HEADS]
         if isinstance(data.get("hd_themes"), list):
             s["hd_themes"] = [n for n in names if n in data["hd_themes"]]
+        if data.get("hd_teams") in (0, 2, 3, 4):
+            s["hd_teams"] = data["hd_teams"]
         if s["mode"] == "heads":
-            s["teams"] = 0  # «Слово на лбу» — каждый за себя
+            s["teams"] = s["hd_teams"]  # своя настройка команд: в викторине по умолчанию каждый за себя
         return s
 
     @property
@@ -1897,12 +1921,13 @@ class Game:
         for t in range(self.settings["teams"]):
             members = [p for p in self.players.values() if p.get("team") == t]
             n = max(1, len(members))
+            hd = self.hd  # «Слово на лбу»: у команды общий счёт угаданных слов, не среднее
             rows.append({
                 "team": t,
                 "name": TEAMS[t],
                 "size": len(members),
-                "score": round(sum(p["score"] for p in members) / n),
-                "last": round(sum(p["last_points"] for p in members) / n),
+                "score": hd.team_scores.get(t, 0) if hd else round(sum(p["score"] for p in members) / n),
+                "last": hd.team_last.get(t, 0) if hd else round(sum(p["last_points"] for p in members) / n),
                 "prev": self.team_prev.get(t, 0),
             })
         rows.sort(key=lambda r: (-r["score"], r["team"]))

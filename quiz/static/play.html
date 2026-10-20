@@ -53,20 +53,6 @@ h2 { font-size: 20px; font-weight: 500; }
 p { margin: 0; line-height: 1.5; }
 .muted { color: var(--muted); }
 /* «Слово на лбу» */
-#hd-face { position: fixed; inset: 0; z-index: 14; /* под «Паузой» */ background: #0e1330; color: #fff; display: flex; align-items: center; justify-content: center;
-  user-select: none; -webkit-user-select: none; touch-action: none; transition: background .15s; }
-#hd-face[data-flash="ok"] { background: #1f9d57; }
-#hd-face[data-flash="pass"] { background: #c77a12; }
-#hd-face .hd-word { width: 92vw; height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
-  font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; pointer-events: none; }
-#hd-face .hd-bar { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: rgba(255, 255, 255, .15); }
-#hd-face .hd-bar i { display: block; height: 100%; background: var(--accent); transition: width .2s linear; }
-#hd-face .hd-left { position: absolute; top: 18px; right: 20px; font: 800 28px var(--display); opacity: .8; pointer-events: none; }
-#hd-face .hd-zone { position: absolute; left: 0; right: 0; height: 50%; border: 0; background: transparent; color: rgba(255, 255, 255, .35);
-  font: 700 14px var(--body); display: flex; justify-content: center; padding: 22px; }
-#hd-face .hd-zone.up { top: 0; align-items: flex-start; padding-top: 30px; }
-#hd-face .hd-zone.down { bottom: 0; align-items: flex-end; }
-body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки ведущего не нужны — легко задеть */
 .hd-howto { text-align: left; margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; }
 .big-btn { font-size: 24px; padding: 18px 44px; }
 .hd-card { width: 100%; padding: 36px 16px; border-radius: 22px; background: var(--panel); border: 2px solid var(--accent);
@@ -326,6 +312,7 @@ body.has-hostbar { padding-bottom: 84px; }
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
 <script src="/static/rope.js"></script>
+<script src="/static/heads-face.js"></script>
 <script>
 const COLORS = ["#e5484d", "#3e7bfa", "#f2a516", "#26a269", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 const $main = document.getElementById("main");
@@ -376,7 +363,8 @@ function startScreen() {
       <div class="roles">
         <button class="role rise" style="--i:2" id="as-player"><span class="ico">📱</span><b>Я игрок</b><small>Есть код комнаты от ведущего</small></button>
         <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
-        <a class="role rise" style="--i:4" href="/learn"><span class="ico">📚</span><b>Тренировка</b><small>Учи флаги, столицы и страны в своём темпе</small></a>
+        <a class="role rise" style="--i:4" href="/heads"><span class="ico">🙆</span><b>Слово на лбу</b><small>С одного телефона: передавайте его по кругу</small></a>
+        <a class="role rise" style="--i:5" href="/learn"><span class="ico">📚</span><b>Тренировка</b><small>Учи флаги, столицы и страны в своём темпе</small></a>
       </div>
       <div class="error" id="err"></div>
       <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
@@ -1065,78 +1053,23 @@ function render(s) {
 }
 
 // ---------- «Слово на лбу» ----------
-// Телефон у лба экраном к друзьям: слово во весь экран. Угадал — наклон вниз (экраном к полу), не знаешь — вверх.
-// Наклон считаем по датчику ориентации: v = cos(beta)·cos(gamma) — куда смотрит экран (1 — в потолок, −1 — в пол, 0 — вперёд).
-// Новый наклон засчитывается, только когда телефон вернули прямо. Запасной вариант — касание верхней или нижней половины экрана.
+// Экран у лба (слово, наклоны, касания) — общий static/heads-face.js; здесь только связь с сервером.
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
-const hd = { word: null, n: 0, end: 0, ready: 0, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, tilt: false };
+let hdN = 0; // номер текущего слова у лба: ответ сервера на старый запрос его не перебивает
 async function hdStart() {
-  try { // iPhone спрашивает разрешение на датчики — только по нажатию
-    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") hd.tilt = (await DeviceOrientationEvent.requestPermission()) === "granted";
-    else hd.tilt = "DeviceOrientationEvent" in window;
-  } catch { hd.tilt = false; }
-  try { hd.wake = await navigator.wakeLock.request("screen"); } catch {} // экран не гаснет посреди хода
-  try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" }); } catch {}
+  await QuizHeads.prepare(); // разрешение на датчики (iPhone), экран не гаснет, полный экран — всё по нажатию
   const r = await api("/api/hd/start", { pid }).catch(() => null);
   if (r && r.ok) { lastSig = ""; poll(); }
 }
 async function hdMark(ok) {
-  if (hd.busy || !hd.word || Date.now() < hd.ready || Date.now() >= hd.end) return;
-  hd.busy = true; hd.armed = false;
-  hdFlash(ok);
-  const r = await api("/api/hd/mark", { pid, ok, n: hd.n }).catch(() => null);
-  if (r && r.ok) { hd.word = r.word; hd.n = r.n; }
-  hd.busy = false;
-  setTimeout(hdPaint, Math.max(0, hd.flashUntil - Date.now()));
+  const r = await api("/api/hd/mark", { pid, ok, n: hdN }).catch(() => null);
+  if (r && r.ok) { hdN = r.n; return r.word; }
 }
-function hdFlash(ok) {
-  const f = document.getElementById("hd-face");
-  if (!f) return;
-  buzz(ok ? 80 : [40, 60, 40]);
-  hd.flashUntil = Date.now() + 700;
-  f.dataset.flash = ok ? "ok" : "pass";
-  f.querySelector(".hd-word").textContent = ok ? "Угадано! ✓" : "Пропуск";
-}
-function hdPaint() {
-  const f = document.getElementById("hd-face");
-  if (!f || Date.now() < hd.flashUntil) return;
-  const left = Math.max(0, (hd.end - Date.now()) / 1000), wait = (hd.ready - Date.now()) / 1000;
-  f.dataset.flash = "";
-  const w = f.querySelector(".hd-word"), text = wait > 0 ? `Приложи ко лбу\n${Math.ceil(wait)}` : hd.word || "";
-  if (w.textContent !== text) { w.textContent = text; w.style.fontSize = ""; fitWord(w); }
-  f.querySelector(".hd-left").textContent = wait > 0 ? "" : Math.ceil(left);
-  f.querySelector(".hd-bar i").style.width = (wait > 0 ? 100 : (left / hd.total) * 100) + "%";
-}
-function fitWord(w) { // слово во всю ширину, но целиком
-  let size = Math.min(innerWidth / 5, innerHeight / 3);
-  w.style.fontSize = size + "px";
-  while (size > 18 && (w.scrollWidth > w.clientWidth || w.scrollHeight > w.clientHeight)) { size *= 0.9; w.style.fontSize = size + "px"; }
-}
-function onTilt(e) {
-  if (e.beta == null || !document.getElementById("hd-face")) return;
-  const v = Math.cos(e.beta * Math.PI / 180) * Math.cos(e.gamma * Math.PI / 180);
-  if (Math.abs(v) < 0.4) hd.armed = true; // телефон снова прямо — можно следующий наклон
-  else if (hd.armed && Math.abs(v) > 0.7) hdMark(v < 0);
-}
-window.addEventListener("deviceorientation", onTilt);
 function hdFace(c, me, seconds) {
-  let f = document.getElementById("hd-face");
-  if (!c) {
-    if (f) { f.remove(); clearInterval(hd.timer); try { hd.wake && hd.wake.release(); } catch {} hd.wake = null; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
-    return;
-  }
-  hd.total = seconds; hd.end = Date.now() + c.left * 1000; hd.ready = Date.now() + (c.ready_left || 0) * 1000;
-  if (!hd.busy && me.n >= hd.n) { hd.n = me.n; hd.word = me.word || hd.word; }
-  if (!f) {
-    f = document.createElement("div"); f.id = "hd-face";
-    f.innerHTML = `<div class="hd-bar"><i></i></div><span class="hd-left"></span><div class="hd-word"></div>
-      <button type="button" class="hd-zone up" aria-label="Угадал">✓ угадал</button><button type="button" class="hd-zone down" aria-label="Пропустить">пропуск</button>`;
-    document.body.appendChild(f);
-    f.querySelector(".up").addEventListener("pointerdown", (e) => { e.preventDefault(); hdMark(true); });
-    f.querySelector(".down").addEventListener("pointerdown", (e) => { e.preventDefault(); hdMark(false); });
-    hd.armed = false; clearInterval(hd.timer); hd.timer = setInterval(hdPaint, 200);
-  }
-  hdPaint();
+  if (!c) return QuizHeads.hide();
+  const fresh = !QuizHeads.busy && me.n >= hdN;
+  if (fresh) hdN = me.n;
+  QuizHeads.show({ word: fresh ? me.word : undefined, left: c.left, readyLeft: c.ready_left, total: seconds, onMark: hdMark });
 }
 
 // размер слова на карточке: самое длинное слово фразы — в одну строку, без переноса посреди слова

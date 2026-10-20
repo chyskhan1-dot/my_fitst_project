@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1330">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/media/app/icon-192.png">
+<link rel="apple-touch-icon" href="/media/app/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Квиз">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Слово на лбу — один телефон</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@500;700;800&display=swap">
+<style>
+/* «Слово на лбу» с одного телефона: без комнаты и сервера, телефон передают по кругу. Сколько тем — столько раундов */
+:root {
+  --bg: #0e1330; --bg2: #1a1050; --panel: rgba(255, 255, 255, .08); --ink: #f4f5ff; --muted: #a7aedb;
+  --line: rgba(255, 255, 255, .12); --accent: #ffd23f; --accent-ink: #1a1400;
+  --a0: #e5484d; --a1: #3e7bfa; --a2: #f2a516; --a3: #26a269; --good: #3ddc84; --bad: #ff6b6b;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; color: var(--ink); font: 17px var(--body);
+  background: radial-gradient(120% 80% at 0% 0%, var(--bg2), var(--bg) 65%) fixed, var(--bg);
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+.app { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.top a { color: var(--muted); text-decoration: none; }
+h1, h2 { font-family: var(--display); margin: 0; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: 28px; } h2 { font-size: 20px; font-weight: 500; }
+p { margin: 0; line-height: 1.5; }
+.muted { color: var(--muted); }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 800; color: var(--accent); }
+.btn { font: 800 18px var(--body); padding: 16px; border-radius: 16px; border: 0; cursor: pointer; background: var(--accent); color: var(--accent-ink); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15); }
+.btn.ghost { background: var(--panel); color: var(--ink); }
+.btn.big { font-size: 24px; padding: 20px; }
+.btn:disabled { opacity: .5; }
+.btn:focus-visible, .chip:focus-visible, .seg button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row .btn { flex: 1; }
+.section { display: flex; flex-direction: column; gap: 10px; }
+.seg { display: inline-flex; background: var(--panel); border-radius: 12px; padding: 4px; gap: 4px; flex-wrap: wrap; align-self: flex-start; }
+.seg button { font: 800 17px var(--body); border: 0; background: transparent; color: var(--muted); padding: 9px 22px; border-radius: 9px; cursor: pointer; }
+.seg button.on { background: var(--ink); color: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 700 15px var(--body); padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.chip.on { background: rgba(255, 210, 63, .14); border-color: var(--accent); color: var(--ink); }
+.team { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--c); color: #fff; font-weight: 800; }
+.turn { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 6vh; }
+.turn .team { font: 800 30px var(--display); padding: 14px 30px; }
+.scores { display: flex; flex-direction: column; gap: 8px; }
+.score { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--panel); border-left: 6px solid var(--c); font-weight: 800; }
+.score b { margin-left: auto; font: 800 24px var(--display); }
+.score.lead b { color: var(--accent); }
+.words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.words button { font: 800 16px var(--body); padding: 10px 14px; border-radius: 999px; cursor: pointer; color: var(--ink); }
+.words .ok { background: rgba(61, 220, 132, .18); border: 2px solid var(--good); }
+.words .no { background: var(--panel); border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
+.howto { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.big-num { font: 800 64px var(--display); line-height: 1; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script src="/static/music.js"></script>
+<script src="/static/heads-face.js"></script>
+<script>
+const TEAMS = [["Красные", "var(--a0)"], ["Синие", "var(--a1)"], ["Жёлтые", "var(--a2)"], ["Зелёные", "var(--a3)"]];
+const SECONDS = 60, READY = 3, KEY = "quiz-heads", DECKS = "quiz-heads-decks";
+const $app = document.getElementById("app");
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const team = (i, cls = "team") => `<span class="${cls}" style="--c:${TEAMS[i][1]}">${TEAMS[i][0]}</span>`;
+const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {} // iPhone: звук и при беззвучном режиме
+const sound = (name) => { try { window.QuizMusic && QuizMusic.sting(name); } catch {} };
+
+let THEMES = []; // [{name, icon, words}]
+// игра: этап, команды, темы по раундам, счёт, слова текущего хода. Хранится на телефоне — после перезагрузки можно продолжить
+let g = load(KEY);
+let draft = null; // настройки до начала игры
+
+// колоды слов по темам живут между играми: слова не повторяются, пока тема не кончится
+function draw(theme) {
+  const decks = load(DECKS) || {};
+  let deck = decks[theme] || [];
+  if (!deck.length) deck = shuffle([...(THEMES.find((t) => t.name === theme) || { words: [] }).words]);
+  const w = deck.pop();
+  decks[theme] = deck; store(DECKS, decks);
+  return w;
+}
+
+function save() { store(KEY, g); }
+
+function setupView() {
+  const d = draft || (draft = { teams: (load(KEY + "-teams") || 2), themes: shuffle(THEMES.map((t) => t.name)).slice(0, 3) });
+  $app.innerHTML = `
+    <div class="top"><a href="/">← Главная</a></div>
+    <div><div class="eyebrow">Один телефон</div><h1>🙆 Слово на лбу</h1></div>
+    <ol class="howto muted"><li>Команды ходят по очереди, телефон передают тому, кто угадывает</li>
+      <li>Он прикладывает телефон ко лбу, своя команда объясняет слово, не называя его</li>
+      <li>Угадал — наклон вниз, не знаешь — вверх. ${SECONDS} секунд</li></ol>
+    <div class="section"><b>Команды</b><div class="seg">${[2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n}</button>`).join("")}</div></div>
+    <div class="section"><b>Темы — по одной на раунд</b>
+      <div class="chips">${THEMES.map((t) => `<button type="button" class="chip ${d.themes.includes(t.name) ? "on" : ""}" data-theme="${esc(t.name)}">${t.icon} ${esc(t.name)}</button>`).join("")}</div>
+      <p class="muted">${d.themes.length ? `Раундов: ${d.themes.length} · в каждом все команды ходят по разу` : "Выбери хотя бы одну тему"}</p></div>
+    <button class="btn big" id="go" ${d.themes.length ? "" : "disabled"}>Начать</button>`;
+}
+
+function turnView() {
+  const theme = g.themes[g.round];
+  $app.innerHTML = `
+    <div class="top"><a href="/" id="quit">✕ Выйти</a></div>
+    <div class="turn">
+      <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(theme)}</div>
+      ${team(g.team)}
+      <h2>Передайте телефон тому, кто угадывает</h2>
+      <p class="muted">Нажми «Старт» и приложи телефон ко лбу — экраном к своей команде. Угадал — наклони вниз, не знаешь — вверх</p>
+      <button class="btn big" id="start" style="align-self:stretch">▶ Старт</button>
+      ${scoresHtml()}
+    </div>`;
+}
+
+function resultView() {
+  const ok = g.cur.filter((w) => w.ok).length, last = isLast();
+  const next = last ? "Итоги" : g.team + 1 < g.teams ? `Дальше: ${TEAMS[g.team + 1][0]}` : "Следующий раунд";
+  $app.innerHTML = `
+    <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(g.themes[g.round])}</div>
+    <div>${team(g.team)}</div>
+    <h1>${wordsN(ok)}</h1>
+    ${g.cur.length ? `<ul class="words">${g.cur.map((w, i) => `<li><button type="button" class="${w.ok ? "ok" : "no"}" data-fix="${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</button></li>`).join("")}</ul>
+      <p class="muted">Наклон сработал случайно? Нажми на слово — поменяется</p>` : `<p class="muted">Ни одного слова — бывает!</p>`}
+    ${scoresHtml()}
+    <button class="btn big" id="next">${next}</button>`;
+}
+
+function finalView() {
+  const best = Math.max(...g.scores), winners = g.scores.map((s, i) => (s === best ? i : -1)).filter((i) => i >= 0);
+  $app.innerHTML = `
+    <div class="turn">
+      <div style="font-size:64px">🏆</div>
+      <div class="eyebrow">Игра окончена</div>
+      <h1>${winners.length > 1 ? "Ничья!" : `Победили ${TEAMS[winners[0]][0]}`}</h1>
+      ${scoresHtml()}
+      <div class="row" style="align-self:stretch"><button class="btn ghost" id="setup">Настройки</button><button class="btn" id="again">Сыграть ещё</button></div>
+      <a class="muted" href="/">На главную</a>
+    </div>`;
+  sound("fanfare");
+}
+
+function scoresHtml() {
+  const scores = g.scores, best = Math.max(...scores);
+  return `<div class="scores" style="align-self:stretch">${scores.map((s, i) => `<div class="score ${s === best && s > 0 ? "lead" : ""}" style="--c:${TEAMS[i][1]}">${TEAMS[i][0]}<b>${s}</b></div>`).join("")}</div>`;
+}
+
+const isLast = () => g.round + 1 >= g.themes.length && g.team + 1 >= g.teams;
+
+function render() {
+  if (!g || g.stage === "setup") return setupView();
+  if (g.stage === "turn") return turnView();
+  if (g.stage === "play") { g.stage = "result"; save(); } // страницу перезагрузили посреди хода — ход закончен
+  if (g.stage === "result") return resultView();
+  if (g.stage === "final") return finalView();
+}
+
+function newGame(teams, themes) {
+  g = { stage: "turn", teams, themes, round: 0, team: 0, scores: Array(teams).fill(0), cur: [] };
+  store(KEY + "-teams", teams);
+  save(); render();
+}
+
+async function startTurn() {
+  try { window.QuizMusic && QuizMusic.unlock(); } catch {}
+  await QuizHeads.prepare();
+  g.stage = "play"; g.cur = []; save();
+  const theme = g.themes[g.round];
+  let word = draw(theme);
+  sound("start");
+  QuizHeads.show({
+    word, left: READY + SECONDS, readyLeft: READY, total: SECONDS,
+    onMark: (ok) => {
+      g.cur.push({ word, ok });
+      if (ok) g.scores[g.team]++;
+      save(); sound(ok ? "reveal" : "wrong");
+      word = draw(theme);
+      return word;
+    },
+    onEnd: () => { QuizHeads.hide(); g.stage = "result"; save(); render(); },
+  });
+}
+
+function nextTurn() {
+  if (isLast()) { g.stage = "final"; save(); return render(); }
+  if (g.team + 1 < g.teams) g.team++;
+  else { g.team = 0; g.round++; }
+  g.stage = "turn"; g.cur = []; save(); render();
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-teams]");
+  if (t) { draft.teams = Number(t.dataset.teams); return setupView(); }
+  const th = e.target.closest("[data-theme]");
+  if (th) {
+    const n = th.dataset.theme, s = new Set(draft.themes);
+    s.has(n) ? s.delete(n) : s.add(n);
+    draft.themes = THEMES.map((x) => x.name).filter((x) => s.has(x));
+    return setupView();
+  }
+  const fix = e.target.closest("[data-fix]");
+  if (fix) { // поправить случайный наклон: счёт команды меняется вместе со словом
+    const w = g.cur[Number(fix.dataset.fix)];
+    w.ok = !w.ok; g.scores[g.team] += w.ok ? 1 : -1; save(); return resultView();
+  }
+  const id = e.target.closest("button, a") && e.target.closest("button, a").id;
+  if (id === "go") newGame(draft.teams, draft.themes);
+  else if (id === "start") { e.target.disabled = true; startTurn(); }
+  else if (id === "next") nextTurn();
+  else if (id === "again") newGame(g.teams, g.themes);
+  else if (id === "setup") { draft = { teams: g.teams, themes: g.themes }; g = null; store(KEY); render(); }
+  else if (id === "quit" && !confirm("Выйти из игры? Счёт сохранится — можно будет продолжить")) e.preventDefault();
+});
+
+(async () => {
+  try { THEMES = await (await fetch("/api/heads/words")).json(); } catch { THEMES = []; }
+  if (!THEMES.length) { $app.innerHTML = `<p class="muted">Не удалось загрузить слова. Проверь интернет и обнови страницу</p>`; return; }
+  if (g && g.themes && g.themes.some((n) => !THEMES.find((t) => t.name === n))) g = null; // темы переименовали — начать заново
+  if (g && g.stage === "final") { draft = { teams: g.teams, themes: g.themes }; g = null; } // прошлая игра закончена — к настройкам
+  render();
+})();
+</script>
+</body>
+</html>

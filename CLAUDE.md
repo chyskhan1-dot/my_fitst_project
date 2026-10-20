@@ -62,9 +62,13 @@
     настройке `hd_themes` (пусто — все); каждый за себя — каждый по разу: `hd_turn` (на телефоне «Старт» → `/api/hd/start`) → `hd_play`
     (`READY_SECONDS` приложить ко лбу, потом `TURN_SECONDS`=60) → `hd_result` → … → `final`. Наклон/касание — `/api/hd/mark`
     {ok, n} (n — номер слова: повтор не считается); очки = угаданные слова. Слово видят телефон у лба и объясняющие, ТВ — нет.
-    На телефоне `hdFace()` (поверх всего, под «Паузой»): наклон по `deviceorientation`, v = cos β · cos γ (−1 — экран в пол =
+    На телефоне `hdFace()` → `QuizHeads.show()` (поверх всего, под «Паузой»): наклон по `deviceorientation`, v = cos β · cos γ (−1 — экран в пол =
     угадал, 1 — в потолок = пропуск, снова засчитывается после возврата прямо); iPhone — `requestPermission` по нажатию «Старт»,
     Wake Lock, полный экран. Настоящий датчик из среды Claude не проверить — только события в Playwright.
+  - «Слово на лбу» с одного телефона — `static/heads.html` (`/heads`, слова — `/api/heads/words`): игра целиком на телефоне,
+    сервер не нужен; раунд = тема (сколько тем выбрано — столько раундов, по умолчанию 3 случайные), команды 2–4 ходят по очереди;
+    состояние — localStorage `quiz-heads` (перезагрузка посреди хода = ход закончен), колоды тем — `quiz-heads-decks`.
+    Экран у лба (слово, наклоны, касания) — общий `static/heads-face.js` (`QuizHeads.prepare/show/hide`) для play.html и heads.html.
   - `SiEngine` — «Своя игра»: `si_round → si_board → [si_cat_give|si_stake] → si_question ⇄ si_answer
     → si_reveal … → si_final_bet → si_final_q → si_final_reveal → final`.
     Пакет по умолчанию `SI_AUTO` — `si_from_quiz()`: случайное табло из тем `general` на каждую игру

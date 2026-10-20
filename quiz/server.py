@@ -2256,11 +2256,14 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
-        if url.path in ("/", "/host", "/editor", "/learn"):
-            name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html", "/learn": "learn.html"}[url.path]
+        if url.path in ("/", "/host", "/editor", "/learn", "/heads"):
+            name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html", "/learn": "learn.html", "/heads": "heads.html"}[url.path]
             device = self.send_file(name, set_device=True)
             with lock:
-                STATS.visit(device, {"/": "Главная", "/host": "Экран ведущего", "/editor": "Редактор", "/learn": "Тренировка"}[url.path])
+                STATS.visit(device, {"/": "Главная", "/host": "Экран ведущего", "/editor": "Редактор", "/learn": "Тренировка",
+                                     "/heads": "Слово на лбу (один телефон)"}[url.path])
+        elif url.path == "/api/heads/words":  # «Слово на лбу» с одного телефона: слова целиком, игра идёт на самом телефоне
+            self.send_json(HEADS)
         elif url.path == "/stats":
             if STATS_KEY and query.get("key", [""])[0] != STATS_KEY:
                 return self.send_json({"error": "Нужен ключ: /stats?key=… (STATS_KEY в настройках Render)"}, 403)

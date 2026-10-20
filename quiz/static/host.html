@@ -331,6 +331,25 @@ button.fd-slot:hover { background: #2a3bb0; }
 .fd-target i { display: block; height: 100%; width: var(--w); background: linear-gradient(90deg, var(--accent), var(--good)); transition: width .8s; }
 @media (max-width: 900px) { .fd-board { grid-template-columns: 1fr; grid-auto-flow: row; } .fd-teams { grid-template-columns: 1fr 1fr; } .fd-bank { grid-column: 1 / -1; order: -1; } .fd-big-row { grid-template-columns: 1fr auto; } }
 
+/* «Слово на лбу» */
+.hd-play { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.hd-name { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.hd-name .ava { width: 1.3em; height: 1.3em; }
+.hd-timer { font: 800 clamp(80px, 16vw, 180px) var(--display); line-height: 1; color: var(--accent); min-height: 1em; }
+.hd-timer.low { color: var(--bad); }
+.hd-count { display: flex; align-items: baseline; gap: 12px; font-size: 1.6em; }
+.hd-count b { font: 800 2em var(--display); color: var(--good); }
+.hd-marks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 900px; }
+.hd-mark { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; animation: pop .3s ease both; }
+.hd-mark.ok { background: var(--good); color: #0e1330; }
+.hd-mark.no { background: var(--line); color: var(--muted); }
+.hd-result { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.hd-words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.hd-words li { padding: 10px 18px; border-radius: 999px; font-weight: 800; font-size: 1.15em; animation: rise .4s calc(var(--i) * 60ms) both; }
+.hd-words li.ok { background: rgba(61, 220, 132, .18); border: 2px solid var(--good); }
+.hd-words li.no { background: var(--panel); border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
+@media (max-width: 760px) { .hd-result { grid-template-columns: 1fr; } }
+
 /* главное меню v2: шаги */
 .steps { display: flex; gap: 6px; flex-wrap: wrap; }
 .wstep { display: flex; align-items: center; gap: 8px; padding: 8px 16px 8px 8px; border-radius: 999px; border: 2px solid var(--line);
@@ -465,9 +484,12 @@ const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
 const MODES = [
   { id: "king", ico: "⛰️", name: "Царь горы", desc: "Кто первым наберёт 10 000 очков — 5 раундов по 3 вопроса", ready: true },
   { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто больше наберёт", ready: true },
+  { id: "heads", ico: "🙆", name: "Слово на лбу", desc: "Телефон ко лбу, друзья объясняют слово", ready: true },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
 ];
 const KING_GOAL = 10000;
+// «1 слово», «2 слова», «5 слов» — очки в «Слове на лбу»
+const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
 const RULES = [
   { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
   { id: "sabotage", name: "Подлянки 😈", desc: "Последнее место между вопросами кидает любому игроку (по умолчанию лидеру) случайную подлянку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
@@ -728,6 +750,7 @@ function draw(s) {
   if (siKeep.el && !s.phase.startsWith("si_")) { siKeep.el.pause(); siKeep = { key: "", el: null }; }
   if (s.phase.startsWith("si_")) return renderSi(s);
   if (s.phase.startsWith("fd_")) return renderFd(s);
+  if (s.phase.startsWith("hd_")) return renderHd(s);
   soundtrack(s);
 
   if (s.phase === "setup") {
@@ -742,7 +765,8 @@ function draw(s) {
     const st = s.settings;
     const fdMode = st.mode === "100to1";
     const tags = fdMode ? [`💯 100 к 1`, `Пакет: ${s.title}`, "2 команды", `${st.seconds} с на ответ`, st.auto ? "Автопереход" : "Ведущий листает сам"]
-      : st.mode === "jeopardy" ? [`🎯 Своя игра`, `Пакет: ${s.title}`, ...rulesSummary(st)] : [
+      : st.mode === "jeopardy" ? [`🎯 Своя игра`, `Пакет: ${s.title}`, ...rulesSummary(st)]
+      : st.mode === "heads" ? ["🙆 Слово на лбу", ...rulesSummary(st)] : [
       `Пакет: ${s.title}`,
       st.teams ? `Команды: ${st.teams}` : "Каждый за себя",
       st.rounds ? roundsLabel(Math.ceil(s.total / 3)) : st.count ? `${s.total} случайных вопросов` : `Вопросов: ${s.total}`,
@@ -855,7 +879,7 @@ function draw(s) {
   } else if (s.phase === "final") {
     const teamMode = !!s.settings.teams;
     const [p1, p2, p3] = teamMode ? s.teams : s.players;
-    const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${p.score} очков</small></div></div>` : "";
+    const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${s.settings.mode === "heads" ? wordsN(p.score) : p.score + " очков"}</small></div></div>` : "";
     const mvp = s.players[0];
     $main.innerHTML = `
       <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
@@ -1033,6 +1057,52 @@ function fdTeams(s, active, bank) {
   return `<div class="fd-teams">${team(0, "")}<div class="fd-bank">${bank == null ? "" : `<small>Банк</small>${bank}`}</div>${team(1, "r")}</div>`;
 }
 
+// «Слово на лбу»: на ТВ — кто угадывает, таймер и счёт; слова — только после хода (угадывающий может видеть экран)
+let hdMusicKey = "";
+function hdSound(s) {
+  const hd = s.hd, c = hd.cur || {}, M = window.QuizMusic;
+  const key = [s.phase, hd.turn, c.n || 0, s.paused].join(":");
+  if (key === hdMusicKey || !M) return;
+  const prev = hdMusicKey;
+  hdMusicKey = key;
+  if (s.paused) { M.stop(0.3); return; }
+  if (s.phase === "hd_turn") M.play("lobby");
+  else if (s.phase === "hd_play") {
+    if (!prev.startsWith(`hd_play:${hd.turn}:`)) { M.play("question"); M.sting("start"); }
+    else if (c.n) M.sting(c.marks[c.n - 1] ? "reveal" : "wrong");
+  } else if (s.phase === "hd_result") { M.stop(0.3); M.sting("fanfare"); }
+}
+
+function renderHd(s) {
+  const hd = s.hd, c = hd.cur || {};
+  hdSound(s);
+  document.getElementById("progress").innerHTML = `Слово на лбу · ход ${hd.turn + 1} из ${hd.turns}`;
+  const marks = (c.marks || []).map((ok, i) => `<span class="hd-mark ${ok ? "ok" : "no"}" style="--i:${i}">${ok ? "✓" : "✗"}</span>`).join("");
+  if (s.phase === "hd_turn") {
+    $main.innerHTML = `<div class="si-splash"><div class="eyebrow">Ход ${hd.turn + 1} из ${hd.turns}</div>
+      <h1 class="hd-name">${avaP(c)} ${esc(c.name)}, твой ход!</h1>
+      <p class="lead">Нажми «Старт» на телефоне и приложи его ко лбу — экраном к друзьям</p>
+      <p class="muted">Друзья объясняют слова, не называя их. Угадал — наклони телефон вниз, не знаешь — вверх. ${hd.seconds} секунд</p></div>`;
+    $actions.innerHTML = `<button class="btn ghost" data-act="next">Пропустить ход</button>`;
+  } else if (s.phase === "hd_play") {
+    $main.innerHTML = `<div class="hd-play">
+      <div class="eyebrow">Угадывает</div><h1 class="hd-name">${avaP(c)} ${esc(c.name)}</h1>
+      <div class="hd-timer" id="hd-timer"></div>
+      <div class="hd-count"><b>${c.ok}</b><span>угадано</span></div>
+      <div class="hd-marks">${marks}</div>
+      <p class="muted">Объясняйте словами — само слово и однокоренные называть нельзя</p></div>`;
+    $actions.innerHTML = `<button class="btn ghost" data-act="next">Закончить ход</button>`;
+  } else if (s.phase === "hd_result") {
+    const words = (c.words || []).map((w, i) => `<li class="${w.ok ? "ok" : "no"}" style="--i:${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
+    $main.innerHTML = `<div><div class="eyebrow">Ход ${hd.turn + 1} из ${hd.turns}</div><h1 class="pop hd-name" style="justify-content:flex-start">${avaP(c)} ${esc(c.name)}: ${wordsN(c.ok)}</h1></div>
+      <div class="hd-result">${words ? `<ul class="hd-words">${words}</ul>` : `<p class="muted">Ни одного слова — бывает!</p>`}
+        <aside>${board(s.players.slice(0, 6))}</aside></div>`;
+    $actions.innerHTML = `<button class="btn" data-act="next">${hd.next ? `Следующий: ${esc(hd.next)}` : "К итогам"}</button>`;
+    countUp();
+  }
+  live(s);
+}
+
 function renderFd(s) {
   const fd = s.fd, c = fd.cur || {}, b = fd.big, names = s.team_names;
   fdSound(s);
@@ -1112,6 +1182,12 @@ let setupStep = 1;
 const STEPS = ["Тип игры", "Вопросы", "Правила"];
 
 function packCards(s, d) {
+  if (d.mode === "heads") { // темы слов: по умолчанию все, хотя бы одна остаётся
+    const all = s.hd_themes || [], cur = new Set(d.hd_themes && d.hd_themes.length ? d.hd_themes : all.map((x) => x.name));
+    return `<div class="pack-grid">${all.map((x) => `
+      <button class="mode pack ${cur.has(x.name) ? "on" : ""}" data-hdtheme="${esc(x.name)}"><span class="ico">${x.icon}</span><span><b>${esc(x.name)}</b></span></button>`).join("")}</div>
+      <div class="pack-tools"><button type="button" class="btn ghost small" data-hdthemes-all>${cur.size === all.length ? "Снять все" : "Все темы"}</button></div>`;
+  }
   if (d.mode === "100to1") {
     const list = s.fd_packs.map((p) => ({ id: p.id, title: p.title, sub: "" }));
     if (s.fd_custom) list.push({ id: "custom", title: s.fd_custom.title, sub: "Свой пакет" });
@@ -1142,7 +1218,7 @@ function packCards(s, d) {
 // Темы и сложность: какие вопросы пакета играть (список тем спрятан за кнопкой)
 let themesOpen = false;
 // правила ведущего запоминаются на этом устройстве: раунды, ставка ×2, сложность и прочее — не настраивать каждый раз
-const RULE_KEYS = ["mode", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
+const RULE_KEYS = ["mode", "hd_themes", "teams", "seconds", "count", "levels", "rounds", "sabotage", "penalty", "speed", "streak", "doubles", "leaders", "auto", "si_round_min"];
 function savedRules() { try { return JSON.parse(localStorage.getItem("quiz-rules") || "{}"); } catch { return {}; } }
 function saveRules(d) { try { localStorage.setItem("quiz-rules", JSON.stringify({ ...savedRules(), ...Object.fromEntries(RULE_KEYS.filter((k) => k in d && !(d.mode === "king" && (k === "rounds" || k === "count"))).map((k) => [k, d[k]])) })); } catch {} }
 const LEVELS = [["easy", "Лёгкие"], ["normal", "Средние"], ["hard", "Сложные"]];
@@ -1167,6 +1243,7 @@ function themePicker(s, d) {
 }
 
 function rulesSummary(d) {
+  if (d.mode === "heads") return ["60 секунд на ход", "Каждый угадывает по разу", d.hd_themes && d.hd_themes.length ? `Тем: ${d.hd_themes.length}` : "Все темы"];
   if (d.mode === "king") return ["5 раундов по 3 вопроса", `До ${KING_GOAL.toLocaleString("ru-RU")} очков`, d.teams ? `Команды: ${d.teams}` : "Каждый за себя", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
     ...RULES.filter((r) => d[r.id] && r.id !== "rounds").map((r) => r.name.replace(" 🔥", ""))];
@@ -1186,7 +1263,8 @@ function rulesList(d) {
        <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${RULES.filter((r) => r.id !== "rounds").map(toggle).join("")}`;
-  const body = d.mode === "king" ? king : d.mode === "100to1"
+  const heads = `<div class="rule"><span class="txt"><b>🙆 Слово на лбу</b><small>Каждый по очереди угадывает слова 60 секунд: телефон у лба экраном к друзьям, они объясняют словами, не называя само слово. Угадал — наклони телефон вниз, не знаешь — вверх. Очко — за каждое угаданное слово. Настраивать больше нечего</small></span></div>`;
+  const body = d.mode === "heads" ? heads : d.mode === "king" ? king : d.mode === "100to1"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
     : d.mode === "jeopardy"
@@ -1212,7 +1290,8 @@ const goStep = (n) => { setupStep = n; renderSetup(lastState, true); };
 
 function drawSetup(s) {
   const d = draft, mode = MODES.find((m) => m.id === d.mode) || MODES[0];
-  const steps = `<nav class="steps">${STEPS.map((n, i) => `<button type="button" class="wstep ${setupStep === i + 1 ? "on" : ""} ${setupStep > i + 1 ? "done" : ""}"
+  const names = STEPS.map((n, i) => (i === 1 && d.mode === "heads" ? "Темы" : n));
+  const steps = `<nav class="steps">${names.map((n, i) => `<button type="button" class="wstep ${setupStep === i + 1 ? "on" : ""} ${setupStep > i + 1 ? "done" : ""}"
     data-step="${i + 1}" ${i === 2 ? "data-open-rules" : ""}><span class="num">${setupStep > i + 1 ? "✓" : i + 1}</span>${n}</button>`).join("")}</nav>`;
   const tags = `<span class="tags">${rulesSummary(d).map((x) => `<span class="tag">${esc(x)}</span>`).join("")}</span>`;
   const body = setupStep === 1
@@ -1220,11 +1299,11 @@ function drawSetup(s) {
         <button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${m.ready ? "" : "disabled"}>
           <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span></button>`).join("")}</div></section>`
     : setupStep === 2
-    ? `<section><p class="section-title">${mode.ico} ${mode.name}: какие вопросы?</p>${packCards(s, d)}</section>
+    ? `<section><p class="section-title">${mode.ico} ${mode.name}: ${d.mode === "heads" ? "какие темы слов?" : "какие вопросы?"}</p>${packCards(s, d)}</section>
        <section class="rules-line"><button class="btn ghost small" data-step="3" type="button">⚙ Правила</button>${tags}</section>`
     : `<section><p class="section-title">${mode.ico} ${mode.name}: правила</p>${rulesList(d)}</section>`;
   $main.innerHTML = `
-    <div><div class="eyebrow">Новая игра</div><h1>${["Во что играем?", "Вопросы", "Правила"][setupStep - 1]}</h1></div>
+    <div><div class="eyebrow">Новая игра</div><h1>${["Во что играем?", names[1], "Правила"][setupStep - 1]}</h1></div>
     ${steps}${body}
     ${s.players.length ? `<p class="muted">Уже подключились: ${s.players.map((p) => esc(p.name)).join(", ")}</p>` : ""}`;
   const back = setupStep > 1 ? `<button class="btn ghost" data-step="${setupStep - 1}">← Назад</button>` : "";
@@ -1309,6 +1388,18 @@ document.addEventListener("click", (e) => {
     draft.levels = LEVELS.map(([x]) => x).filter((x) => cur.has(x));
     return renderSetup(lastState);
   }
+  const ht = e.target.closest("[data-hdtheme], [data-hdthemes-all]");
+  if (ht) {
+    const all = (lastState.hd_themes || []).map((x) => x.name);
+    const cur = new Set(draft.hd_themes && draft.hd_themes.length ? draft.hd_themes : all);
+    if (ht.dataset.hdthemesAll != null) draft.hd_themes = cur.size === all.length ? [all[0]] : [];
+    else {
+      const name = ht.dataset.hdtheme;
+      cur.has(name) ? cur.delete(name) : cur.add(name);
+      draft.hd_themes = !cur.size ? [name] : cur.size === all.length ? [] : all.filter((x) => cur.has(x));
+    }
+    return renderSetup(lastState);
+  }
   if (e.target.closest("[data-rounds-toggle]")) { draft.rounds = !draft.rounds; return renderSetup(lastState); }
   const t = e.target.closest("[data-teams], [data-seconds], [data-mode], [data-pack], [data-sipack], [data-fdpack], [data-count], [data-siround]");
   if (!t || t.disabled) return;
@@ -1341,6 +1432,11 @@ function live(s) {
   }
   const ft = document.getElementById("fd-timer"), fl = s.fd && (s.fd.cur || s.fd.big || {}).left;
   if (ft && fl != null) { ft.textContent = `${Math.ceil(fl)} с`; ft.classList.toggle("low", fl <= 5); }
+  const ht = document.getElementById("hd-timer"), hc = s.hd && s.hd.cur;
+  if (ht && hc && hc.left != null) {
+    ht.textContent = hc.ready_left > 0 ? `Приготовься… ${Math.ceil(hc.ready_left)}` : Math.ceil(Math.min(hc.left, s.hd.seconds));
+    ht.classList.toggle("low", !hc.ready_left && hc.left <= 10);
+  }
   if (window.QuizMusic) QuizMusic.setTension((s.phase === "question" && s.left <= 5) || (s.phase === "fd_big_q" && fl <= 5));
   soundButton();
   const nx = document.getElementById("auto-next");
@@ -1408,8 +1504,9 @@ async function pollOnce(seq) {
     lastState = s;
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
+    const hdKey = s.hd ? JSON.stringify(s.hd, (k, v) => (k === "left" || k === "ready_left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.paused, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + topicKey;
+    const sig = JSON.stringify([s.phase, s.index, s.paused, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + hdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {

@@ -77,9 +77,10 @@ DEVICE_COOKIE = "quiz_device"  # метка устройства: один иг�
 JOIN_URL = None  # адрес для игроков; онлайн берётся из адреса страницы
 
 TEAMS = ["Красные", "Синие", "Жёлтые", "Зелёные"]
-MODES = ["king", "quiz", "jeopardy", "100to1"]  # «100 к 1» пока спрятан из меню (решение владельца), код оставлен
+MODES = ["king", "quiz", "heads", "jeopardy", "100to1"]  # «100 к 1» пока спрятан из меню (решение владельца), код оставлен
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
+HEADS_FILE = BASE / "heads" / "words.json"  # «Слово на лбу»: слова по темам
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
@@ -488,6 +489,12 @@ for f in sorted(FD_DIR.glob("*.json")) if FD_DIR.exists() else []:
     except (PackError, json.JSONDecodeError) as e:
         print(f"Пакет «100 к 1» {f.name} пропущен: {e}", flush=True)
 
+try:
+    HEADS = json.loads(HEADS_FILE.read_text(encoding="utf-8"))["themes"]
+except (OSError, ValueError, KeyError) as e:
+    HEADS = []
+    print(f"Слова «Слова на лбу» не загрузились: {e}", flush=True)
+
 
 def balanced_sample(indexes, n, questions):
     """Случайные вопросы поровну из каждой темы: большая тема (флаги, столицы) не вытесняет остальные."""
@@ -552,6 +559,7 @@ DEFAULTS = {
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
+    "hd_themes": [],  # «Слово на лбу»: темы слов (пусто — все)
 }
 
 
@@ -1244,6 +1252,117 @@ class FeudEngine:
         return s
 
 
+class HeadsEngine:
+    """«Слово на лбу»: игрок держит телефон у лба, друзья объясняют слово словами.
+    Угадал — наклоняет телефон вниз, не знает — вверх (пропуск). Каждый игрок угадывает по разу, TURN_SECONDS на ход.
+
+    Этапы: hd_turn (готовится, на телефоне «Старт») → hd_play (READY_SECONDS на «приложи ко лбу», потом слова)
+    → hd_result → следующий игрок … → final. Очки — число угаданных слов.
+    """
+
+    TURN_SECONDS = 60
+    READY_SECONDS = 3
+
+    def __init__(self, game):
+        self.g = game
+        chosen = set(game.settings.get("hd_themes") or [])
+        self.words = [w for th in HEADS if not chosen or th["name"] in chosen for w in th["words"]]
+        self.deck = []
+        self.order = list(game.players)  # по порядку входа
+        self.turn = -1
+        self.cur = None
+
+    def draw(self):
+        if not self.deck:  # слова кончились — тасуем заново
+            self.deck = self.words[:]
+            random.shuffle(self.deck)
+        return self.deck.pop()
+
+    def start(self):
+        self.order = [pid for pid in self.order if pid in self.g.players] + [pid for pid in self.g.players if pid not in self.order]
+        self.next_turn()
+
+    def next_turn(self):
+        self.order += [pid for pid in self.g.players if pid not in self.order]  # пришёл позже — тоже сыграет
+        self.turn += 1
+        while self.turn < len(self.order) and self.order[self.turn] not in self.g.players:
+            self.turn += 1  # игрок ушёл — ход следующему
+        if self.turn >= len(self.order):
+            self.cur = None
+            return self.g.set_phase("final")
+        for p in self.g.players.values():
+            p["last_points"] = 0
+        self.cur = {"pid": self.order[self.turn], "words": [], "word": None, "ready_at": 0.0, "deadline": 0.0}
+        self.g.set_phase("hd_turn")
+
+    def begin(self):
+        """Игрок нажал «Старт»: несколько секунд приложить телефон ко лбу, потом слова."""
+        if self.g.phase != "hd_turn":
+            return False
+        now = self.g.clock()
+        self.cur.update(word=self.draw(), ready_at=now + self.READY_SECONDS, deadline=now + self.READY_SECONDS + self.TURN_SECONDS)
+        self.g.set_phase("hd_play")
+        return True
+
+    def mark(self, pid, ok, n):
+        """Угадал (ok) или пропуск. n — номер слова у телефона: повторный наклон того же слова не считаем."""
+        c = self.cur
+        if (self.g.phase != "hd_play" or pid != c["pid"] or n != len(c["words"])
+                or self.g.clock() < c["ready_at"] or self.g.clock() >= c["deadline"]):
+            return False
+        c["words"].append({"word": c["word"], "ok": bool(ok)})
+        if ok:
+            p = self.g.players.get(pid)
+            if p:
+                p["score"] += 1
+                p["last_points"] += 1
+        c["word"] = self.draw()
+        return True
+
+    def finish(self):
+        self.cur["word"] = None
+        self.g.set_phase("hd_result")
+
+    def shift(self, dt):
+        if self.cur:
+            self.cur["ready_at"] += dt
+            self.cur["deadline"] += dt
+
+    def tick(self):
+        if self.g.phase == "hd_play" and self.g.clock() >= self.cur["deadline"]:
+            self.finish()
+
+    def host_next(self):
+        ph = self.g.phase
+        if ph == "hd_turn":
+            self.next_turn()  # игрока нет или не готов — ход следующему
+        elif ph == "hd_play":
+            self.finish()
+        elif ph == "hd_result":
+            self.next_turn()
+
+    def state(self, pid):
+        c, ph, now = self.cur, self.g.phase, self.g.clock()
+        s = {"turn": self.turn, "turns": len(self.order), "seconds": self.TURN_SECONDS,
+             "next": self.g.players[self.order[self.turn + 1]]["name"]
+             if self.turn + 1 < len(self.order) and self.order[self.turn + 1] in self.g.players else None}
+        if c:
+            p = self.g.players.get(c["pid"]) or {}
+            s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"),
+                        "ok": sum(w["ok"] for w in c["words"]), "n": len(c["words"]),
+                        "marks": [w["ok"] for w in c["words"]],
+                        # слова целиком — только после хода: на ТВ во время хода может посмотреть тот, кто угадывает
+                        "words": c["words"] if ph == "hd_result" else None,
+                        "ready_left": max(0, round(c["ready_at"] - now, 1)) if ph == "hd_play" else None,
+                        "left": max(0, round(c["deadline"] - now, 1)) if ph == "hd_play" else None}
+        if pid in self.g.players and c:
+            ready = ph == "hd_play" and now >= c["ready_at"]
+            s["me"] = {"is_guesser": pid == c["pid"],
+                       # слово видят телефон у лба и те, кто объясняет (ТВ — нет)
+                       "word": c["word"] if ready else None, "n": len(c["words"])}
+        return s
+
+
 class Game:
     def __init__(self, code, host_device):
         self.code = code
@@ -1259,6 +1378,7 @@ class Game:
         self.selected = []
         self.si = None  # «Своя игра», если выбран этот режим
         self.fd = None  # «100 к 1»
+        self.hd = None  # «Слово на лбу»
         self.fd_custom = None
         self.si_custom = None  # загруженный пакет .siq
         self.si_auto, self.si_used = None, set()  # случайная «Своя игра» и уже сыгранные в ней вопросы
@@ -1296,6 +1416,11 @@ class Game:
             s.update(rounds=True, count=KING_COUNT, race=KING_GOAL)
         if s["mode"] == "100to1":
             s["teams"] = 2  # «100 к 1» — всегда две команды
+        names = [th["name"] for th in HEADS]
+        if isinstance(data.get("hd_themes"), list):
+            s["hd_themes"] = [n for n in names if n in data["hd_themes"]]
+        if s["mode"] == "heads":
+            s["teams"] = 0  # «Слово на лбу» — каждый за себя
         return s
 
     @property
@@ -1343,8 +1468,11 @@ class Game:
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
         self.si = None
         self.fd = None
+        self.hd = None
         if phase == "lobby":
-            if self.settings["mode"] == "100to1" and self.fd_pack:
+            if self.settings["mode"] == "heads":
+                self.hd = HeadsEngine(self)
+            elif self.settings["mode"] == "100to1" and self.fd_pack:
                 self.fd = FeudEngine(self, self.fd_pack)
             elif self.settings["mode"] == "jeopardy" and self.si_pack:
                 if self.settings["si_pack"] == SI_AUTO:  # новое табло на каждую игру, сыгранные вопросы — в конец очереди
@@ -1477,7 +1605,7 @@ class Game:
                 self.started_at += dt
             if self.all_answered_at is not None:
                 self.all_answered_at += dt
-            for engine in (self.si, self.fd):
+            for engine in (self.si, self.fd, self.hd):
                 if engine:
                     engine.shift(dt)
 
@@ -1512,7 +1640,7 @@ class Game:
     def seconds(self):
         """Время на текущий вопрос: своё у вопроса или общее, для сложных типов — больше."""
         base = self.settings["seconds"]
-        if self.si or self.fd or not 0 <= self.index < len(self.selected):
+        if self.si or self.fd or self.hd or not 0 <= self.index < len(self.selected):
             return base
         q = self.question()
         return q.get("seconds") or int(base * TYPE_TIME.get(q["type"], 1) + 0.5)
@@ -1574,6 +1702,8 @@ class Game:
             return self.si.tick()
         if self.fd and self.phase.startswith("fd_"):
             return self.fd.tick()
+        if self.hd and self.phase.startswith("hd_"):
+            return self.hd.tick()
         now = self.clock()
         if self.phase == "topic_vote":
             online = self.online()
@@ -1598,7 +1728,7 @@ class Game:
     def trick_roles(self):
         """Кто может устроить подлянку: (последние места, лидер — цель по умолчанию) или None.
         Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
-        if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.trick
+        if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.hd or self.trick
                 or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total
                 or self.race_winner()):
             return None
@@ -1669,7 +1799,7 @@ class Game:
     def race_winner(self):
         """«Гонка до вершины»: кто (игрок или команда) уже набрал нужные очки — или None."""
         goal = self.settings.get("race")
-        if not goal or self.si or self.fd or self.index < 0:
+        if not goal or self.si or self.fd or self.hd or self.index < 0:
             return None
         board = self.team_board() if self.settings["teams"] else self.leaderboard()
         return board[0]["name"] if board and board[0]["score"] >= goal else None
@@ -1698,7 +1828,7 @@ class Game:
 
     def can_bet(self):
         """Ставку ×2 на следующий вопрос можно сделать между вопросами (и в лобби), пока он не начался."""
-        return (bool(self.settings.get("doubles")) and not self.si and not self.fd and not self.paused_at
+        return (bool(self.settings.get("doubles")) and not self.si and not self.fd and not self.hd and not self.paused_at
                 and self.phase in ("lobby", "reveal", "leaders", "topic_vote", "topic_bet")
                 and self.index + 1 < self.total and not self.race_winner())
 
@@ -1735,7 +1865,7 @@ class Game:
 
     def marks_range(self):
         """Чьи ответы показать в таблице: в раундах — все вопросы текущего раунда, иначе — последний."""
-        if self.phase not in ("reveal", "leaders") or self.index < 0 or self.si or self.fd:
+        if self.phase not in ("reveal", "leaders") or self.index < 0 or self.si or self.fd or self.hd:
             return range(0)
         start = self.index // ROUND_SIZE * ROUND_SIZE if self.settings.get("rounds") else self.index
         return range(start, self.index + 1)
@@ -1811,12 +1941,16 @@ class Game:
         if self.fd:
             s["title"] = self.fd_pack["title"]
             s["fd"] = self.fd.state(pid if self.owns(pid, device) else None)
+        if self.hd:
+            s["title"] = "Слово на лбу"
+            s["hd"] = self.hd.state(pid if self.owns(pid, device) else None)
         if self.si:
             s["title"] = self.si_pack["title"]
             s["si"] = self.si.state(pid if self.owns(pid, device) else None)
         if self.phase == "setup":
             s["si_packs"] = [{"id": SI_AUTO, "title": "🎲 Случайная из «Общих знаний»", "rounds": len(SI_ROUNDS), "count": 6 * 5 * len(SI_ROUNDS),
                               "final": True, "auto": True}] + [{"id": k, **si_info(p)} for k, p in SI_PACKS.items()]
+            s["hd_themes"] = [{"name": th["name"], "icon": th["icon"], "count": len(th["words"])} for th in HEADS]
             s["fd_packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in FD_PACKS.items()]
             if self.fd_custom:
                 s["fd_custom"] = {"title": self.fd_custom["title"], "count": len(self.fd_custom["questions"])}
@@ -1827,7 +1961,7 @@ class Game:
                 s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("topic_vote", "topic_bet"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
-        if not self.si and not self.fd and self.phase in ("reveal", "leaders", "final"):
+        if not self.si and not self.fd and not self.hd and self.phase in ("reveal", "leaders", "final"):
             # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 1000 за вопрос)
             s["rope_top"] = self.settings.get("race") or max(1000, self.total * 1000)
             s["race_winner"] = self.race_winner()
@@ -1836,7 +1970,7 @@ class Game:
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
             s["round_no"] = self.index // ROUND_SIZE + 1
             s["rounds_total"] = -(-self.target // ROUND_SIZE)
-        if self.settings.get("sabotage") and not self.si and not self.fd:
+        if self.settings.get("sabotage") and not self.si and not self.fd and not self.hd:
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()
             if roles:
@@ -1847,7 +1981,7 @@ class Game:
             if t and self.phase in ("question", "reveal"):
                 s["trick_now"] = {"to": name(t["to"]), "by": name(t["by"]), "kind": t["kind"]}
             s["tricks"] = TRICKS
-        if self.phase in ("question", "reveal") and not self.si and not self.fd:
+        if self.phase in ("question", "reveal") and not self.si and not self.fd and not self.hd:
             q = self.question()
             s["qtype"] = q["type"]
             s["question"] = q["q"]
@@ -1866,7 +2000,7 @@ class Game:
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
             s["doubled_now"] = [p["name"] for p in self.players.values() if p.get("bet")]  # кто поставил ×2 на этот вопрос
-        if self.phase in ("reveal", "leaders") and not self.si and not self.fd:
+        if self.phase in ("reveal", "leaders") and not self.si and not self.fd and not self.hd:
             # для комментариев в таблице лидеров: самый быстрый верный ответ и сколько ответили верно
             right = [(a["time"], who) for who, a in self.answers.items() if a.get("result") == "right" and who in self.players]
             if right:
@@ -2004,7 +2138,7 @@ class Stats:
 
 STATS = Stats()
 STATS_KEY = os.environ.get("STATS_KEY", "")  # ключ к странице /stats (на Render — в Environment)
-MODE_NAMES = {"king": "Царь горы", "quiz": "Викторина", "jeopardy": "Своя игра", "100to1": "100 к 1"}
+MODE_NAMES = {"king": "Царь горы", "quiz": "Викторина", "heads": "Слово на лбу", "jeopardy": "Своя игра", "100to1": "100 к 1"}
 
 
 def cleanup():
@@ -2249,7 +2383,7 @@ class Handler(BaseHTTPRequestHandler):
                 STATS.counts["players"] += 1
                 return self.send_json({"pid": pid})
 
-            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/double") or path.startswith(("/api/fd/", "/api/si/"))):
+            if game.paused_at and (path in ("/api/answer", "/api/vote", "/api/double") or path.startswith(("/api/fd/", "/api/si/", "/api/hd/"))):
                 return self.send_json({"ok": False, "paused": True})  # на паузе ответы не принимаем
 
             if path.startswith("/api/fd/"):
@@ -2262,6 +2396,17 @@ class Handler(BaseHTTPRequestHandler):
                 STATS.counts["answers"] += bool(ok)
                 game.tick()
                 return self.send_json({"ok": bool(ok)})
+
+            if path.startswith("/api/hd/"):  # «Слово на лбу»: «Старт» и наклоны телефона у лба
+                pid, hd = data.get("pid"), game.hd
+                if not hd or not game.owns(pid, device) or not hd.cur or hd.cur["pid"] != pid:
+                    return self.send_json({"ok": False})
+                game.tick()
+                action = path.rsplit("/", 1)[1]
+                ok = hd.begin() if action == "start" else hd.mark(pid, data.get("ok"), data.get("n")) if action == "mark" else False
+                game.tick()
+                st = hd.state(pid)
+                return self.send_json({"ok": bool(ok), "word": st.get("me", {}).get("word"), "n": st.get("me", {}).get("n")})
 
             if path.startswith("/api/si/"):
                 pid, si = data.get("pid"), game.si
@@ -2403,6 +2548,11 @@ class Handler(BaseHTTPRequestHandler):
         elif action == "next" and game.fd and game.phase.startswith("fd_"):
             game.tick()
             game.fd.host_next()
+        elif action == "next" and game.hd and game.phase == "lobby":
+            game.hd.start()
+        elif action == "next" and game.hd and game.phase.startswith("hd_"):
+            game.tick()
+            game.hd.host_next()
         elif action == "si_pick" and game.si:
             game.si.pick(data.get("theme"), data.get("question"))
         elif action == "si_override" and game.si:

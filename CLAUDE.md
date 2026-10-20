@@ -55,6 +55,13 @@
     (choice/multi/order: сначала верные) — на телефоне `othersAnswers()`, у ведущего — аватарки у вариантов.
   - `FeudEngine` — «100 к 1» (две команды; пока спрятан из меню — владелец решил, код оставлен): `fd_round → fd_play → [fd_steal] → fd_reveal` × 4 раунда
     (простая, двойная, тройная, наоборот) → `fd_big_intro → fd_big_q × 5 → fd_big_result → final`.
+  - `HeadsEngine` — «Слово на лбу» (`mode` `heads`, «каждый за себя»): слова по темам — `heads/words.json` (`HEADS`), темы в
+    настройке `hd_themes` (пусто — все); каждый игрок по разу: `hd_turn` (на телефоне «Старт» → `/api/hd/start`) → `hd_play`
+    (`READY_SECONDS` приложить ко лбу, потом `TURN_SECONDS`=60) → `hd_result` → … → `final`. Наклон/касание — `/api/hd/mark`
+    {ok, n} (n — номер слова: повтор не считается); очки = угаданные слова. Слово видят телефон у лба и объясняющие, ТВ — нет.
+    На телефоне `hdFace()` (поверх всего, под «Паузой»): наклон по `deviceorientation`, v = cos β · cos γ (−1 — экран в пол =
+    угадал, 1 — в потолок = пропуск, снова засчитывается после возврата прямо); iPhone — `requestPermission` по нажатию «Старт»,
+    Wake Lock, полный экран. Настоящий датчик из среды Claude не проверить — только события в Playwright.
   - `SiEngine` — «Своя игра»: `si_round → si_board → [si_cat_give|si_stake] → si_question ⇄ si_answer
     → si_reveal … → si_final_bet → si_final_q → si_final_reveal → final`.
     Пакет по умолчанию `SI_AUTO` — `si_from_quiz()`: случайное табло из тем `general` на каждую игру

@@ -52,6 +52,30 @@ h1 { font-size: 30px; font-weight: 800; }
 h2 { font-size: 20px; font-weight: 500; }
 p { margin: 0; line-height: 1.5; }
 .muted { color: var(--muted); }
+/* «Слово на лбу» */
+#hd-face { position: fixed; inset: 0; z-index: 14; /* под «Паузой» */ background: #0e1330; color: #fff; display: flex; align-items: center; justify-content: center;
+  user-select: none; -webkit-user-select: none; touch-action: none; transition: background .15s; }
+#hd-face[data-flash="ok"] { background: #1f9d57; }
+#hd-face[data-flash="pass"] { background: #c77a12; }
+#hd-face .hd-word { width: 92vw; height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
+  font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; overflow-wrap: anywhere; pointer-events: none; }
+#hd-face .hd-bar { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: rgba(255, 255, 255, .15); }
+#hd-face .hd-bar i { display: block; height: 100%; background: var(--accent); transition: width .2s linear; }
+#hd-face .hd-left { position: absolute; top: 18px; right: 20px; font: 800 28px var(--display); opacity: .8; pointer-events: none; }
+#hd-face .hd-zone { position: absolute; left: 0; right: 0; height: 50%; border: 0; background: transparent; color: rgba(255, 255, 255, .35);
+  font: 700 14px var(--body); display: flex; justify-content: center; padding: 22px; }
+#hd-face .hd-zone.up { top: 0; align-items: flex-start; padding-top: 30px; }
+#hd-face .hd-zone.down { bottom: 0; align-items: flex-end; }
+body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки ведущего не нужны — легко задеть */
+.hd-howto { text-align: left; margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; }
+.big-btn { font-size: 24px; padding: 18px 44px; }
+.hd-card { width: 100%; padding: 36px 16px; border-radius: 22px; background: var(--panel); border: 2px solid var(--accent);
+  font: 800 clamp(30px, 10vw, 54px) var(--display); overflow-wrap: anywhere; }
+.hd-card.wait { border-color: var(--line); color: var(--muted); font-size: 24px; }
+.hd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.hd-list li { padding: 8px 14px; border-radius: 999px; font-weight: 800; }
+.hd-list li.ok { background: rgba(61, 220, 132, .18); border: 2px solid var(--good); }
+.hd-list li.no { background: var(--panel); color: var(--muted); text-decoration: line-through; }
 .scene { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; }
 .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 800; color: var(--accent); }
 
@@ -879,6 +903,7 @@ const HOST_NEXT = {
   si_reveal: "Дальше", si_final_bet: "Хватит ждать", si_final_q: "Открыть ответы", si_final_reveal: "Итоги",
   fd_round: "Начать раунд", fd_play: "Время вышло", fd_steal: "Не угадали", fd_reveal: "Дальше",
   fd_big_intro: "Начать", fd_big_q: "Пропустить вопрос", fd_big_result: "Итоги",
+  hd_turn: "Пропустить ход", hd_play: "Закончить ход", hd_result: "Дальше",
 };
 // Звук. Телефон ведущего (играет без ТВ — экран ведущего у него не открыт) звучит как большой экран:
 // фоновая музыка, сигналы, мелодии. Остальные телефоны молчат, чтобы не было какофонии, — мелодию вопроса
@@ -1038,6 +1063,114 @@ function render(s) {
   } else if (y) window.scrollTo(0, 0);
 }
 
+// ---------- «Слово на лбу» ----------
+// Телефон у лба экраном к друзьям: слово во весь экран. Угадал — наклон вниз (экраном к полу), не знаешь — вверх.
+// Наклон считаем по датчику ориентации: v = cos(beta)·cos(gamma) — куда смотрит экран (1 — в потолок, −1 — в пол, 0 — вперёд).
+// Новый наклон засчитывается, только когда телефон вернули прямо. Запасной вариант — касание верхней или нижней половины экрана.
+const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
+const hd = { word: null, n: 0, end: 0, ready: 0, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, tilt: false };
+async function hdStart() {
+  try { // iPhone спрашивает разрешение на датчики — только по нажатию
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") hd.tilt = (await DeviceOrientationEvent.requestPermission()) === "granted";
+    else hd.tilt = "DeviceOrientationEvent" in window;
+  } catch { hd.tilt = false; }
+  try { hd.wake = await navigator.wakeLock.request("screen"); } catch {} // экран не гаснет посреди хода
+  try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" }); } catch {}
+  const r = await api("/api/hd/start", { pid }).catch(() => null);
+  if (r && r.ok) { lastSig = ""; poll(); }
+}
+async function hdMark(ok) {
+  if (hd.busy || !hd.word || Date.now() < hd.ready || Date.now() >= hd.end) return;
+  hd.busy = true; hd.armed = false;
+  hdFlash(ok);
+  const r = await api("/api/hd/mark", { pid, ok, n: hd.n }).catch(() => null);
+  if (r && r.ok) { hd.word = r.word; hd.n = r.n; }
+  hd.busy = false;
+  setTimeout(hdPaint, Math.max(0, hd.flashUntil - Date.now()));
+}
+function hdFlash(ok) {
+  const f = document.getElementById("hd-face");
+  if (!f) return;
+  buzz(ok ? 80 : [40, 60, 40]);
+  hd.flashUntil = Date.now() + 700;
+  f.dataset.flash = ok ? "ok" : "pass";
+  f.querySelector(".hd-word").textContent = ok ? "Угадано! ✓" : "Пропуск";
+}
+function hdPaint() {
+  const f = document.getElementById("hd-face");
+  if (!f || Date.now() < hd.flashUntil) return;
+  const left = Math.max(0, (hd.end - Date.now()) / 1000), wait = (hd.ready - Date.now()) / 1000;
+  f.dataset.flash = "";
+  const w = f.querySelector(".hd-word"), text = wait > 0 ? `Приложи ко лбу\n${Math.ceil(wait)}` : hd.word || "";
+  if (w.textContent !== text) { w.textContent = text; w.style.fontSize = ""; fitWord(w); }
+  f.querySelector(".hd-left").textContent = wait > 0 ? "" : Math.ceil(left);
+  f.querySelector(".hd-bar i").style.width = (wait > 0 ? 100 : (left / hd.total) * 100) + "%";
+}
+function fitWord(w) { // слово во всю ширину, но целиком
+  let size = Math.min(innerWidth / 5, innerHeight / 3);
+  w.style.fontSize = size + "px";
+  while (size > 18 && (w.scrollWidth > w.clientWidth || w.scrollHeight > w.clientHeight)) { size *= 0.9; w.style.fontSize = size + "px"; }
+}
+function onTilt(e) {
+  if (e.beta == null || !document.getElementById("hd-face")) return;
+  const v = Math.cos(e.beta * Math.PI / 180) * Math.cos(e.gamma * Math.PI / 180);
+  if (Math.abs(v) < 0.4) hd.armed = true; // телефон снова прямо — можно следующий наклон
+  else if (hd.armed && Math.abs(v) > 0.7) hdMark(v < 0);
+}
+window.addEventListener("deviceorientation", onTilt);
+function hdFace(c, me, seconds) {
+  let f = document.getElementById("hd-face");
+  if (!c) {
+    if (f) { f.remove(); clearInterval(hd.timer); try { hd.wake && hd.wake.release(); } catch {} hd.wake = null; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+    return;
+  }
+  hd.total = seconds; hd.end = Date.now() + c.left * 1000; hd.ready = Date.now() + (c.ready_left || 0) * 1000;
+  if (!hd.busy && me.n >= hd.n) { hd.n = me.n; hd.word = me.word || hd.word; }
+  if (!f) {
+    f = document.createElement("div"); f.id = "hd-face";
+    f.innerHTML = `<div class="hd-bar"><i></i></div><span class="hd-left"></span><div class="hd-word"></div>
+      <button type="button" class="hd-zone up" aria-label="Угадал">✓ угадал</button><button type="button" class="hd-zone down" aria-label="Пропустить">пропуск</button>`;
+    document.body.appendChild(f);
+    f.querySelector(".up").addEventListener("pointerdown", (e) => { e.preventDefault(); hdMark(true); });
+    f.querySelector(".down").addEventListener("pointerdown", (e) => { e.preventDefault(); hdMark(false); });
+    hd.armed = false; clearInterval(hd.timer); hd.timer = setInterval(hdPaint, 200);
+  }
+  hdPaint();
+}
+
+function renderHd(s, me) {
+  const h = s.hd, c = h.cur || {}, m = h.me || {};
+  mood("");
+  const who = `${avaP(c)} <b>${esc(c.name)}</b>`;
+  if (s.phase === "hd_turn") {
+    $main.innerHTML = m.is_guesser
+      ? `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div><h1>Твой ход! 🙆</h1>
+          <ol class="hd-howto"><li>Нажми «Старт» и приложи телефон ко лбу — экраном к друзьям</li>
+            <li>Друзья объясняют слово, не называя его</li><li>Угадал — наклони телефон <b>вниз</b>, не знаешь — <b>вверх</b></li></ol>
+          <p class="muted">${h.seconds} секунд. Если наклоны не срабатывают — касайся верха или низа экрана</p>
+          <button class="btn big-btn" id="hd-start" type="button">▶ Старт</button></div>`
+      : `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div><h2>Угадывает ${who}</h2>
+          <p class="muted">Сейчас приложит телефон ко лбу. Объясняй слова, не называя их, — слово будет и у тебя на экране</p></div>`;
+    const b = document.getElementById("hd-start");
+    if (b) b.addEventListener("click", () => { b.disabled = true; b.textContent = "…"; hdStart().finally(() => { b.disabled = false; b.textContent = "▶ Старт"; }); });
+  } else if (s.phase === "hd_play") {
+    if (m.is_guesser) {
+      $main.innerHTML = `<div class="scene"><h2>Телефон — ко лбу!</h2></div>`;
+      return hdFace(c, m, h.seconds);
+    }
+    const timebar = c.left != null ? `<div class="timebar" style="width:100%"><i style="animation-duration:${c.left}s"></i></div>` : "";
+    $main.innerHTML = `<div class="scene"><div class="eyebrow">Угадывает ${esc(c.name)} · угадано ${c.ok}</div>${timebar}
+      ${m.word ? `<div class="hd-card">${esc(m.word)}</div><p class="muted">Объясняй, не называя слово и однокоренные</p>`
+        : `<div class="hd-card wait">Приготовьтесь…</div>`}</div>`;
+  } else if (s.phase === "hd_result") {
+    const words = (c.words || []).map((w) => `<li class="${w.ok ? "ok" : "no"}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
+    const mineNext = h.next && h.next === me.name;
+    $main.innerHTML = `<div class="scene"><div class="eyebrow">Ход ${h.turn + 1} из ${h.turns}</div>
+      <h2>${who}: ${wordsN(c.ok)}</h2>${words ? `<ul class="hd-list">${words}</ul>` : ""}
+      ${mineNext ? `<p class="pill">Следующий ход — твой! Готовься 🙆</p>` : h.next ? `<p class="muted">Следующий: ${esc(h.next)}</p>` : `<p class="muted">Это был последний ход</p>`}</div>`;
+  }
+}
+
 function draw(s) {
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
@@ -1050,6 +1183,8 @@ function draw(s) {
   $main.classList.toggle("calm", scene === lastScene); lastScene = scene;
   if (s.phase.startsWith("si_")) return renderSi(s, me);
   if (s.phase.startsWith("fd_")) return renderFd(s, me);
+  if (s.phase !== "hd_play") hdFace(null);
+  if (s.phase.startsWith("hd_")) return renderHd(s, me);
   const myTeam = me.team != null ? s.team_names[me.team] : null;
   if (s.phase === "setup") {
     $main.innerHTML = `
@@ -1236,7 +1371,7 @@ function draw(s) {
         <span class="big pop">${medal}</span>
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
         ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
-        <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${me.score} очков. Спасибо за игру!</p>
+        <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${s.settings.mode === "heads" ? wordsN(me.score) : me.score + " очков"}. Спасибо за игру!</p>
         ${standings(s, me)}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>
       </div>`;
@@ -1307,10 +1442,11 @@ async function pollOnce(seq) {
     version = s.version;
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "blocked" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
+    const hdKey = s.hd ? JSON.stringify(s.hd, (k, v) => (k === "left" || k === "ready_left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" || k === "voters" ? undefined : v)) : "";
     const meKey = s.me ? JSON.stringify(s.me, (k, v) => (k === "trick_wait" ? v > 0 : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.paused, meKey, s.trick_next, s.trick_now, s.players.length, s.phase === "lobby" && s.teams,
-      s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + topicKey;
+      s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + hdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     pauseView(s);
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);

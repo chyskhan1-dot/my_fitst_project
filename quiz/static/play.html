@@ -153,10 +153,31 @@ input {
 .teampick small { color: var(--muted); font-weight: 700; }
 .teambadge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; font-weight: 800; background: var(--c); color: #fff; }
 .roles { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-.about { text-align: left; margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; line-height: 1.4; }
+/* главная и экран игры: прижаты к верху, у каждой игры свой цвет */
+#main.top-start { justify-content: flex-start; padding-top: 8px; padding-bottom: 24px; }
+.home h1 { font-size: 27px; }
+.games { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.game { position: relative; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 12px 14px 16px; border-radius: 18px; border: 1px solid var(--line); text-align: left; color: var(--ink); font: inherit; cursor: pointer;
+  background: linear-gradient(90deg, var(--t), transparent 70%), var(--panel); overflow: hidden; transition: transform .1s, border-color .15s; }
+.game::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 4px 4px 0; background: var(--c); }
+.game .tile, .game-head .tile { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 28px; background: var(--t); }
+.game b { display: block; font-family: var(--display); font-size: 17px; line-height: 1.25; }
+.game small { color: var(--muted); font-size: 14px; }
+.game .chev { font-size: 30px; line-height: 1; color: var(--muted); padding-right: 4px; }
+.game:hover { border-color: var(--c); }
+.game:active { transform: scale(.98); border-color: var(--c); }
+.game-about { align-items: stretch; text-align: left; gap: 14px; }
+.back-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: var(--muted); font: 700 15px var(--body); cursor: pointer; }
+.game-head { display: flex; align-items: center; gap: 14px; }
+.game-head .tile { width: 60px; height: 60px; font-size: 34px; flex: none; }
+.game-head h1 { font-size: 26px; }
+.game-head small { color: var(--muted); font-size: 15px; }
+.about { margin: 0; padding: 14px 16px 14px 36px; display: flex; flex-direction: column; gap: 8px; font-size: 16px; line-height: 1.4;
+  border-radius: 16px; background: var(--panel); border-left: 4px solid var(--c); }
+.about li::marker { color: var(--c); font-weight: 800; }
 .game-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .game-btns .btn { width: 100%; text-align: center; text-decoration: none; }
-.game-about #back { align-self: flex-start; }
 .role {
   display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 14px; text-align: left; align-items: center;
   padding: 18px; border-radius: 18px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
@@ -357,15 +378,15 @@ function setRoom(code) {
 
 // Главное меню: сначала выбор игры, потом — описание и «Начать» (ведущий, игрок или один телефон)
 const GAMES = [
-  { id: "king", ico: "⛰️", name: "Царь горы", short: "Кто первым наберёт 10 000 очков", room: true,
-    about: ["5 раундов по 3 вопроса, тему раунда выбирают голосованием", "Кто первым наберёт 10 000 очков — тот царь горы", "Вопросы — на большом экране (телевизор или ноутбук), ответы — на телефонах"] },
-  { id: "quiz", ico: "❓", name: "Викторина", short: "Вопросы с вариантами, кто больше наберёт", room: true,
+  { id: "king", ico: "⛰️", name: "Царь горы", short: "Гонка до 10 000 очков", c: "#2bb673", t: "rgba(43, 182, 115, .22)", room: true,
+    about: ["5 раундов по 3 вопроса, тему выбирают голосованием", "Первым набрал 10 000 очков — царь горы", "Вопросы на большом экране, ответы — на телефонах"] },
+  { id: "quiz", ico: "❓", name: "Викторина", short: "Вопросы и варианты ответов", c: "#3e7bfa", t: "rgba(62, 123, 250, .22)", room: true,
     about: ["Вопросы — на большом экране, ответы — на телефонах", "Быстрый правильный ответ — больше очков", "Ведущий настраивает команды, темы, сложность и подлянки"] },
-  { id: "heads", ico: "🙆", name: "Слово на лбу", short: "Телефон ко лбу, друзья объясняют слово", room: true, one: true,
-    about: ["Телефон у лба экраном к друзьям — они объясняют слово, не называя его", "Угадал — наклони телефон вниз, не знаешь — вверх. 60 секунд на ход", "Можно с одного телефона, передавая его по кругу, или комнатой с телевизором"] },
-  { id: "jeopardy", ico: "🎯", name: "Своя игра", short: "Табло тем и цен, кнопка «Ответить»", room: true,
-    about: ["Табло тем и цен: кто первым нажал «Ответить», тот и отвечает", "Ошибся — минус стоимость вопроса", "В конце финал со ставками"] },
-  { id: "learn", ico: "📚", name: "Тренировка", short: "Флаги, столицы и страны в своём темпе", href: "/learn",
+  { id: "heads", ico: "🙆", name: "Слово на лбу", short: "Друзья объясняют — ты угадываешь", c: "#f28c28", t: "rgba(242, 140, 40, .22)", room: true, one: true,
+    about: ["Телефон у лба, друзья объясняют слово, не называя его", "Угадал — наклон вниз, не знаешь — вверх. 60 секунд на ход", "Можно с одного телефона или комнатой с телевизором"] },
+  { id: "jeopardy", ico: "🎯", name: "Своя игра", short: "Табло тем и цен, кто быстрее", c: "#a855f7", t: "rgba(168, 85, 247, .22)", room: true,
+    about: ["Кто первым нажал «Ответить», тот и отвечает", "Ошибся — минус стоимость вопроса", "В конце финал со ставками"] },
+  { id: "learn", ico: "📚", name: "Тренировка", short: "Флаги и столицы в своём темпе", c: "#14b8a6", t: "rgba(20, 184, 166, .22)", href: "/learn",
     about: ["Играешь один, в своём темпе", "Ошибки возвращаются, пока не выучишь"] },
 ];
 let mine = null; // своя игра ведущего на этом устройстве
@@ -374,13 +395,15 @@ function startScreen() {
   setRoom("");
   document.getElementById("top").innerHTML = "";
   mood("");
+  $main.classList.add("top-start");
   $main.innerHTML = `
-    <div class="scene">
+    <div class="scene home">
       <div class="eyebrow rise">Квиз</div>
       <h1 class="rise" style="--i:1">Во что играем?</h1>
       <div class="roles" id="resume"></div>
-      <div class="roles">${GAMES.map((g, i) => `
-        <button class="role rise" style="--i:${i + 2}" data-game="${g.id}"><span class="ico">${g.ico}</span><b>${g.name}</b><small>${g.short}</small></button>`).join("")}
+      <div class="games">${GAMES.map((g, i) => `
+        <button class="game rise" style="--i:${i + 2};--c:${g.c};--t:${g.t}" data-game="${g.id}">
+          <span class="tile">${g.ico}</span><span><b>${g.name}</b><small>${g.short}</small></span><span class="chev" aria-hidden="true">›</span></button>`).join("")}
       </div>
       <button class="btn ghost rise" style="--i:8;width:100%" id="as-player" type="button">📱 У меня есть код комнаты</button>
       <div class="error" id="err"></div>
@@ -401,12 +424,12 @@ function gameScreen(id) {
     : `${g.one ? `<a class="btn" href="/heads">▶ Начать с одного телефона</a>` : ""}
        <button class="${g.one ? "btn ghost" : "btn"}" id="as-host" type="button">${g.one ? "🎤 Комната с телевизором — я ведущий" : "▶ Начать — я ведущий"}</button>
        <button class="btn ghost" id="as-player" type="button">📱 Я игрок — есть код</button>`;
+  $main.classList.add("top-start");
   $main.innerHTML = `
-    <div class="scene game-about">
-      <button class="leave" type="button" id="back">← Все игры</button>
-      <span class="big pop">${g.ico}</span>
-      <h1 class="rise">${g.name}</h1>
-      <ul class="about rise" style="--i:1">${g.about.map((x) => `<li>${x}</li>`).join("")}</ul>
+    <div class="scene game-about" style="--c:${g.c};--t:${g.t}">
+      <button class="back-link" type="button" id="back">‹ Все игры</button>
+      <div class="game-head rise"><span class="tile">${g.ico}</span><div><h1>${g.name}</h1><small>${g.short}</small></div></div>
+      <ol class="about rise" style="--i:1">${g.about.map((x) => `<li>${x}</li>`).join("")}</ol>
       <div class="game-btns rise" style="--i:2">${buttons}</div>
       <div class="error" id="err"></div>
     </div>`;
@@ -456,6 +479,7 @@ async function resumeOffers() {
 }
 
 function codeForm() {
+  $main.classList.remove("top-start");
   $main.innerHTML = `
     <div class="scene">
       <div class="eyebrow rise">Вход в игру</div>
@@ -491,6 +515,7 @@ function avatarPicker(list, selected) {
 }
 
 function joinForm() {
+  $main.classList.remove("top-start");
   const s = lastState;
   document.getElementById("top").innerHTML = "";
   mood("");
@@ -1151,6 +1176,7 @@ function renderHd(s, me) {
 }
 
 function draw(s) {
+  $main.classList.remove("top-start");
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
   document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc">${me.score}</span>`;

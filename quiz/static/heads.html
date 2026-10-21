@@ -104,7 +104,7 @@ function draw(theme) {
   return w;
 }
 
-function save() { store(KEY, g); }
+function save() { g.at = Date.now(); store(KEY, g); }
 
 function setupView() {
   const d = draft || (draft = { teams: (load(KEY + "-teams") || 2), themes: shuffle(THEMES.map((t) => t.name)).slice(0, 3), names: savedNames() });
@@ -170,6 +170,22 @@ function scoresHtml() {
 }
 
 const isLast = () => g.round + 1 >= g.themes.length && g.team + 1 >= g.teams;
+
+// вернулись к незаконченной игре: продолжить с того же места или начать заново
+function resumeView() {
+  const mins = g.at ? Math.round((Date.now() - g.at) / 60000) : 0;
+  const ago = !g.at ? "" : mins < 1 ? "только что" : mins < 60 ? `${mins} мин назад` : mins < 1440 ? `${Math.round(mins / 60)} ч назад` : `${Math.round(mins / 1440)} дн назад`;
+  $app.innerHTML = `
+    <div class="top"><a href="/">← Главная</a></div>
+    <div class="turn">
+      <div class="eyebrow">Незаконченная игра${ago ? ` · ${ago}` : ""}</div>
+      <h1>🙆 Слово на лбу</h1>
+      <p class="muted">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(g.themes[g.round])} · ходит ${tname(g.team)}</p>
+      ${scoresHtml()}
+      <button class="btn big" id="resume" style="align-self:stretch">▶ Продолжить</button>
+      <button class="btn ghost" id="restart" style="align-self:stretch">Начать заново</button>
+    </div>`;
+}
 
 function render() {
   if (!g || g.stage === "setup") return setupView();
@@ -238,8 +254,10 @@ document.addEventListener("click", (e) => {
   else if (id === "start") { e.target.disabled = true; startTurn(); }
   else if (id === "next") nextTurn();
   else if (id === "again") newGame(g.teams, g.themes, g.names || savedNames());
+  else if (id === "resume") render();
+  else if (id === "restart") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; store(KEY); render(); }
   else if (id === "setup") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; store(KEY); render(); }
-  else if (id === "quit" && !confirm("Выйти из игры? Счёт сохранится — можно будет продолжить")) e.preventDefault();
+  else if (id === "quit" && !confirm("Выйти из игры? Счёт сохранится — потом можно продолжить или начать заново")) e.preventDefault();
 });
 
 (async () => {
@@ -247,7 +265,8 @@ document.addEventListener("click", (e) => {
   if (!THEMES.length) { $app.innerHTML = `<p class="muted">Не удалось загрузить слова. Проверь интернет и обнови страницу</p>`; return; }
   if (g && g.themes && g.themes.some((n) => !THEMES.find((t) => t.name === n))) g = null; // темы переименовали — начать заново
   if (g && g.stage === "final") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; } // прошлая игра закончена — к настройкам
-  render();
+  if (g && g.stage === "play") { g.stage = "result"; save(); } // страницу закрыли посреди хода — ход закончен
+  if (g && g.stage !== "setup") resumeView(); else render();
 })();
 </script>
 </body>

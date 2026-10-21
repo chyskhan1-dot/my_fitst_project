@@ -15,6 +15,7 @@
 import base64
 import collections
 import binascii
+import gzip
 import hashlib
 import json
 import math
@@ -2006,7 +2007,11 @@ class Game:
     def owns(self, pid, device):
         return pid in self.players and device and self.players[pid]["device"] == device
 
-    def state(self, pid=None, device=None):
+    def packs_key(self):
+        c = self.custom
+        return f"{len(PACKS)}:{c['title'] + ':' + str(len(c['questions'])) if c else ''}"
+
+    def state(self, pid=None, device=None, pk=None):
         self.tick()
         s = {
             "title": self.pack["title"] if self.phase != "setup" else "Квиз",
@@ -2044,9 +2049,13 @@ class Game:
                 s["fd_custom"] = {"title": self.fd_custom["title"], "count": len(self.fd_custom["questions"])}
             if self.si_custom:
                 s["si_custom"] = si_info(self.si_custom)
-            s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
-            if self.custom:
-                s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
+            # список пакетов с темами всех вопросов (~90 КБ) нужен только меню ведущего, и только когда он изменился:
+            # экран ведущего присылает pk — ключ того списка, что у него уже есть
+            s["packs_key"] = self.packs_key()
+            if pid is None and pk != s["packs_key"]:
+                s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
+                if self.custom:
+                    s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("topic_vote", "topic_bet"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
         if not self.si and not self.fd and not self.hd and self.phase in ("reveal", "leaders", "final"):
@@ -2272,6 +2281,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send_bytes(json.dumps(data, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8", code, "no-store")
 
     def send_bytes(self, body, mime, code=200, cache="no-cache", extra=None):
+        # под общим замком ответ только запоминаем: медленный телефон не должен держать замок, пока ему отправляют данные
+        if getattr(self, "defer", False):
+            self.pending = (body, mime, code, cache, extra)
+            return
+        extra = dict(extra or {})
+        if (len(body) > 1400 and mime.startswith(("application/json", "text/", "application/manifest"))
+                and "gzip" in (self.headers.get("Accept-Encoding") or "")):
+            body = gzip.compress(body, 5)  # JSON и страницы сжимаются в 5–10 раз — быстрее по мобильному интернету
+            extra["Content-Encoding"], extra["Vary"] = "gzip", "Accept-Encoding"
         self.send_response(code)
         self.send_header("Content-Type", mime)
         self.send_header("Cache-Control", cache)
@@ -2367,13 +2385,20 @@ class Handler(BaseHTTPRequestHandler):
         elif parts[:2] == ["api", "packs"] and len(parts) == 3 and parts[2] in PACK_FILES:
             self.send_bytes(PACK_FILES[parts[2]].read_bytes(), "application/json; charset=utf-8")
         elif url.path == "/api/state":
-            with lock:
-                game = rooms.get(query.get("room", [""])[0])
-                if not game:
-                    return self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
-                game.touched = time.time()
-                STATS.sample()
-                self.send_json(game.state(query.get("pid", [None])[0], self.device()))
+            self.defer, self.pending = True, None
+            try:
+                with lock:
+                    game = rooms.get(query.get("room", [""])[0])
+                    if not game:
+                        self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
+                    else:
+                        game.touched = time.time()
+                        STATS.sample()
+                        self.send_json(game.state(query.get("pid", [None])[0], self.device(), query.get("pk", [None])[0]))
+            finally:
+                self.defer = False
+            if self.pending:
+                self.send_bytes(*self.pending)
         else:
             self.send_json({"error": "Страница не найдена"}, 404)
 
@@ -2399,6 +2424,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"ok": True, **si_info(pack)})
 
     def do_POST(self):
+        self.defer, self.pending = True, None  # ответ отправим, когда замок уже отпущен
+        try:
+            self.post()
+        finally:
+            self.defer = False
+        if self.pending:
+            self.send_bytes(*self.pending)
+
+    def post(self):
         url = urlparse(self.path)
         path = url.path
         if path == "/api/host/upload_siq":

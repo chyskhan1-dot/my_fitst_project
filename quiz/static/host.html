@@ -1578,10 +1578,15 @@ function wake() {
 document.addEventListener("visibilitychange", wake);
 window.addEventListener("pageshow", (e) => { if (e.persisted) wake(); });
 
+let packsCache = null;
 async function pollOnce(seq) {
   try {
-    const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store", signal: timeout(5000) })).json();
+    // список пакетов (большой) сервер присылает, только если у нас его ещё нет или он изменился
+    const s = await (await fetch("/api/state?room=" + encodeURIComponent(room) + (packsCache ? "&pk=" + encodeURIComponent(packsCache.key) : ""),
+      { cache: "no-store", signal: timeout(5000) })).json();
     if (seq !== pollSeq) return; // запрос устарел — уже ушёл новый
+    if (s.packs) packsCache = { key: s.packs_key, packs: s.packs, custom: s.custom };
+    else if (s.packs_key && packsCache && packsCache.key === s.packs_key) { s.packs = packsCache.packs; s.custom = packsCache.custom; }
     fails = 0;
     if (s.phase === "gone") return stop("Эта комната закрылась", GONE_TEXT);
     if (version && s.version !== version) return location.reload(); // сервер обновился

@@ -8,24 +8,30 @@
 #hd-face { position: fixed; inset: 0; z-index: 14; /* под «Паузой» */ background: #0e1330; color: #fff; display: flex; align-items: center; justify-content: center;
   user-select: none; -webkit-user-select: none; touch-action: none; transition: background .15s; }
 #hd-face[data-flash="ok"] { background: #1f9d57; }
-#hd-face[data-flash="pass"] { background: #c77a12; }
+#hd-face[data-flash="pass"] { background: #c93a3a; }
 #hd-face .hd-word { width: 92vw; height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
   font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; pointer-events: none; }
 #hd-face .hd-bar { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: rgba(255, 255, 255, .15); }
 #hd-face .hd-bar i { display: block; height: 100%; background: var(--accent); transition: width .2s linear; }
-#hd-face .hd-left { position: absolute; top: 18px; right: 20px; font: 800 28px var(--display); opacity: .8; pointer-events: none; }
-#hd-face .hd-zone { position: absolute; left: 0; right: 0; height: 50%; border: 0; background: transparent; color: rgba(255, 255, 255, .35);
-  font: 700 14px var(--body); display: flex; justify-content: center; padding: 22px; }
+#hd-face .hd-left { position: absolute; top: 18px; right: 22px; font: 800 48px var(--display); line-height: 1; color: #ffd23f; pointer-events: none; }
+#hd-face .hd-left.low { color: #ff6b6b; }
+#hd-face .hd-zone { position: absolute; left: 0; right: 0; height: 50%; border: 0; background: transparent; color: rgba(255, 255, 255, .6);
+  font: 800 18px var(--body); display: flex; justify-content: center; padding: 22px; }
+#hd-face.taps .hd-zone { color: #fff; }
+#hd-face.taps .hd-zone.up { background: linear-gradient(rgba(61, 220, 132, .18), transparent); }
+#hd-face.taps .hd-zone.down { background: linear-gradient(transparent, rgba(255, 107, 107, .18)); }
 #hd-face .hd-zone.up { top: 0; align-items: flex-start; padding-top: 30px; }
 #hd-face .hd-zone.down { bottom: 0; align-items: flex-end; }
 body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки ведущего не нужны — легко задеть */
 #hd-rotate { position: fixed; inset: 0; z-index: 14; background: #0e1330; color: #fff; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 18px; padding: 24px; text-align: center; font: 700 20px var(--body); }
+#hd-rotate small { font: 600 15px var(--body); color: #c2c8ec; max-width: 320px; line-height: 1.4; }
+#hd-rotate .ok { font: 800 18px var(--body); color: #1a1400; background: #ffd23f; border: 0; padding: 14px 24px; }
 #hd-rotate .ph { font-size: 72px; animation: hd-turn 1.6s ease-in-out infinite; }
 #hd-rotate button { font: 700 15px var(--body); color: #a7aedb; background: transparent; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px; padding: 10px 16px; }
 @keyframes hd-turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 `;
-  const hd = { word: null, end: 0, ready: 0, total: 60, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, onMark: null, onEnd: null, ended: false };
+  const hd = { taps: false, word: null, end: 0, ready: 0, total: 60, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, onMark: null, onEnd: null, ended: false };
   let styled = false;
   const face = () => document.getElementById("hd-face");
   const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
@@ -35,13 +41,26 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
   // закреплённое горизонтальное положение. Играем горизонтально: держать у лба удобнее, и экран не повернётся посреди хода.
   async function prepare() {
     style();
+    let allowed = true;
     try {
-      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") await DeviceOrientationEvent.requestPermission();
-    } catch {}
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") allowed = (await DeviceOrientationEvent.requestPermission()) === "granted";
+    } catch { allowed = false; }
+    hd.taps = !allowed;
+    if (!allowed) await notice("Наклоны выключены", "Телефон не дал доступ к датчику движения. Играем касаниями: верх экрана — угадал, низ — пропуск. Включить наклоны: закрой и снова открой сайт и нажми «Разрешить»");
     try { hd.wake = await navigator.wakeLock.request("screen"); } catch {}
     try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" }); } catch {}
     try { await screen.orientation.lock("landscape"); } catch {} // iPhone так не умеет — тогда просим повернуть
     if (portrait()) await askRotate();
+  }
+
+  // сообщение с кнопкой «Понятно»
+  function notice(title, text) {
+    return new Promise((done) => {
+      const box = document.createElement("div"); box.id = "hd-rotate";
+      box.innerHTML = `<span class="ph">✋</span><span>${title}</span><small>${text}</small><button type="button" class="ok">Понятно</button>`;
+      document.body.appendChild(box);
+      box.querySelector("button").addEventListener("click", () => { box.remove(); done(); });
+    });
   }
 
   // «Поверни телефон боком» — ждём горизонтального положения; если автоповорот выключен — можно играть вертикально
@@ -49,6 +68,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     return new Promise((done) => {
       const box = document.createElement("div"); box.id = "hd-rotate";
       box.innerHTML = `<span class="ph">📱</span><span>Поверни телефон горизонтально</span>
+        <small>Не поворачивается? Выключи блокировку поворота экрана или играй вертикально — тоже работает</small>
         <button type="button">Играть вертикально</button>`;
       document.body.appendChild(box);
       const finish = () => { removeEventListener("resize", check); box.remove(); done(); };
@@ -66,6 +86,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     if (hd.busy || !hd.word || Date.now() < hd.ready || Date.now() >= hd.end) return;
     hd.busy = true; hd.armed = false;
     flash(ok);
+    try { window.QuizMusic && QuizMusic.sting(ok ? "reveal" : "wrong"); } catch {} // звук на самом телефоне
     try {
       const next = await hd.onMark(ok);
       if (next !== undefined) hd.word = next;
@@ -92,7 +113,9 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     f.dataset.flash = "";
     const w = f.querySelector(".hd-word"), text = wait > 0 ? `Приложи ко лбу\n${Math.ceil(wait)}` : hd.word || "";
     if (w.textContent !== text) { w.textContent = text; w.style.fontSize = ""; fitWord(w); }
-    f.querySelector(".hd-left").textContent = wait > 0 ? "" : Math.ceil(left);
+    const lt = f.querySelector(".hd-left");
+    lt.textContent = wait > 0 ? "" : Math.ceil(left);
+    lt.classList.toggle("low", wait <= 0 && left <= 10);
     f.querySelector(".hd-bar i").style.width = (wait > 0 ? 100 : (left / hd.total) * 100) + "%";
   }
 
@@ -126,10 +149,11 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     if (!f) {
       f = document.createElement("div"); f.id = "hd-face";
       f.innerHTML = `<div class="hd-bar"><i></i></div><span class="hd-left"></span><div class="hd-word"></div>
-        <button type="button" class="hd-zone up" aria-label="Угадал">✓ угадал</button><button type="button" class="hd-zone down" aria-label="Пропустить">пропуск</button>`;
+        <button type="button" class="hd-zone up" aria-label="Угадал">✓ Угадал</button><button type="button" class="hd-zone down" aria-label="Пропустить">✗ Пропуск</button>`;
       document.body.appendChild(f);
       f.querySelector(".up").addEventListener("pointerdown", (e) => { e.preventDefault(); mark(true); });
       f.querySelector(".down").addEventListener("pointerdown", (e) => { e.preventDefault(); mark(false); });
+      f.classList.toggle("taps", hd.taps); // без датчика — касания подсвечены
       hd.armed = false; hd.ended = false; clearInterval(hd.timer); hd.timer = setInterval(paint, 200);
     }
     paint();

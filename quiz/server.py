@@ -2357,7 +2357,7 @@ class Handler(BaseHTTPRequestHandler):
                 game = next((g for g in rooms.values() if g.host_device == device), None)
                 if not game:
                     return self.send_json({})
-                return self.send_json({"room": game.code, "token": game.host_token, "phase": game.phase,
+                return self.send_json({"room": game.code, "token": game.host_token, "phase": game.phase, "mode": game.settings["mode"],
                                        "players": len(game.players), "title": game.state()["title"]})
 
             if path == "/api/rooms":

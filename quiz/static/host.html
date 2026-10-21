@@ -81,7 +81,7 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 .join-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .room-code { font-family: var(--display); font-weight: 800; font-size: clamp(48px, 8vw, 110px); letter-spacing: .12em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
 a.btn { text-decoration: none; display: inline-block; }
-.join-url { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 4vw, 52px); color: var(--accent); word-break: break-all; }
+.join-url { font-family: var(--display); font-weight: 800; font-size: clamp(16px, 4vw, 52px); color: var(--accent); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 #qr { background: #fff; padding: 12px; border-radius: 16px; line-height: 0; }
 #qr:empty { display: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -113,6 +113,7 @@ a.btn { text-decoration: none; display: inline-block; }
   transition: opacity .5s, transform .5s;
 }
 .opt .label { min-width: 0; flex: 1; position: relative; }
+.opt.ink, .topic.ink { color: #10142e; } /* на жёлтом и зелёном — тёмный текст */
 .opt .opt-img { position: relative; height: 2.2em; width: 3.3em; object-fit: contain; flex: none; border-radius: 8px; }
 .opt .who { position: relative; display: flex; flex: none; font-size: .8em; }
 .opt .who .ava { margin-left: -.4em; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
@@ -161,6 +162,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .topic { padding: 28px 22px; border-radius: 26px; background: var(--c); color: #fff; box-shadow: inset 0 -8px 0 rgba(0,0,0,.2);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: min(44vh, 400px); text-align: center; }
 .topic .ti { font-size: 5em; line-height: 1; }
+.unanimous { font-size: 9em; line-height: 1; text-align: center; }
 .topic b { font-size: 1.9em; line-height: 1.15; }
 .topic .who { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 2.2em; font-size: 1.2em; }
 .topic-time { font-family: var(--display); font-weight: 800; font-size: 1.3em; color: var(--accent); }
@@ -194,6 +196,8 @@ a.btn { text-decoration: none; display: inline-block; }
 @media (max-width: 900px) { .map-reveal, .map-row { display: flex; flex-direction: column; } }
 /* темы и сложность в меню */
 .theme-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.lv-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.theme-chip.lv.on { background: rgba(255, 210, 63, .3); color: #fff; }
 .theme-chip { font: 700 .8em var(--body); padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
 .theme-chip.on { background: rgba(255, 210, 63, .14); border-color: var(--accent); color: var(--ink); }
 .theme-chip small { opacity: .7; margin-left: 4px; }
@@ -373,7 +377,30 @@ button.fd-slot:hover { background: #2a3bb0; }
 .pack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
 .pack-grid .mode { padding: 12px 16px; }
 .pack-tools { margin-top: 10px; }
-.rules-line { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.group-title { margin: 0; font-size: .72em; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.group .picker-line { margin-top: 0; }
+details.own { border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; }
+details.own summary { cursor: pointer; padding: 10px 0; font-weight: 700; color: var(--muted); list-style: none; }
+details.own summary::-webkit-details-marker { display: none; }
+details.own summary::after { content: " ▾"; }
+details.own[open] summary::after { content: " ▴"; }
+details.own .pack-tools { margin: 0 0 12px; }
+.rules-link { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.rules-link:hover { border-color: var(--muted); }
+.rules-link .rl-ico { font-size: 1.4em; }
+.rules-link b { display: block; }
+.rules-link small { color: var(--muted); }
+.rules-link .chev { margin-left: auto; font-size: 1.6em; color: var(--muted); }
+/* телефон: кнопка «Создать игру» всегда видна внизу */
+@media (max-width: 760px) {
+  .stage > .actions { position: sticky; bottom: 0; margin: 0 -16px -24px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(14, 19, 48, .96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .stage > .actions .need { flex-basis: 100%; text-align: center; }
+  .stage > .actions .btn { flex: 1; padding-left: 14px; padding-right: 14px; }
+  .stage > .actions .btn.ghost { flex: 0 0 auto; background-color: #1c2150; }
+}
 @media (max-width: 760px) { .mode-row { grid-template-columns: 1fr; } }
 
 /* главное меню */
@@ -405,6 +432,8 @@ button.fd-slot:hover { background: #2a3bb0; }
 .switch { width: 48px; height: 28px; border-radius: 99px; background: var(--line); position: relative; flex: none; transition: background .2s; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
 .rule input:checked + .switch { background: var(--good); }
+.rule .state { width: 3.2em; flex: none; font-weight: 800; font-size: .8em; color: var(--muted); }
+.rule input:checked ~ .state { color: var(--good); }
 .rule input:checked + .switch::after { transform: translateX(20px); }
 .rule input:focus-visible + .switch { outline: 3px solid var(--ink); outline-offset: 2px; }
 .seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--line); flex: none; }
@@ -442,6 +471,8 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 .btn:disabled { opacity: .4; cursor: default; }
 .btn:focus-visible, .chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .error { color: var(--bad); }
+#pack-err:empty { display: none; } /* пустая строка ошибки не оставляет дыру */
+.need { align-self: center; color: var(--muted); font-weight: 700; font-size: .85em; }
 
 @media (max-width: 640px) {
   .options { grid-template-columns: 1fr; }
@@ -633,7 +664,7 @@ function options(s, reveal) {
     const count = reveal ? `<span class="count">${s.counts[i]}</span>` : "";
     const who = reveal ? (s.player_answers || []).filter((a) => (Array.isArray(a.pick) ? a.pick : [a.pick]).includes(i)) : [];
     const faces = who.length ? `<span class="who">${who.slice(0, 6).map(avaP).join("")}${who.length > 6 ? `<span class="more">+${who.length - 6}</span>` : ""}</span>` : "";
-    return `<div class="opt ${cls}" style="--c:var(--a${i});--i:${i + 1}">${fill}${s.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(s.option_images[i]))}" alt="">` : ""}<span class="label">${esc(o)}</span>${faces}${count}</div>`;
+    return `<div class="opt ${cls} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i + 1}">${fill}${s.option_images ? `<img class="opt-img" src="${esc(QuizPack.mediaSrc(s.option_images[i]))}" alt="">` : ""}<span class="label">${esc(o)}</span>${faces}${count}</div>`;
   }).join("")}</div>`;
 }
 
@@ -818,6 +849,7 @@ function draw(s) {
     s.players.forEach((p) => seen.add(p.id));
     if (window.QRCode) new QRCode(document.getElementById("qr"), { text: url, width: 180, height: 180 });
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">← Правила</button>
+      ${s.players.length ? "" : `<span class="need">Нужен хотя бы 1 игрок</span>`}
       <button class="btn" data-act="next" ${s.players.length ? "" : "disabled"}>Начать игру</button>`;
   } else if (s.phase === "topic_vote") {
     const t = s.topic;
@@ -825,7 +857,7 @@ function draw(s) {
       <div class="qhead"><div><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div><h1 class="rise">Какую тему играем?</h1>
         <p class="muted">Голосуйте на телефонах — на колесо попадут только темы с голосами</p></div>
         <span class="topic-time" id="topic-time"></span></div>
-      <div class="topics">${t.options.map((o, i) => `<div class="topic pop" style="--c:var(--a${i});--i:${i}"><span class="ti">${QuizWheel.icon(o)}</span><b>${esc(o)}</b>
+      <div class="topics">${t.options.map((o, i) => `<div class="topic pop ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}"><span class="ti">${QuizWheel.icon(o)}</span><b>${esc(o)}</b>
         <span class="who">${t.voters[i].map(avaP).join("")}</span></div>`).join("")}</div>
       <p class="muted">Проголосовали: <b style="color:var(--ink)">${t.voted} из ${s.players.filter((p) => p.online).length}</b></p>`;
     $actions.innerHTML = `<button class="btn" data-act="next">Хватит голосовать</button>`;
@@ -834,11 +866,11 @@ function draw(s) {
     const wheel = document.getElementById("topic-wheel");
     if (!wheel || wheel.dataset.round !== String(t.round)) { // колесо рисуем один раз — иначе оно начнёт крутиться заново
       $main.innerHTML = `
-        <div class="topic-stage"><div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 460)}</div>
+        <div class="topic-stage"><div id="topic-wheel" data-round="${t.round}">${t.unanimous ? `<div class="unanimous pop">${QuizWheel.icon(t.options[t.winner])}</div>` : QuizWheel.html(t.options, w, 460)}</div>
           <div class="topic-result" id="topic-result"><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${t.unanimous ? "единогласно!" : "тема"}</div>
             <h1>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h1>
             <p class="muted">Приготовьтесь!</p></div></div>`;
-      QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
+      if (!t.unanimous) QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left); // все за одну — крутить нечего
     }
     $actions.innerHTML = `<button class="btn" data-act="next">Начать раунд</button>`;
   } else if (s.phase === "question") {
@@ -1220,14 +1252,16 @@ function packCards(s, d) {
   const custom = si ? s.si_custom : s.custom;
   if (custom) list.push({ id: "custom", title: custom.title, sub: "Свой пакет" + (si ? ` · ${custom.rounds} раунд.` : "") });
   const cur = si ? d.si_pack : d.pack, attr = si ? "data-sipack" : "data-pack";
-  return `<div class="pack-grid">${list.map((p) => `
-    <button class="mode pack ${cur === p.id ? "on" : ""}" ${attr}="${esc(p.id)}"><span><b>${esc(p.title)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ""}</span></button>`).join("")}</div>
-    ${si ? "" : themePicker(s, d)}
-    <div class="pack-tools">
-      ${si ? `<label class="btn ghost small" for="siq-file">📦 Загрузить пакет SIGame (.siq)</label>`
-           : `<label class="btn ghost small" for="pack-file">Загрузить свой (.json, .csv)</label>
+  // три группы: пакет, темы и сложность, свои вопросы (свёрнуты — нужны не каждому)
+  return `<div class="group"><p class="group-title">Пакет вопросов</p><div class="pack-grid">${list.map((p) => `
+    <button class="mode pack ${cur === p.id ? "on" : ""}" ${attr}="${esc(p.id)}"><span><b>${esc(p.title)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ""}</span></button>`).join("")}</div></div>
+    ${si ? "" : `<div class="group"><p class="group-title">Темы и сложность</p>${themePicker(s, d)}</div>`}
+    <details class="own" ${custom ? "open" : ""}><summary>${si ? "📦 Свой пакет SIGame" : "📝 Свои вопросы"}</summary>
+      <div class="pack-tools">
+      ${si ? `<label class="btn ghost small" for="siq-file">Загрузить пакет (.siq)</label>`
+           : `<label class="btn ghost small" for="pack-file">Загрузить файл (.json, .csv)</label>
               <a class="btn ghost small" href="/editor" target="_blank" rel="noopener">Редактор вопросов</a>`}
-    </div>
+      </div></details>
     <p class="error" id="pack-err" role="alert"></p>`;
 }
 
@@ -1253,7 +1287,7 @@ function themePicker(s, d) {
   return `${themes.length > 1 ? `<div class="picker-line"><button type="button" class="btn ghost small" data-themes-open aria-expanded="${themesOpen}">🏷 Темы: ${esc(label)} ${themesOpen ? "▴" : "▾"}</button></div>` : ""}
     ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}</button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
-    <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="seg">${LEVELS.map(([v, n]) => `<button type="button" class="${levelsOf(d).includes(v) ? "on" : ""}" data-levelt="${v}">${n}</button>`).join("")}</span>` : ""}
+    <div class="picker-line">${levels.size ? `<span class="muted">Сложность</span><span class="lv-chips">${LEVELS.map(([v, n]) => `<button type="button" class="theme-chip lv ${levelsOf(d).includes(v) ? "on" : ""}" data-levelt="${v}" aria-pressed="${levelsOf(d).includes(v)}">${levelsOf(d).includes(v) ? "✓ " : ""}${n}</button>`).join("")}</span>` : ""}
       ${d.mode === "king" ? "" : `<button type="button" class="theme-chip ${d.rounds ? "on" : ""}" data-rounds-toggle title="Голосование за тему перед каждыми 3 вопросами">🎡 Раунды по темам</button>`}
       ${fits ? "" : `<span class="muted" style="color:var(--bad)">Таких вопросов нет — будет весь пакет</span>`}</div>`;
 }
@@ -1274,7 +1308,7 @@ function rulesSummary(d) {
 function rulesList(d) {
   const seg = (attr, values, cur, label) => `<span class="seg">${values.map((v) => `<button type="button" class="${cur === v ? "on" : ""}" data-${attr}="${v}">${label(v)}</button>`).join("")}</span>`;
   const toggle = (r) => `<label class="rule"><span class="txt"><b>${r.name}</b><small>${r.desc}</small></span>
-    <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span></label>`;
+    <input type="checkbox" id="rule-${r.id}" data-rule="${r.id}" ${d[r.id] ? "checked" : ""}><span class="switch"></span><span class="state">${d[r.id] ? "Вкл" : "Выкл"}</span></label>`;
   const king = `<div class="rule"><span class="txt"><b>⛰️ Царь горы</b><small>Цель — ${KING_GOAL.toLocaleString("ru-RU")} очков: кто первым дошёл до вершины, тот выиграл. Не дошёл никто — после 5 раундов по 3 вопроса побеждает тот, кто выше</small></span></div>
        <div class="rule wrap"><span class="txt"><b>Командная игра</b><small>Счёт команды — средний по игрокам</small></span>${seg("teams", [0, 2, 3, 4], d.teams, (v) => (v ? v + " команды" : "Выкл"))}</div>
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
@@ -1310,14 +1344,17 @@ function drawSetup(s) {
   const names = STEPS.map((n, i) => (i === 1 && d.mode === "heads" ? "Темы" : n));
   const steps = `<nav class="steps">${names.map((n, i) => `<button type="button" class="wstep ${setupStep === i + 1 ? "on" : ""} ${setupStep > i + 1 ? "done" : ""}"
     data-step="${i + 1}" ${i === 2 ? "data-open-rules" : ""}><span class="num">${setupStep > i + 1 ? "✓" : i + 1}</span>${n}</button>`).join("")}</nav>`;
-  const tags = `<span class="tags">${rulesSummary(d).map((x) => `<span class="tag">${esc(x)}</span>`).join("")}</span>`;
+  // правила одной строкой-ссылкой: видно главное, остальное — на шаге «Правила»
+  const sum = rulesSummary(d), shown = sum.slice(0, 3);
+  const rulesLink = `<button class="rules-link" data-step="3" type="button"><span class="rl-ico">⚙</span>
+    <span><b>Правила</b><small>${esc(shown.join(" · "))}${sum.length > shown.length ? ` · ещё ${sum.length - shown.length}` : ""}</small></span><span class="chev">›</span></button>`;
   const body = setupStep === 1
     ? `<section><div class="mode-row">${MODES.map((m) => `
         <button class="mode ${d.mode === m.id ? "on" : ""}" data-mode="${m.id}" ${m.ready ? "" : "disabled"}>
           <span class="ico">${m.ico}</span><span><b>${m.name}</b><small>${m.desc}</small></span></button>`).join("")}</div></section>`
     : setupStep === 2
     ? `<section><p class="section-title">${mode.ico} ${mode.name}: ${d.mode === "heads" ? "какие темы слов?" : "какие вопросы?"}</p>${packCards(s, d)}</section>
-       <section class="rules-line"><button class="btn ghost small" data-step="3" type="button">⚙ Правила</button>${tags}</section>`
+       <section>${rulesLink}</section>`
     : `<section><p class="section-title">${mode.ico} ${mode.name}: правила</p>${rulesList(d)}</section>`;
   $main.innerHTML = `
     <div><div class="eyebrow">Новая игра</div><h1>${["Во что играем?", names[1], "Правила"][setupStep - 1]}</h1></div>
@@ -1379,7 +1416,11 @@ document.addEventListener("change", async (e) => {
     return;
   }
   const r = e.target.closest("[data-rule]");
-  if (r && draft) draft[r.dataset.rule] = r.checked;
+  if (r && draft) {
+    draft[r.dataset.rule] = r.checked;
+    const st = r.parentElement.querySelector(".state"); // подпись рядом с переключателем
+    if (st) st.textContent = r.checked ? "Вкл" : "Выкл";
+  }
 });
 document.addEventListener("click", (e) => {
   if (!draft) return;
@@ -1516,7 +1557,7 @@ async function pollOnce(seq) {
     const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store", signal: timeout(5000) })).json();
     if (seq !== pollSeq) return; // запрос устарел — уже ушёл новый
     fails = 0;
-    if (s.phase === "gone") return stop("Эта комната закрылась", "Комнаты без активности удаляются через 3 часа, а при обновлении сервера — сразу.");
+    if (s.phase === "gone") return stop("Эта комната закрылась", GONE_TEXT);
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
@@ -1610,6 +1651,8 @@ document.addEventListener("click", async (e) => {
 });
 
 let timer = null;
+// комната пропала: прошло 3 часа без игры, сервер уснул (бесплатный Render — через 15 минут без игры) или обновился
+const GONE_TEXT = "Комнаты без игры закрываются через 3 часа, а когда сервер засыпает или обновляется — сразу. Создай новую игру — это быстро.";
 function stop(title, text) {
   clearInterval(timer);
   $main.innerHTML = `<h2 class="error">${esc(title)}</h2><p class="muted">${esc(text)}</p>`;
@@ -1618,7 +1661,7 @@ function stop(title, text) {
 
 (async () => {
   const check = await post("check").catch(() => ({ error: "Нет связи с сервером." }));
-  if (check.error) return stop(check.error, "Создай свою игру на главной странице: нажми «Я ведущий».");
+  if (check.error) return stop(/Комнаты/.test(check.error) ? "Эта комната закрылась" : check.error, GONE_TEXT);
   poll();
   timer = setInterval(pollTick, 500);
 })();

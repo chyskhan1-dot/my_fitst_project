@@ -467,10 +467,17 @@ function gameScreen(id) {
   if (host) host.onclick = async (e) => {
     if (mine && mine.players && !["setup", "final"].includes(mine.phase)
       && !confirm(`Игра в комнате ${mine.room} ещё идёт. Закончить её и создать новую?`)) return;
-    const b = e.currentTarget;
-    b.disabled = true; b.textContent = "Создаю комнату…";
-    const res = await api("/api/rooms", {}).catch(() => ({ error: "Нет связи с сервером" }));
-    if (res.error) { document.getElementById("err").textContent = res.error; b.disabled = false; b.textContent = "Попробовать ещё раз"; return; }
+    const b = e.currentTarget, err = document.getElementById("err");
+    b.disabled = true; b.textContent = "Создаю комнату…"; err.textContent = "";
+    // сервер мог быть занят или только просыпаться — пробуем ещё пару раз, прежде чем показать ошибку
+    let res = {};
+    for (let i = 0; i < 3; i++) {
+      res = await api("/api/rooms", {}).catch(() => ({ error: "Нет связи с сервером", retry: true }));
+      if (!res.retry) break;
+      b.textContent = "Сервер просыпается, ещё секунду…";
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    if (res.error) { err.textContent = res.error + (res.retry ? ". Проверь интернет и нажми ещё раз" : ""); b.disabled = false; b.textContent = "Попробовать ещё раз"; return; }
     try { localStorage.setItem("quiz-host-" + res.room, res.token); } catch {}
     location.href = `/host?room=${res.room}&mode=${id}`; // выбранная игра — сразу ко второму шагу меню
   };

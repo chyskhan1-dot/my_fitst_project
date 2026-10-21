@@ -22,7 +22,7 @@ pack.questions.forEach((q, i) => {
     const v = q[k];
     if (v && !/^(https?:|data:)/.test(v) && !fs.existsSync(process.cwd() + '/quiz/' + v)) problems.push(`${at}: нет файла ${v}`);
   }
-  const key = q.q.trim().toLowerCase() + (q.image || '');
+  const key = q.q.trim().toLowerCase() + (q.image || '') + (q.emoji || ''); // один текст с разными картинками или ребусами — разные вопросы
   if (seen.has(key)) problems.push(`${at}: повтор вопроса ${seen.get(key) + 1}`); else seen.set(key, i);
 });
 const csv = P.packToCSV(pack);

@@ -63,8 +63,8 @@ def picture(v):
 pack = json.load(open(pack_path, encoding="utf-8"))
 Q = pack["questions"]
 themes = {q.get("theme") for q in Q if q.get("theme")} | ({new_theme} if new_theme else set())
-qkey = lambda text, image: text.strip().lower() + "|" + (image or "")  # один текст с разными картинками — разные вопросы
-have = {qkey(q["q"], q.get("image")) for q in Q}
+qkey = lambda text, image, emoji="": text.strip().lower() + "|" + (image or "") + (emoji or "")  # один текст с разными картинками или ребусами — разные вопросы
+have = {qkey(q["q"], q.get("image"), q.get("emoji")) for q in Q}
 counts = collections.Counter(q["answer"] for q in Q if q.get("type", "choice") == "choice")
 right_of = lambda q: q["options"][q["answer"]] if q.get("type", "choice") == "choice" else None
 by_answer = collections.defaultdict(list)  # (тема, верный ответ) → вопросы: ловим повторы другими словами
@@ -79,7 +79,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     image = item.get("image")
     if image and image.startswith("emoji:"):
         image = picture(image)
-    if qkey(text, image) in have:
+    if qkey(text, image, item.get("emoji")) in have:
         skipped.append(text)
         continue
     if item.get("theme") not in themes:
@@ -100,6 +100,8 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
         a = min(range(4), key=lambda i: (counts[i], rnd.random()))
         counts[a] += 1
         q = {"q": text, "options": wrong[:a] + [item["right"]] + wrong[a:], "answer": a}
+        if item.get("emoji"):
+            q["emoji"] = item["emoji"]  # ребус из смайликов
         for old_q in by_answer[(item["theme"], item["right"].lower())]:
             similar.append((text, old_q))
     else:
@@ -111,7 +113,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
         if p:
             q[key] = p
     Q.append(q)
-    have.add(qkey(text, q.get("image")))
+    have.add(qkey(text, q.get("image"), q.get("emoji")))
     added.append(text)
 json.dump(pack, open(pack_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"добавлено: {len(added)} | уже были: {len(skipped)} | всего: {len(Q)} | позиции верных: {dict(sorted(counts.items()))}")

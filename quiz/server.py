@@ -81,19 +81,23 @@ MODES = ["king", "quiz", "heads", "jeopardy", "100to1"]  # «100 к 1» пока
 SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame или .json
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 HEADS_FILE = BASE / "heads" / "words.json"  # «Слово на лбу»: слова по темам
+HD_THEMES = 3  # «Слово на лбу» в комнате: сколько случайных тем (раундов), если ведущий не выбрал
 PENALTY = 300  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
 DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
 KING_GOAL = 10000  # «Царь горы»: кто первым наберёт столько очков, тот выиграл
 KING_COUNT = 15  # «Царь горы»: 5 раундов по 3 вопроса — если до вершины никто не дошёл, побеждает тот, кто выше
-# «Подлянки»: последнее место может усложнить следующий вопрос любому игроку (это видно только на его телефоне)
+# «Подлянки»: кто ошибся TRICK_STREAK раз подряд, получает подлянку и может усложнить следующий вопрос любому игроку
+# (это видно только на его телефоне). desc — что случилось, tip — что делать жертве.
 TRICKS = [
-    {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд"},
-    {"id": "vowels", "name": "🔤 Без гласных", "desc": "в вариантах ответа пропадут гласные"},
-    {"id": "flip", "name": "🙃 Вверх ногами", "desc": "варианты ответа перевёрнуты"},
-    {"id": "mirror", "name": "🪞 Зеркало", "desc": "варианты ответа отражены зеркально"},
-    {"id": "fog", "name": "🌫 Туман", "desc": "ответы в тумане, проясняются не сразу"},
+    {"id": "delay", "name": "⏳ Ответы позже", "desc": "кнопки появятся через 6 секунд", "tip": "Читай вопрос и думай — кнопки появятся сами"},
+    {"id": "vowels", "name": "🔤 Без гласных", "desc": "в вариантах ответа пропадут гласные", "tip": "Угадай слова по согласным"},
+    {"id": "flip", "name": "🙃 Вверх ногами", "desc": "варианты ответа перевёрнуты", "tip": "Читай ответы вверх ногами — или переверни телефон"},
+    {"id": "mirror", "name": "🪞 Зеркало", "desc": "варианты ответа отражены зеркально", "tip": "Читай ответы справа налево"},
+    {"id": "fog", "name": "🌫 Туман", "desc": "ответы в тумане, проясняются не сразу", "tip": "Подожди пару секунд — туман рассеется сам. Не жми наугад!"},
 ]
+TRICK_STREAK = 2  # столько ошибок (или пропусков) подряд — и у игрока подлянка
+TRICK_GAP = 3  # подлянка летит не чаще, чем раз в столько вопросов
 TRICK_IDS = {t["id"] for t in TRICKS}  # какая подлянка — решает случай, игрок выбирает только кому
 TRICK_DELAY = 6  # «Ответы позже»: столько секунд нельзя ответить
 
@@ -559,7 +563,7 @@ DEFAULTS = {
     "si_pack": SI_AUTO,  # пакет «Своей игры»: по умолчанию — случайная из «Общих знаний»
     "si_round_min": 10,  # «Своя игра»: минут на раунд (0 — без ограничения), несыгранные вопросы сгорают
     "fd_pack": next(iter(FD_PACKS), None),  # пакет «100 к 1»
-    "hd_themes": [],  # «Слово на лбу»: темы слов (пусто — все)
+    "hd_themes": [],  # «Слово на лбу»: темы слов = раунды (пусто — HD_THEMES случайных)
     "hd_teams": 2,  # «Слово на лбу»: команды (0 — каждый за себя), по умолчанию две — так решил владелец
 }
 
@@ -1256,11 +1260,12 @@ class FeudEngine:
 class HeadsEngine:
     """«Слово на лбу»: игрок держит телефон у лба, друзья объясняют слово словами.
     Угадал — наклоняет телефон вниз, не знает — вверх (пропуск). TURN_SECONDS на ход.
-    Каждый за себя: каждый угадывает по разу, очко — угадавшему. Команды: ходят по очереди, угадывает каждый раз
-    следующий из команды, кругов — по самой большой команде (маленькая начинает сначала), очки — команде.
+    Раунд = тема: в каждом раунде сыграют все (каждый за себя — каждый по ходу; команды — по ходу на команду,
+    угадывает каждый раз следующий из команды). Темы — выбранные ведущим, иначе HD_THEMES случайных.
+    Каждый за себя: очко угадавшему и тому, кто объяснил (нажал на своём телефоне «Я объяснил»). Команды: очки команде.
 
     Этапы: hd_turn (готовится, на телефоне «Старт») → hd_play (READY_SECONDS на «приложи ко лбу», потом слова)
-    → hd_result → следующий игрок … → final. Очки — число угаданных слов.
+    → hd_result (можно поправить случайный наклон) → следующий ход … → final.
     """
 
     TURN_SECONDS = 60
@@ -1268,47 +1273,58 @@ class HeadsEngine:
 
     def __init__(self, game):
         self.g = game
-        chosen = set(game.settings.get("hd_themes") or [])
-        self.words = [w for th in HEADS if not chosen or th["name"] in chosen for w in th["words"]]
-        self.deck = []
+        names = [th["name"] for th in HEADS]
+        chosen = [n for n in names if n in (game.settings.get("hd_themes") or [])]
+        self.themes = chosen or random.sample(names, min(HD_THEMES, len(names)))
+        self.decks = {}
         self.order = list(game.players)  # по порядку входа
+        self.round, self.queue, self.qi = -1, [], 0  # раунд (тема), очередь хода в раунде
         self.turn = -1
         self.cur = None
         self.team_scores, self.team_last = {}, {}
 
-    def draw(self):
-        if not self.deck:  # слова кончились — тасуем заново
-            self.deck = self.words[:]
-            random.shuffle(self.deck)
-        return self.deck.pop()
+    def draw(self, theme):
+        deck = self.decks.get(theme)
+        if not deck:  # слова темы кончились — тасуем заново
+            deck = self.decks[theme] = list(next(th["words"] for th in HEADS if th["name"] == theme))
+            random.shuffle(deck)
+        return deck.pop()
 
     @property
     def teams(self):
         return self.g.settings["teams"]
 
-    def start(self):
+    def round_queue(self, r):
+        """Кто ходит в раунде r: каждый за себя — все; команды — по одному от команды (каждый раунд следующий)."""
         self.order = [pid for pid in self.order if pid in self.g.players] + [pid for pid in self.g.players if pid not in self.order]
-        if self.teams:  # команды по очереди: А1, Б1, А2, Б2…
-            online = set(self.g.online())
-            members = [[pid for pid in self.order if self.g.players[pid].get("team") == t] for t in range(self.teams)]
-            members = [[pid for pid in m if pid in online] or m for m in members if m]
-            rounds = max((len(m) for m in members), default=0)
-            self.order = [m[r % len(m)] for r in range(rounds) for m in members]
+        if not self.teams:
+            return list(self.order)
+        online = set(self.g.online())
+        members = [[pid for pid in self.order if self.g.players[pid].get("team") == t] for t in range(self.teams)]
+        members = [[pid for pid in m if pid in online] or m for m in members if m]
+        return [m[r % len(m)] for m in members]
+
+    def start(self):
         self.next_turn()
 
     def next_turn(self):
-        if not self.teams:
-            self.order += [pid for pid in self.g.players if pid not in self.order]  # пришёл позже — тоже сыграет
         self.turn += 1
-        while self.turn < len(self.order) and self.order[self.turn] not in self.g.players:
-            self.turn += 1  # игрок ушёл — ход следующему
-        if self.turn >= len(self.order):
-            self.cur = None
-            return self.g.set_phase("final")
+        self.qi += 1
+        while True:
+            while self.qi < len(self.queue) and self.queue[self.qi] not in self.g.players:
+                self.qi += 1  # игрок ушёл — ход следующему
+            if self.qi < len(self.queue):
+                break
+            self.round += 1
+            if self.round >= len(self.themes) or not self.g.players:
+                self.cur = None
+                return self.g.set_phase("final")
+            self.queue, self.qi = self.round_queue(self.round), 0
         for p in self.g.players.values():
             p["last_points"] = 0
         self.team_last = {}
-        self.cur = {"pid": self.order[self.turn], "words": [], "word": None, "ready_at": 0.0, "deadline": 0.0}
+        self.cur = {"pid": self.queue[self.qi], "theme": self.themes[self.round], "words": [], "word": None,
+                    "claim": None, "ready_at": 0.0, "deadline": 0.0}
         self.g.set_phase("hd_turn")
 
     def begin(self):
@@ -1316,9 +1332,24 @@ class HeadsEngine:
         if self.g.phase != "hd_turn":
             return False
         now = self.g.clock()
-        self.cur.update(word=self.draw(), ready_at=now + self.READY_SECONDS, deadline=now + self.READY_SECONDS + self.TURN_SECONDS)
+        self.cur.update(word=self.draw(self.cur["theme"]), ready_at=now + self.READY_SECONDS, deadline=now + self.READY_SECONDS + self.TURN_SECONDS)
         self.g.set_phase("hd_play")
         return True
+
+    def award(self, w, sign):
+        """Очки за угаданное слово (sign = 1) или отмена (sign = -1): угадавшему (или его команде) и объяснившему."""
+        p = self.g.players.get(self.cur["pid"])
+        if p:
+            p["score"] += sign
+            p["last_points"] += sign
+            team = p.get("team")
+            if self.teams and team is not None:
+                self.team_scores[team] = self.team_scores.get(team, 0) + sign
+                self.team_last[team] = self.team_last.get(team, 0) + sign
+        e = self.g.players.get(w.get("by"))
+        if e:
+            e["score"] += sign
+            e["last_points"] += sign
 
     def mark(self, pid, ok, n):
         """Угадал (ok) или пропуск. n — номер слова у телефона: повторный наклон того же слова не считаем."""
@@ -1326,17 +1357,30 @@ class HeadsEngine:
         if (self.g.phase != "hd_play" or pid != c["pid"] or n != len(c["words"])
                 or self.g.clock() < c["ready_at"] or self.g.clock() >= c["deadline"]):
             return False
-        c["words"].append({"word": c["word"], "ok": bool(ok)})
+        w = {"word": c["word"], "ok": bool(ok), "by": c["claim"] if ok else None}
+        c["words"].append(w)
         if ok:
-            p = self.g.players.get(pid)
-            if p:
-                p["score"] += 1
-                p["last_points"] += 1
-                team = p.get("team")
-                if self.teams and team is not None:
-                    self.team_scores[team] = self.team_scores.get(team, 0) + 1
-                    self.team_last[team] = self.team_last.get(team, 0) + 1
-        c["word"] = self.draw()
+            self.award(w, 1)
+        c["word"], c["claim"] = self.draw(c["theme"]), None
+        return True
+
+    def claim(self, pid, n):
+        """Каждый за себя: «Я объяснил» — кто первым нажал на текущем слове, получит очко, если слово угадают."""
+        c = self.cur
+        if (self.teams or self.g.phase != "hd_play" or pid == c["pid"] or pid not in self.g.players
+                or n != len(c["words"]) or self.g.clock() < c["ready_at"]):
+            return False
+        if c["claim"] is None:
+            c["claim"] = pid
+        return c["claim"] == pid
+
+    def fix(self, i):
+        """После хода: случайный наклон — слово меняется «угадал ⇄ пропуск», очки вместе с ним."""
+        if self.g.phase != "hd_result" or not self.cur or not 0 <= i < len(self.cur["words"]):
+            return False
+        w = self.cur["words"][i]
+        w["ok"] = not w["ok"]
+        self.award(w, 1 if w["ok"] else -1)
         return True
 
     def finish(self):
@@ -1363,25 +1407,32 @@ class HeadsEngine:
 
     def state(self, pid):
         c, ph, now = self.cur, self.g.phase, self.g.clock()
-        n = len({self.g.players[pid].get("team") for pid in self.order if pid in self.g.players}) if self.teams else 0
-        s = {"turn": self.turn, "turns": len(self.order), "seconds": self.TURN_SECONDS,
-             "round": self.turn // n + 1 if n else None, "rounds": -(-len(self.order) // n) if n else None,
-             "next": self.g.players[self.order[self.turn + 1]]["name"]
-             if self.turn + 1 < len(self.order) and self.order[self.turn + 1] in self.g.players else None}
+        nxt = self.queue[self.qi + 1] if self.qi + 1 < len(self.queue) else None
+        if nxt is None and self.round + 1 < len(self.themes):
+            q = self.round_queue(self.round + 1)
+            nxt = q[0] if q else None
+        per = max(1, len(self.queue))
+        s = {"turn": self.turn, "turns": max(self.turn + 1, per * len(self.themes)), "seconds": self.TURN_SECONDS,
+             "round": self.round + 1, "rounds": len(self.themes), "theme": c["theme"] if c else None,
+             "themes": self.themes, "in_round": self.qi + 1, "per_round": per,
+             "next": self.g.players[nxt]["name"] if nxt in self.g.players else None,
+             "next_round": bool(nxt) and self.qi + 1 >= len(self.queue)}
+        name = lambda i: self.g.players[i]["name"] if i in self.g.players else None
         if c:
             p = self.g.players.get(c["pid"]) or {}
             s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"), "team": p.get("team"),
                         "ok": sum(w["ok"] for w in c["words"]), "n": len(c["words"]),
                         "marks": [w["ok"] for w in c["words"]],
                         # слова целиком — только после хода: на ТВ во время хода может посмотреть тот, кто угадывает
-                        "words": c["words"] if ph == "hd_result" else None,
+                        "words": [dict(w, by=name(w["by"])) for w in c["words"]] if ph == "hd_result" else None,
                         "ready_left": max(0, round(c["ready_at"] - now, 1)) if ph == "hd_play" else None,
                         "left": max(0, round(c["deadline"] - now, 1)) if ph == "hd_play" else None}
         if pid in self.g.players and c:
             ready = ph == "hd_play" and now >= c["ready_at"]
             s["me"] = {"is_guesser": pid == c["pid"], "team": self.g.players[pid].get("team"),
                        # слово видят телефон у лба и те, кто объясняет (ТВ — нет)
-                       "word": c["word"] if ready else None, "n": len(c["words"])}
+                       "word": c["word"] if ready else None, "n": len(c["words"]),
+                       "claimed": c["claim"] == pid, "claim_by": name(c["claim"]) if c["claim"] else None}
         return s
 
 
@@ -1488,6 +1539,7 @@ class Game:
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
         self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
+        self.trick_at = -99  # номер последнего вопроса с подлянкой (подлянки не чаще раза в TRICK_GAP вопросов)
         self.active_trick = None  # подлянка на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
         self.si = None
@@ -1749,19 +1801,23 @@ class Game:
         elif self.settings["auto"] and self.auto_left() == 0 and not self.phase.startswith(("si_", "fd_")):
             self.next()
 
+    def tricks_on(self):
+        return bool(self.settings.get("sabotage")) and not self.settings["teams"] and not self.si and not self.fd and not self.hd
+
     def trick_roles(self):
-        """Кто может устроить подлянку: (последние места, лидер — цель по умолчанию) или None.
-        Только «каждый за себя», между вопросами и пока подлянка на следующий вопрос не выбрана."""
-        if (not self.settings.get("sabotage") or self.settings["teams"] or self.si or self.fd or self.hd or self.trick
+        """Кто может устроить подлянку: (у кого она есть, лидер — цель по умолчанию) или None.
+        Подлянку получает тот, кто ошибся TRICK_STREAK раз подряд. Только «каждый за себя», между вопросами,
+        пока подлянка на следующий вопрос не выбрана и не чаще раза в TRICK_GAP вопросов."""
+        if (not self.tricks_on() or self.trick or self.index + 1 - self.trick_at < TRICK_GAP
                 or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total
                 or self.race_winner()):
             return None
         online = set(self.online())
         board = [r for r in self.leaderboard() if r["id"] in online]
-        if len(board) < 2 or board[-1]["score"] >= board[0]["score"]:
+        holders = {r["id"] for r in board if self.players[r["id"]].get("trick_charge")}
+        if len(board) < 2 or not holders:
             return None
-        low = board[-1]["score"]
-        return {r["id"] for r in board[1:] if r["score"] == low}, board[0]["id"]
+        return holders, board[0]["id"]
 
     def auto_left(self):
         """Сколько секунд до автоперехода, или None, если его нет."""
@@ -1788,9 +1844,14 @@ class Game:
         if self.question()["type"] == "map":
             errs = [distance_km(a["value"], self.question()["answer"]) for a in self.answers.values() if a["value"] is not None]
             self.best_err = min(errs) if errs else 0
+        online = set(self.online())
         for pid, p in self.players.items():
             a = self.answers.get(pid)
             frac = self.grade(a["value"]) if a else 0.0
+            if self.tricks_on() and (a or pid in online):  # ошибки подряд копят подлянку
+                p["misses"] = 0 if frac > 0 else p.get("misses", 0) + 1
+                if p["misses"] >= TRICK_STREAK and not p.get("trick_charge"):
+                    p["trick_charge"], p["misses"] = True, 0
             p["doubled"] = bool(p.get("bet"))  # ставка ×2, сделанная вслепую до вопроса
             points = 0
             if frac > 0:
@@ -1882,6 +1943,8 @@ class Game:
         self.all_answered_at = None
         t, self.trick = self.trick, None
         self.active_trick = t if t and t["to"] in self.players else None
+        if self.active_trick:
+            self.trick_at = self.index
 
     def online(self):
         now = time.time()
@@ -1995,7 +2058,7 @@ class Game:
             s["round_end"] = self.index + 1 >= len(self.selected)  # после этого вопроса — новая тема
             s["round_no"] = self.index // ROUND_SIZE + 1
             s["rounds_total"] = -(-self.target // ROUND_SIZE)
-        if self.settings.get("sabotage") and not self.si and not self.fd and not self.hd:
+        if self.tricks_on():
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()
             if roles:
@@ -2099,6 +2162,10 @@ class Game:
             roles = s.get("trick_next") and self.trick_roles()
             if roles and pid in roles[0]:
                 s["me"]["can_trick"] = True
+            if self.tricks_on():
+                s["me"]["trick_charge"] = bool(me.get("trick_charge"))  # подлянка есть (может ждать своей очереди)
+                s["me"]["misses"] = me.get("misses", 0)
+                s["trick_streak"] = TRICK_STREAK
             if self.trick and self.trick["by"] == pid:
                 s["me"]["trick_sent"] = self.trick["kind"]  # кинувший видит, какая подлянка выпала
             t = self.active_trick
@@ -2427,11 +2494,14 @@ class Handler(BaseHTTPRequestHandler):
 
             if path.startswith("/api/hd/"):  # «Слово на лбу»: «Старт» и наклоны телефона у лба
                 pid, hd = data.get("pid"), game.hd
-                if not hd or not game.owns(pid, device) or not hd.cur or hd.cur["pid"] != pid:
+                action = path.rsplit("/", 1)[1]
+                # «Я объяснил» жмут объясняющие, остальное — только тот, кто угадывает
+                if not hd or not game.owns(pid, device) or not hd.cur or (hd.cur["pid"] != pid and action != "claim"):
                     return self.send_json({"ok": False})
                 game.tick()
-                action = path.rsplit("/", 1)[1]
-                ok = hd.begin() if action == "start" else hd.mark(pid, data.get("ok"), data.get("n")) if action == "mark" else False
+                ok = (hd.begin() if action == "start" else hd.mark(pid, data.get("ok"), data.get("n")) if action == "mark"
+                      else hd.claim(pid, data.get("n")) if action == "claim"
+                      else hd.fix(data.get("index")) if action == "fix" and isinstance(data.get("index"), int) else False)
                 game.tick()
                 st = hd.state(pid)
                 return self.send_json({"ok": bool(ok), "word": st.get("me", {}).get("word"), "n": st.get("me", {}).get("n")})
@@ -2512,6 +2582,7 @@ class Handler(BaseHTTPRequestHandler):
                 ok = bool(roles and pid in roles[0] and to in game.players and to != pid)
                 if ok:
                     game.trick = {"by": pid, "to": to, "kind": kind}
+                    game.players[pid]["trick_charge"] = False
                 return self.send_json({"ok": ok})
 
             if path == "/api/vote":  # голос за тему раунда (можно передумать)
@@ -2578,6 +2649,8 @@ class Handler(BaseHTTPRequestHandler):
             game.fd.host_next()
         elif action == "next" and game.hd and game.phase == "lobby":
             game.hd.start()
+        elif action == "hd_fix" and game.hd and isinstance(data.get("index"), int):
+            game.hd.fix(data["index"])
         elif action == "next" and game.hd and game.phase.startswith("hd_"):
             game.tick()
             game.hd.host_next()

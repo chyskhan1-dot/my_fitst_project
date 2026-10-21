@@ -210,6 +210,9 @@ a.btn { text-decoration: none; display: inline-block; }
 .ava.emo { background: var(--panel); box-shadow: none; font-size: 1.15em; }
 .chip.off { opacity: .5; }
 #to-player { text-decoration: none; white-space: nowrap; }
+.top .home { color: inherit; text-decoration: none; font-weight: 700; padding: 4px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); margin-right: 6px; }
+.play-too { margin-top: 10px; align-self: flex-start; }
+.play-note { font-size: .8em; }
 .sound { font: inherit; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 .sound.blocked { border-color: var(--accent); color: var(--accent); animation: blink2 1.2s ease-in-out infinite; }
 @keyframes blink2 { 50% { opacity: .5; } }
@@ -341,6 +344,10 @@ button.fd-slot:hover { background: #2a3bb0; }
 .hd-name .ava { width: 1.3em; height: 1.3em; }
 .hd-timer { font: 800 clamp(80px, 16vw, 180px) var(--display); line-height: 1; color: var(--accent); min-height: 1em; }
 .hd-timer.low { color: var(--bad); }
+.hd-theme { font-size: 1.4em; margin: 0; } .hd-theme b { color: var(--accent); }
+.hd-sum { margin: 0 0 12px; font-weight: 800; } .hd-sum small { display: block; font-weight: 600; color: var(--muted); }
+.hd-words button { all: unset; cursor: pointer; display: block; } .hd-words small { display: block; font-size: .6em; color: var(--muted); font-weight: 600; }
+.hd-fixnote { font-size: .8em; }
 .hd-count { display: flex; align-items: baseline; gap: 12px; font-size: 1.6em; }
 .hd-count b { font: 800 2em var(--display); color: var(--good); }
 .hd-marks { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 900px; }
@@ -494,8 +501,8 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <input type="file" id="fd-file" accept=".json,.csv,.txt" hidden>
 <div class="stage">
   <div class="top">
-    <span class="brand" id="brand">Квиз</span>
-    <span class="row-right"><span id="progress"></span> <a class="sound" id="to-player" href="/" hidden>📱 В игру</a> <button class="sound" id="sound" type="button" aria-label="Звук">🔊</button></span>
+    <span class="brand"><a class="home" href="/" title="Главное меню">⌂ Меню</a> <span id="brand">Квиз</span></span>
+    <span class="row-right"><span id="progress"></span> <a class="sound" id="to-player" href="/" hidden>📱 Я игрок</a> <button class="sound" id="sound" type="button" aria-label="Звук">🔊</button></span>
   </div>
   <main id="main"><h2 class="muted waiting">Подключаюсь к серверу</h2></main>
   <div class="actions" id="actions"></div>
@@ -530,7 +537,7 @@ const KING_GOAL = 10000;
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
 const RULES = [
   { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
-  { id: "sabotage", name: "Подлянки 😈", desc: "Последнее место между вопросами кидает любому игроку (по умолчанию лидеру) случайную подлянку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Только «каждый за себя»" },
+  { id: "sabotage", name: "Подлянки 😈", desc: "Кто ошибся 2 раза подряд, получает подлянку и кидает её любому игроку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Не чаще раза в 3 вопроса. Только «каждый за себя»" },
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
@@ -679,7 +686,7 @@ function trickNext(s) {
   const t = s.trick_next;
   if (!t) return "";
   return t.chosen ? `<p class="trick-line">😈 Готовится подлянка: <b>${esc(t.by)}</b> → <b>${esc(t.to)}</b>…</p>`
-    : `<p class="trick-line">😈 Последнее место может устроить подлянку любому игроку — выбор на телефоне!</p>`;
+    : `<p class="trick-line">😈 У кого-то подлянка (2 ошибки подряд) — кому достанется, решается на телефоне!</p>`;
 }
 
 function board(players) {
@@ -837,8 +844,9 @@ function draw(s) {
           <div class="share-row">
             <button class="btn ghost small" data-copy="${esc(url)}" type="button">📋 Копировать ссылку</button>
             ${navigator.share ? `<button class="btn ghost small" data-share="${esc(url)}" type="button">📤 Поделиться</button>` : ""}
-            <a class="btn ghost small" href="/?room=${s.room}" target="_blank" rel="noopener">📱 Играть с этого устройства</a>
           </div>
+          <a class="btn small play-too" href="/?room=${s.room}">🙋 Я тоже играю — с этого телефона</a>
+          <span class="muted play-note">Кнопки ведущего будут внизу экрана игрока, а большой экран — по кнопке 🖥</span>
         </div>
       </div>
       <div>
@@ -1114,18 +1122,29 @@ function hdSound(s) {
   else if (s.phase === "hd_play") {
     if (!prev.startsWith(`hd_play:${hd.turn}:`)) { M.play("question"); M.sting("start"); }
     else if (c.n) M.sting(c.marks[c.n - 1] ? "reveal" : "wrong");
-  } else if (s.phase === "hd_result") { M.stop(0.3); M.sting("fanfare"); }
+  } else if (s.phase === "hd_result") {
+    M.stop(0.1);
+    if (prev.startsWith("hd_play:")) { M.sting("timeup"); setTimeout(() => M.sting("fanfare"), 1300); } else M.sting("fanfare");
+  }
+}
+// последние 10 секунд хода — сердцебиение «тук-тук» раз в секунду
+let hdBeat = -1;
+function hdHeart(s) {
+  const c = s.hd && s.hd.cur, left = c && c.left;
+  if (s.phase !== "hd_play" || s.paused || left == null || c.ready_left > 0 || left > 10 || left <= 0) return;
+  const sec = Math.ceil(left);
+  if (sec !== hdBeat && window.QuizMusic) { hdBeat = sec; QuizMusic.sting("beat"); }
 }
 
 function renderHd(s) {
   const hd = s.hd, c = hd.cur || {};
   hdSound(s);
   const teamMode = !!s.settings.teams, team = teamMode && c.team != null ? `<span class="hd-team" style="--c:${TEAM_COLORS[c.team]}">${esc(s.team_names[c.team])}</span>` : "";
-  const turnLabel = teamMode ? `Круг ${hd.round} из ${hd.rounds}` : `Ход ${hd.turn + 1} из ${hd.turns}`;
+  const turnLabel = `Раунд ${hd.round} из ${hd.rounds} · ${hd.theme || ""}`;
   document.getElementById("progress").innerHTML = `Слово на лбу · ${turnLabel.toLowerCase()}`;
   const marks = (c.marks || []).map((ok, i) => `<span class="hd-mark ${ok ? "ok" : "no"}" style="--i:${i}">${ok ? "✓" : "✗"}</span>`).join("");
   if (s.phase === "hd_turn") {
-    $main.innerHTML = `<div class="si-splash"><div class="eyebrow">${turnLabel}</div>${team}
+    $main.innerHTML = `<div class="si-splash"><div class="eyebrow">Раунд ${hd.round} из ${hd.rounds}</div><p class="hd-theme">Тема: <b>${esc(hd.theme || "")}</b></p>${team}
       <h1 class="hd-name">${avaP(c)} ${esc(c.name)}, твой ход!</h1>
       <p class="lead">Нажми «Старт» на телефоне и приложи его ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</p>
       <p class="muted">${teamMode ? "Объясняет только своя команда, соперники следят, чтобы не называли слово" : "Друзья объясняют слова, не называя их"}. Угадал — наклони телефон вниз, не знаешь — вверх. ${hd.seconds} секунд</p></div>`;
@@ -1139,13 +1158,13 @@ function renderHd(s) {
       <p class="muted">Объясняйте словами — само слово и однокоренные называть нельзя</p></div>`;
     $actions.innerHTML = `<button class="btn ghost" data-act="next">Закончить ход</button>`;
   } else if (s.phase === "hd_result") {
-    const words = (c.words || []).map((w, i) => `<li class="${w.ok ? "ok" : "no"}" style="--i:${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
+    const words = (c.words || []).map((w, i) => `<li class="${w.ok ? "ok" : "no"}" style="--i:${i}"><button type="button" data-hd-fix="${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}${w.ok && w.by ? `<small>объяснил ${esc(w.by)}</small>` : ""}</button></li>`).join("");
     const teams = s.teams.map((x) => `<div class="hd-trow" style="--c:${TEAM_COLORS[x.team]}"><span class="tdot"></span><b>${esc(x.name)}</b>
       ${x.last ? `<span class="plus">+${x.last}</span>` : ""}<span class="sc">${x.score}</span></div>`).join("");
     $main.innerHTML = `<div><div class="eyebrow">${turnLabel}</div>${team}<h1 class="pop hd-name" style="justify-content:flex-start">${avaP(c)} ${esc(c.name)}: ${wordsN(c.ok)}</h1></div>
-      <div class="hd-result">${words ? `<ul class="hd-words">${words}</ul>` : `<p class="muted">Ни одного слова — бывает!</p>`}
+      <div class="hd-result">${words ? `<div><ul class="hd-words">${words}</ul><p class="muted hd-fixnote">Наклон сработал случайно? Нажми на слово — поменяется</p></div>` : `<p class="muted">Ни одного слова — бывает!</p>`}
         <aside>${teamMode ? `<div class="hd-teams">${teams}</div>` : board(s.players.slice(0, 6))}</aside></div>`;
-    $actions.innerHTML = `<button class="btn" data-act="next">${hd.next ? `Следующий: ${esc(hd.next)}` : "К итогам"}</button>`;
+    $actions.innerHTML = `<button class="btn" data-act="next">${hd.next_round ? `Следующий раунд · ходит ${esc(hd.next)}` : hd.next ? `Следующий: ${esc(hd.next)}` : "К итогам"}</button>`;
     countUp();
   }
   live(s);
@@ -1231,10 +1250,13 @@ const STEPS = ["Тип игры", "Вопросы", "Правила"];
 
 function packCards(s, d) {
   if (d.mode === "heads") { // темы слов: по умолчанию все, хотя бы одна остаётся
-    const all = s.hd_themes || [], cur = new Set(d.hd_themes && d.hd_themes.length ? d.hd_themes : all.map((x) => x.name));
-    return `<div class="pack-grid">${all.map((x) => `
+    // тема = раунд: в каждом раунде ходят все. Ничего не выбрано — 3 случайные темы
+    const all = s.hd_themes || [], cur = new Set(d.hd_themes || []), n = cur.size;
+    return `<p class="hd-sum">${n ? `Выбрано ${n} ${n === 1 ? "тема" : n < 5 ? "темы" : "тем"} → ${n} ${n === 1 ? "раунд" : n < 5 ? "раунда" : "раундов"}` : "Темы не выбраны — сыграем 3 случайные (3 раунда)"}
+      <small>В каждом раунде одна тема — ходят все по очереди</small></p>
+      <div class="pack-grid">${all.map((x) => `
       <button class="mode pack ${cur.has(x.name) ? "on" : ""}" data-hdtheme="${esc(x.name)}"><span class="ico">${x.icon}</span><span><b>${esc(x.name)}</b></span></button>`).join("")}</div>
-      <div class="pack-tools"><button type="button" class="btn ghost small" data-hdthemes-all>${cur.size === all.length ? "Снять все" : "Все темы"}</button></div>`;
+      <div class="pack-tools"><button type="button" class="btn ghost small" data-hdthemes-all>🎲 Случайные 3</button>${n ? `<button type="button" class="btn ghost small" data-hdthemes-none>Снять все</button>` : ""}</div>`;
   }
   if (d.mode === "100to1") {
     const list = s.fd_packs.map((p) => ({ id: p.id, title: p.title, sub: "" }));
@@ -1293,7 +1315,7 @@ function themePicker(s, d) {
 }
 
 function rulesSummary(d) {
-  if (d.mode === "heads") return [d.hd_teams ? `Команды: ${d.hd_teams}` : "Каждый за себя", "60 секунд на ход", d.hd_themes && d.hd_themes.length ? `Тем: ${d.hd_themes.length}` : "Все темы"];
+  if (d.mode === "heads") return [d.hd_teams ? `Команды: ${d.hd_teams}` : "Каждый за себя", "60 секунд на ход", d.hd_themes && d.hd_themes.length ? `Раундов (тем): ${d.hd_themes.length}` : "3 случайные темы"];
   if (d.mode === "king") return ["5 раундов по 3 вопроса", `До ${KING_GOAL.toLocaleString("ru-RU")} очков`, d.teams ? `Команды: ${d.teams}` : "Каждый за себя", `${d.seconds} с на ответ`,
     ...(levelsLabel(d) ? [levelsLabel(d)] : []), ...(d.themes && d.themes.length ? [`Тем: ${d.themes.length}`] : []),
     ...RULES.filter((r) => d[r.id] && r.id !== "rounds").map((r) => r.name.replace(" 🔥", ""))];
@@ -1314,7 +1336,7 @@ function rulesList(d) {
        <div class="rule"><span class="txt"><b>Время на ответ</b><small>На «несколько верных» и «по порядку» — в 1,5 раза больше, на свой ответ и число — в 1,25</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${RULES.filter((r) => r.id !== "rounds").map(toggle).join("")}`;
   const heads = `<div class="rule"><span class="txt"><b>🙆 Слово на лбу</b><small>Игроки по очереди угадывают слова 60 секунд: телефон у лба экраном к друзьям, они объясняют словами, не называя само слово. Угадал — наклони телефон вниз, не знаешь — вверх. Очко — за каждое угаданное слово</small></span></div>
-       <div class="rule wrap"><span class="txt"><b>Команды</b><small>Команды ходят по очереди, угадывает каждый раз новый игрок, объясняют свои. Очки — команде</small></span>${seg("hdteams", [2, 3, 4, 0], d.hd_teams ?? 2, (v) => (v ? v + " команды" : "Каждый за себя"))}</div>`;
+       <div class="rule wrap"><span class="txt"><b>Команды</b><small>Команды ходят по очереди, угадывает каждый раз новый игрок, объясняют свои. Очки — команде. Каждый за себя: очко угадавшему и тому, кто объяснил (жмёт «Я объяснил» на своём телефоне)</small></span>${seg("hdteams", [2, 3, 4, 0], d.hd_teams ?? 2, (v) => (v ? v + " команды" : "Каждый за себя"))}</div>`;
   const body = d.mode === "heads" ? heads : d.mode === "king" ? king : d.mode === "100to1"
     ? `<div class="rule"><span class="txt"><b>Время на ответ</b><small>Сколько секунд у отвечающего игрока команды</small></span>${seg("seconds", [10, 20, 30], d.seconds, (v) => v + " с")}</div>
        ${toggle({ id: "auto", name: "Автопереход", desc: "Через 7 секунд после раунда — следующий" })}`
@@ -1446,15 +1468,18 @@ document.addEventListener("click", (e) => {
     draft.levels = LEVELS.map(([x]) => x).filter((x) => cur.has(x));
     return renderSetup(lastState);
   }
-  const ht = e.target.closest("[data-hdtheme], [data-hdthemes-all]");
+  const ht = e.target.closest("[data-hdtheme], [data-hdthemes-all], [data-hdthemes-none]");
   if (ht) {
     const all = (lastState.hd_themes || []).map((x) => x.name);
-    const cur = new Set(draft.hd_themes && draft.hd_themes.length ? draft.hd_themes : all);
-    if (ht.dataset.hdthemesAll != null) draft.hd_themes = cur.size === all.length ? [all[0]] : [];
+    const cur = new Set(draft.hd_themes || []);
+    if (ht.dataset.hdthemesAll != null) { // три случайные
+      const pool = all.slice(); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      draft.hd_themes = all.filter((x) => pool.slice(0, 3).includes(x));
+    } else if (ht.dataset.hdthemesNone != null) draft.hd_themes = [];
     else {
       const name = ht.dataset.hdtheme;
       cur.has(name) ? cur.delete(name) : cur.add(name);
-      draft.hd_themes = !cur.size ? [name] : cur.size === all.length ? [] : all.filter((x) => cur.has(x));
+      draft.hd_themes = all.filter((x) => cur.has(x));
     }
     return renderSetup(lastState);
   }
@@ -1496,6 +1521,7 @@ function live(s) {
     ht.textContent = hc.ready_left > 0 ? `Приготовься… ${Math.ceil(hc.ready_left)}` : Math.ceil(Math.min(hc.left, s.hd.seconds));
     ht.classList.toggle("low", !hc.ready_left && hc.left <= 10);
   }
+  hdHeart(s);
   if (window.QuizMusic) QuizMusic.setTension((s.phase === "question" && s.left <= 5) || (s.phase === "fd_big_q" && fl <= 5));
   soundButton();
   const nx = document.getElementById("auto-next");
@@ -1604,7 +1630,10 @@ function confetti(on) {
 
 // Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
 const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
-const roomInvite = (code) => `🎉 Заходи ко мне в «Квиз»! Код комнаты ${code} — отвечаем с телефонов 👇`;
+// игра по комнате: приглашение с названием игры. Ссылку кладём в сам текст — иначе мессенджеры часто шлют одну ссылку без текста
+const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 10 000 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
+const roomInvite = (code, mode) => `🎉 Привет! Зову тебя в ${GAME_INVITE[mode] || "квиз"}. Отвечаем с телефонов, ничего устанавливать не нужно. Код комнаты: ${code}`;
+const shareText = (text, url) => (navigator.share ? navigator.share({ title: "Квиз", text: text + "\n👉 " + url }) : Promise.reject()).catch(() => {});
 
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
@@ -1617,12 +1646,14 @@ document.addEventListener("click", async (e) => {
   const ss = e.target.closest("[data-share-site]");
   if (ss) { // ссылка на сам сайт, а не на комнату
     const url = location.origin + "/";
-    if (navigator.share) navigator.share({ title: "Квиз", text: SITE_INVITE, url }).catch(() => {});
+    if (navigator.share) shareText(SITE_INVITE, url);
     else ss.textContent = (await copyText(SITE_INVITE + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
     return;
   }
   const sh = e.target.closest("[data-share]");
-  if (sh) { navigator.share({ title: "Квиз", text: roomInvite(room), url: sh.dataset.share }).catch(() => {}); return; }
+  if (sh) { shareText(roomInvite(room, lastState && lastState.settings.mode), sh.dataset.share); return; }
+  const hfx = e.target.closest("[data-hd-fix]");
+  if (hfx) { await post("hd_fix", { index: Number(hfx.dataset.hdFix) }); lastSig = ""; return poll(); }
   const fdo = e.target.closest("[data-fd-open]");
   if (fdo) { await post("fd_open", { index: Number(fdo.dataset.fdOpen) }); lastSig = ""; return poll(); }
   const ovr = e.target.closest("[data-si-ovr]");

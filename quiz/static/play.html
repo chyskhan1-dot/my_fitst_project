@@ -249,6 +249,19 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .trick-got small { font-weight: 600; font-size: 13px; color: var(--muted); }
 .qbody { display: contents; }
 .trick-banner { padding: 10px 14px; border-radius: 12px; background: var(--a0); color: #fff; font-weight: 800; text-align: center; }
+.trick-banner small { display: block; margin-top: 4px; font-size: 14px; font-weight: 700; color: #ffe9a8; }
+.welcome { display: flex; gap: 12px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 16px; background: var(--t); border-left: 5px solid var(--c); text-align: left; }
+.welcome .tile { font-size: 34px; line-height: 1; }
+.welcome div { display: flex; flex-direction: column; gap: 2px; }
+.welcome small { color: var(--muted); font-weight: 700; font-size: 12px; }
+.welcome b { font-family: var(--display); font-size: 20px; }
+.welcome span { font-size: 14px; }
+.home-btn { text-decoration: none; font-size: 18px; padding: 4px 6px; border-radius: 10px; background: var(--panel); line-height: 1; }
+.hd-claim { width: 100%; font-size: 20px; }
+.hd-claimed { margin: 0; font-weight: 800; color: var(--good, #3ddc84); }
+.hd-tip { margin: 0; font-size: 14px; font-weight: 700; color: #ffe9a8; }
+.hd-list button { all: unset; cursor: pointer; } .hd-list small { color: var(--muted); font-weight: 600; }
+.trick-hint { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); text-align: center; }
 .trick-wait { padding: 40px 10px; text-align: center; font-weight: 800; font-size: 18px; border-radius: 16px; background: var(--panel); }
 .trick-wait b { font-family: var(--display); font-size: 1.4em; color: var(--accent); }
 .ans.plain { background: #4a4f72; }
@@ -534,9 +547,11 @@ function joinForm() {
     const smallest = s.teams.slice().sort((a, b) => a.size - b.size || a.team - b.team)[0];
     pickTeam = smallest.team;
   }
+  const g = s && GAMES.find((x) => x.id === s.settings.mode);
   $main.innerHTML = `
     <div class="scene">
-      <div class="eyebrow rise">Комната ${esc(room)}</div>
+      ${g ? `<div class="welcome rise" style="--c:${g.c};--t:${g.t}"><span class="tile">${g.ico}</span><div><small>Тебя зовут в игру · комната ${esc(room)}</small><b>${g.name}</b><span>${g.short}</span></div></div>`
+        : `<div class="eyebrow rise">Комната ${esc(room)}</div>`}
       <h1 class="rise" style="--i:1">Как тебя записать?</h1>
       <form id="join" class="rise" style="--i:2">
         <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required value="${esc(recall("quiz-name"))}">
@@ -609,11 +624,11 @@ function betBox(me) {
 
 function trickBox(s, me) {
   const t = s.trick_next;
-  if (!t || !s.tricks) return "";
+  if (!t || !s.tricks) return trickHint(s, me);
   if (me.can_trick) {
     const others = s.players.filter((p) => p.name !== me.name);
-    if (!others.some((p) => p.id === trickTo)) trickTo = t.leader;
-    return `<div class="trick-box pop"><b>😈 Подлянка!</b><p class="muted">Ты на последнем месте — испорти кому-нибудь следующий вопрос. Кому?</p>
+    if (!others.some((p) => p.id === trickTo)) trickTo = others.some((p) => p.id === t.leader) ? t.leader : others[0] && others[0].id;
+    return `<div class="trick-box pop"><b>😈 У тебя подлянка!</b><p class="muted">Ты ошибся ${s.trick_streak || 2} раза подряд — испорти кому-нибудь следующий вопрос. Кому?</p>
     <div class="trick-who">${others.map((p) => `<button class="trick-to ${p.id === trickTo ? "on" : ""}" data-trick-to="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
     <p class="muted">Какая подлянка достанется — решит случай</p>
     <button class="btn trick-throw" data-trick type="button">🎲 Кинуть подлянку</button></div>`;
@@ -624,7 +639,14 @@ function trickBox(s, me) {
       <p class="muted">Сработает на следующем вопросе</p></div>`;
   }
   if (t.chosen && t.to === me.name) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(t.by)}. Сюрприз будет на следующем вопросе</p></div>`;
-  return "";
+  return trickHint(s, me);
+}
+// как получить подлянку: подсказка тому, кто уже ошибся, и тому, чья подлянка ждёт очереди
+function trickHint(s, me) {
+  if (!s.trick_streak || s.index + 1 >= s.total) return "";
+  if (me.trick_charge) return `<p class="trick-hint">😈 У тебя есть подлянка — кинешь, когда снова будет можно</p>`;
+  const left = s.trick_streak - (me.misses || 0);
+  return me.misses > 0 && left > 0 ? `<p class="trick-hint">😈 Ещё ${left === 1 ? "одна ошибка" : left + " ошибки"} подряд — и получишь подлянку</p>` : "";
 }
 
 function answerControls(s) {
@@ -912,12 +934,15 @@ async function copyText(text) {
 
 // Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
 const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
-const roomInvite = (code) => `🎉 Заходи ко мне в «Квиз»! Код комнаты ${code} — отвечаем с телефонов 👇`;
+// игра по комнате: приглашение с названием игры. Ссылку кладём в сам текст — иначе мессенджеры часто шлют одну ссылку без текста
+const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 10 000 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
+const roomInvite = (code, mode) => `🎉 Привет! Зову тебя в ${GAME_INVITE[mode] || "квиз"}. Отвечаем с телефонов, ничего устанавливать не нужно. Код комнаты: ${code}`;
+const shareText = (text, url) => (navigator.share ? navigator.share({ title: "Квиз", text: text + "\n👉 " + url }) : Promise.reject()).catch(() => {});
 
 // ссылка на сам сайт (не на комнату): чтобы друзья устроили свою игру
 async function shareSite(btn) {
   const url = location.origin + "/";
-  if (navigator.share) return navigator.share({ title: "Квиз", text: SITE_INVITE, url }).catch(() => {});
+  if (navigator.share) return shareText(SITE_INVITE, url);
   btn.textContent = (await copyText(SITE_INVITE + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
 }
 
@@ -950,8 +975,9 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").cat
 
 async function invite(btn, s) {
   const url = (s.join || location.origin) + "/?room=" + room;
-  if (navigator.share) return navigator.share({ title: "Квиз", text: roomInvite(room), url }).catch(() => {});
-  btn.textContent = (await copyText(roomInvite(room) + "\n" + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
+  const text = roomInvite(room, s.settings && s.settings.mode);
+  if (navigator.share) return shareText(text, url);
+  btn.textContent = (await copyText(text + "\n👉 " + url)) ? "✓ Приглашение скопировано — вставь в чат" : url;
 }
 
 // ---------- ведущий играет сам: управление с телефона ----------
@@ -992,6 +1018,9 @@ function soundtrack(s) {
   } else if (s.phase === "reveal") { M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders" || s.phase === "topic_vote") M.play("leaders");
   else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 4300); }
+  else if (s.phase === "hd_turn") M.play("lobby");
+  else if (s.phase === "hd_play") M.play("question");
+  else if (s.phase === "hd_result") { M.stop(0.1); if (!(s.hd && s.hd.me && s.hd.me.is_guesser)) M.sting("timeup"); } // у лба «пип-пип» играет сам экран со словом
   else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
 }
 // браузер включает звук только после нажатия — открываем его при первом касании
@@ -1145,7 +1174,7 @@ function hdFace(c, me, seconds) {
 }
 
 // размер слова на карточке: самое длинное слово фразы — в одну строку, без переноса посреди слова
-const cardSize = (w) => Math.round(Math.min(54, (Math.min(innerWidth, 560) - 70) / (0.66 * Math.max(...w.split(" ").map((x) => x.length)))));
+const cardSize = (w) => Math.round(Math.min(54, (Math.min(innerWidth, 560) - 70) / (0.8 * Math.max(...w.split(" ").map((x) => x.length)))));
 
 function renderHd(s, me) {
   const h = s.hd, c = h.cur || {}, m = h.me || {};
@@ -1153,17 +1182,19 @@ function renderHd(s, me) {
   const teamMode = !!s.settings.teams, ours = !teamMode || m.team === c.team;
   const tb = teamMode && c.team != null ? ` <span class="teambadge" style="--c:${TEAM_COLORS[c.team]}">${esc(s.team_names[c.team])}</span>` : "";
   const who = `${avaP(c)} <b>${esc(c.name)}</b>${tb}`;
-  const turnLabel = teamMode ? `Круг ${h.round} из ${h.rounds}` : `Ход ${h.turn + 1} из ${h.turns}`;
+  const turnLabel = `Раунд ${h.round} из ${h.rounds} · ${esc(h.theme || "")}`;
   if (s.phase === "hd_turn") {
     $main.innerHTML = m.is_guesser
       ? `<div class="scene"><div class="eyebrow">${turnLabel}</div><h1>Твой ход! 🙆</h1>
           <ol class="hd-howto"><li>Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</li>
             <li>${teamMode ? "Команда объясняет" : "Друзья объясняют"} слово, не называя его</li><li>Угадал — наклони телефон <b>вниз</b>, не знаешь — <b>вверх</b></li></ol>
           <p class="muted">${h.seconds} секунд. Если наклоны не срабатывают — касайся верха или низа экрана</p>
+          <p class="hd-tip">📱 Экран переворачивается при наклонах? Включи блокировку поворота экрана (в шторке телефона) — играть можно и вертикально</p>
           <button class="btn big-btn" id="hd-start" type="button">▶ Старт</button></div>`
       : `<div class="scene"><div class="eyebrow">${turnLabel}</div><h2>Угадывает ${who}</h2>
           <p class="muted">${ours ? "Сейчас приложит телефон ко лбу. Объясняй слова, не называя их, — слово будет и у тебя на экране"
-            : "Ход соперников: объясняют они, а ты следи, чтобы не называли само слово"}</p></div>`;
+            : "Ход соперников: объясняют они, а ты следи, чтобы не называли само слово"}</p>
+          ${teamMode ? "" : `<p class="hd-tip">🙋 Объяснил слово — жми «Я объяснил»: если его угадают, очко и тебе</p>`}</div>`;
     const b = document.getElementById("hd-start");
     if (b) b.addEventListener("click", () => { b.disabled = true; b.textContent = "…"; hdStart().finally(() => { b.disabled = false; b.textContent = "▶ Старт"; }); });
   } else if (s.phase === "hd_play") {
@@ -1172,15 +1203,22 @@ function renderHd(s, me) {
       return hdFace(c, m, h.seconds);
     }
     const timebar = c.left != null ? `<div class="timebar" style="width:100%"><i style="animation-duration:${c.left}s"></i></div>` : "";
+    // каждый за себя: объяснивший жмёт «Я объяснил» — первый нажавший получит очко, если слово угадают
+    const claim = teamMode || !m.word ? "" : m.claimed ? `<p class="hd-claimed">✓ Объясняешь ты — очко твоё, если угадает</p>`
+      : m.claim_by ? `<p class="muted">Это слово объясняет ${esc(m.claim_by)}</p>`
+      : `<button class="btn hd-claim" type="button" data-hd-claim="${m.n}">🙋 Я объяснил</button>`;
     $main.innerHTML = `<div class="scene"><div class="eyebrow">Угадывает ${esc(c.name)} · угадано ${c.ok}</div>${tb}${timebar}
-      ${m.word ? `<div class="hd-card ${ours ? "" : "rival"}" style="font-size:${cardSize(m.word)}px">${esc(m.word)}</div><p class="muted">${ours ? "Объясняй, не называя слово и однокоренные" : "Объясняют соперники — следи, чтобы не называли слово"}</p>`
+      ${m.word ? `<div class="hd-card ${ours ? "" : "rival"}" style="font-size:${cardSize(m.word)}px">${esc(m.word)}</div>${claim}<p class="muted">${ours ? "Объясняй, не называя слово и однокоренные" : "Объясняют соперники — следи, чтобы не называли слово"}</p>`
         : `<div class="hd-card wait">Приготовьтесь…</div>`}</div>`;
   } else if (s.phase === "hd_result") {
-    const words = (c.words || []).map((w) => `<li class="${w.ok ? "ok" : "no"}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</li>`).join("");
+    // угадывающий (и ведущий) может поправить случайный наклон — нажать на слово
+    const canFix = m.is_guesser || !!hostToken();
+    const words = (c.words || []).map((w, i) => `<li class="${w.ok ? "ok" : "no"}">${canFix ? `<button type="button" data-hd-fix="${i}">` : ""}${w.ok ? "✓" : "✗"} ${esc(w.word)}${w.ok && w.by ? ` <small>· объяснил ${esc(w.by)}</small>` : ""}${canFix ? "</button>" : ""}</li>`).join("");
     const mineNext = h.next && h.next === me.name;
     $main.innerHTML = `<div class="scene"><div class="eyebrow">${turnLabel}</div>
-      <h2>${who}: ${wordsN(c.ok)}</h2>${words ? `<ul class="hd-list">${words}</ul>` : ""}
+      <h2>${who}: ${wordsN(c.ok)}</h2>${words ? `<ul class="hd-list">${words}</ul>${canFix ? `<p class="muted small-note">Наклон сработал случайно? Нажми на слово — поменяется</p>` : ""}` : ""}
       ${teamMode ? `<p class="muted">Счёт: ${s.teams.map((x) => `<span class="teambadge" style="--c:${TEAM_COLORS[x.team]}">${esc(x.name)} ${x.score}</span>`).join(" ")}</p>` : ""}
+      ${h.next_round ? `<p class="muted">Раунд «${esc(h.theme || "")}» сыгран — дальше новая тема</p>` : ""}
       ${mineNext ? `<p class="pill">Следующий ход — твой! Готовься 🙆</p>` : h.next ? `<p class="muted">Следующий: ${esc(h.next)}</p>` : `<p class="muted">Это был последний ход</p>`}</div>`;
   }
 }
@@ -1189,7 +1227,7 @@ function draw(s) {
   $main.classList.remove("top-start");
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
+  document.getElementById("top").innerHTML = `<a class="home-btn" href="/" title="Главное меню — в игру можно вернуться">⌂</a>${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
   soundtrack(s);
   mood("");
   confetti(false);
@@ -1253,12 +1291,12 @@ function draw(s) {
   } else if (s.phase === "question" && !me.answered) {
     if (draftQ !== s.index) { draftQ = s.index; picks = []; typed = ""; mapPick = null; }
     const trick = me.trick, waiting = me.trick_wait > 0, tn = s.trick_now;
-    const trickName = trick && s.tricks ? (s.tricks.find((k) => k.id === trick) || {}).name : "";
+    const tk = (trick && s.tricks && s.tricks.find((k) => k.id === trick)) || {}, trickName = tk.name || "";
     if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
     $main.innerHTML = `
       <div class="q-top"><div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div><b class="q-left" id="q-left">${Math.ceil(s.left)}</b></div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
-      ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}</div>` : ""}
+      ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}${tk.tip ? `<small>${esc(tk.tip)}</small>` : ""}</div>` : ""}
       <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
       <h2>${esc(s.question)}</h2>
       ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
@@ -1571,6 +1609,15 @@ document.addEventListener("click", async (e) => {
   if (e.target.closest("[data-listen]") && lastState) { listen(lastState); return; }
   const vote = e.target.closest("[data-vote]");
   if (vote) { buzz(15); document.querySelectorAll("[data-vote]").forEach((b) => b.classList.toggle("on", b === vote)); await api("/api/vote", { pid, theme: vote.dataset.vote }).catch(() => {}); lastSig = ""; poll(); return; }
+  const hcl = e.target.closest("[data-hd-claim]"); // «Я объяснил»
+  if (hcl) { hcl.disabled = true; buzz(30); await api("/api/hd/claim", { pid, n: Number(hcl.dataset.hdClaim) }).catch(() => {}); lastSig = ""; poll(); return; }
+  const hfx = e.target.closest("[data-hd-fix]"); // поправить случайный наклон
+  if (hfx) {
+    const h = lastState && lastState.hd, mine = h && h.me && h.me.is_guesser, i = Number(hfx.dataset.hdFix);
+    if (mine) await api("/api/hd/fix", { pid, index: i }).catch(() => {});
+    else await api("/api/host/hd_fix", { token: hostToken(), index: i }).catch(() => {});
+    lastSig = ""; poll(); return;
+  }
   const tto = e.target.closest("[data-trick-to]"); // кому подлянка
   if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
   const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер

@@ -384,6 +384,20 @@
     for (const [n, dt] of seq) { I.marimba(sfxBus, f(n), t + dt, 0.3, 0.8); I.piano(sfxBus, f(n), t + dt, 0.4, 0.5); }
     if (name === "fanfare") { ["C4", "E4", "G4", "C5"].forEach((n) => I.strings(sfxBus, f(n), t + 1.08, 2, 0.9)); D.kick(t + 1.08); }
     if (name === "start") D.open(t + 0.2, 1);
+    if (name === "beat") { // сердцебиение «тук-тук» — последние секунды хода
+      [[0, 1], [0.17, 0.7]].forEach(([dt, v]) => {
+        const g = ctx.createGain(); out(sfxBus, g, 0);
+        adsr(g, t + dt, 0.005, 0.9 * v, 0.03, 0.14);
+        const o = osc("sine", 70, t + dt, t + dt + 0.25); o.frequency.setValueAtTime(95, t + dt); o.frequency.exponentialRampToValueAtTime(48, t + dt + 0.2); o.connect(g);
+      });
+    }
+    if (name === "timeup") { // время вышло: «пип-пип-пиииип»
+      [[0, 0.14], [0.28, 0.14], [0.56, 0.7]].forEach(([dt, d]) => {
+        const g = ctx.createGain(); out(sfxBus, g, 0.1);
+        adsr(g, t + dt, 0.005, 0.22, d, 0.05);
+        osc("square", 880, t + dt, t + dt + d + 0.1).connect(g);
+      });
+    }
     if (name === "wrong") { // промах: низкий гудок
       [0, 0.28].forEach((dt) => {
         const g = ctx.createGain(), lp = lowpass(900); g.connect(lp); out(sfxBus, lp, 0.1);

@@ -45013,6 +45013,591 @@
    "level": "normal",
    "note": "С 1996 по 2018 год; с ним «Арсенал» выиграл три чемпионата Англии.",
    "answer_image": "media/pics/ans-stadium.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Кит",
+    "Дельфин",
+    "Акула",
+    "Тюлень"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Акула — рыба, а кит, дельфин и тюлень — млекопитающие: дышат воздухом и кормят детёнышей молоком.",
+   "image": "media/odd/dolphin_seal_shark_whale.webp",
+   "answer_image": "media/pics/ans-shark.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Орёл",
+    "Голубь",
+    "Пингвин",
+    "Попугай"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Пингвин не летает, зато отлично плавает: крылья у него превратились в ласты.",
+   "image": "media/odd/dove_eagle_parrot_penguin.webp",
+   "answer_image": "media/pics/ans-penguin.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Морковь",
+    "Помидор",
+    "Огурец",
+    "Баклажан"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Морковь — корнеплод, а помидор, огурец и баклажан — плоды растений, внутри у них семена.",
+   "image": "media/odd/carrot_cucumber_eggplant_tomato.webp",
+   "answer_image": "media/pics/ans-carrot.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Муравей",
+    "Пчела",
+    "Паук",
+    "Бабочка"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Паук — не насекомое, а паукообразное: у него восемь ног, у насекомых — шесть.",
+   "image": "media/odd/ant_butterfly_honeybee_spider.webp",
+   "answer_image": "media/pics/ans-spider.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Лягушка",
+    "Черепаха",
+    "Крокодил",
+    "Ящерица"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Лягушка — земноводное: её икра и головастики живут в воде. Черепаха, крокодил и ящерица — пресмыкающиеся.",
+   "image": "media/odd/crocodile_frog_lizard_turtle.webp",
+   "answer_image": "media/pics/ans-frog.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Скрипка",
+    "Гитара",
+    "Барабан",
+    "Банджо"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Барабан — ударный инструмент, остальные — струнные.",
+   "image": "media/odd/banjo_drum_guitar_violin.webp",
+   "answer_image": "media/pics/ans-drum.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Скрипка",
+    "Труба",
+    "Саксофон",
+    "Флейта"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Скрипка — струнный инструмент, а труба, саксофон и флейта — духовые: звук рождается от дыхания.",
+   "image": "media/odd/flute_saxophone_trumpet_violin.webp",
+   "answer_image": "media/pics/ans-violin.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Велосипед",
+    "Мотоцикл",
+    "Самокат",
+    "Скейтборд"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "У мотоцикла есть мотор, а велосипед, самокат и скейтборд едут силой человека.",
+   "image": "media/odd/bicycle_kick-scooter_motorcycle_skateboard.webp",
+   "answer_image": "media/pics/ans-motorcycle.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Самолёт",
+    "Вертолёт",
+    "Ракета",
+    "Парусник"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Парусник плывёт по воде, остальные летают.",
+   "image": "media/odd/airplane_helicopter_rocket_sailboat.webp",
+   "answer_image": "media/pics/ans-sailboat.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Хоккей",
+    "Футбол",
+    "Лыжи",
+    "Санки"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Футбол — летний вид спорта, хоккей, лыжи и санки — зимние.",
+   "image": "media/odd/ice-hockey_skis_sled_soccer-ball.webp",
+   "answer_image": "media/pics/ans-soccer-ball.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Яйцо",
+    "Сыр",
+    "Молоко",
+    "Масло"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Сыр и сливочное масло делают из молока, а яйцо к молочным продуктам не относится.",
+   "image": "media/odd/butter_cheese-wedge_egg_glass-of-milk.webp",
+   "answer_image": "media/pics/ans-egg.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Голубь",
+    "Орёл",
+    "Летучая мышь",
+    "Попугай"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Летучая мышь — млекопитающее, а не птица: у неё нет перьев, детёнышей она кормит молоком.",
+   "image": "media/odd/bat_dove_eagle_parrot.webp",
+   "answer_image": "media/pics/ans-bat.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Зебра",
+    "Жираф",
+    "Лев",
+    "Тигр"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Тигры живут только в Азии, а зебры, жирафы и львы — в Африке.",
+   "image": "media/odd/giraffe_lion_tiger_zebra.webp",
+   "answer_image": "media/pics/ans-tiger.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Корова",
+    "Овца",
+    "Коза",
+    "Свинья"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Коровы, овцы и козы — жвачные: проглоченную траву они отрыгивают и пережёвывают снова. Свинья так не делает.",
+   "image": "media/odd/cow_ewe_goat_pig.webp",
+   "answer_image": "media/pics/ans-pig.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Телефон",
+    "Ноутбук",
+    "Книга",
+    "Телевизор"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Книге не нужно электричество, остальным — нужно.",
+   "image": "media/odd/closed-book_laptop_mobile-phone_television.webp",
+   "answer_image": "media/pics/ans-closed-book.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Ананас",
+    "Яблоко",
+    "Банан",
+    "Кокос"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Яблоки растут в умеренном климате, а ананас, банан и кокос — тропические.",
+   "image": "media/odd/banana_coconut_pineapple_red-apple.webp",
+   "answer_image": "media/pics/ans-red-apple.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Помидор",
+    "Картофель",
+    "Морковь",
+    "Лук"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Помидоры растут над землёй, а клубни картофеля, морковь и луковица — под землёй.",
+   "image": "media/odd/carrot_onion_potato_tomato.webp",
+   "answer_image": "media/pics/ans-tomato.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Гриб",
+    "Брокколи",
+    "Морковь",
+    "Огурец"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Грибы — не растения, а отдельное царство живой природы.",
+   "image": "media/odd/broccoli_carrot_cucumber_mushroom.webp",
+   "answer_image": "media/pics/ans-mushroom.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Арбуз",
+    "Дыня",
+    "Огурец",
+    "Помидор"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Арбуз, дыня и огурец — родственники из семейства тыквенных, а помидор — паслёновый, родня картофеля.",
+   "image": "media/odd/cucumber_melon_tomato_watermelon.webp",
+   "answer_image": "media/pics/ans-tomato.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Помидор",
+    "Огурец",
+    "Картофель",
+    "Баклажан"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Помидор, картофель и баклажан — паслёновые, а огурец — тыквенный.",
+   "image": "media/odd/cucumber_eggplant_potato_tomato.webp",
+   "answer_image": "media/pics/ans-cucumber.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Улитка",
+    "Осьминог",
+    "Краб",
+    "Кальмар"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Улитка, осьминог и кальмар — моллюски, а краб — ракообразное с панцирем и суставчатыми ногами.",
+   "image": "media/odd/crab_octopus_snail_squid.webp",
+   "answer_image": "media/pics/ans-crab.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Краб",
+    "Осьминог",
+    "Креветка",
+    "Омар"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Краб, креветка и омар — ракообразные, а осьминог — моллюск.",
+   "image": "media/odd/crab_lobster_octopus_shrimp.webp",
+   "answer_image": "media/pics/ans-octopus.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Единорог",
+    "Дракон",
+    "Привидение",
+    "Лошадь"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Лошадь существует на самом деле, а единорог, дракон и привидение — выдумка.",
+   "image": "media/odd/dragon_ghost_horse_unicorn.webp",
+   "answer_image": "media/pics/ans-horse.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Трамвай",
+    "Метро",
+    "Троллейбус",
+    "Поезд"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Трамвай, метро и поезд ездят по рельсам, а троллейбус — по обычной дороге, хотя тоже от электричества.",
+   "image": "media/odd/locomotive_metro_tram_trolleybus.webp",
+   "answer_image": "media/pics/ans-trolleybus.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Тако",
+    "Суши",
+    "Рамен",
+    "Онигири"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Тако — мексиканская еда, а суши, рамен и онигири — японские блюда.",
+   "image": "media/odd/rice-ball_steaming-bowl_sushi_taco.webp",
+   "answer_image": "media/pics/ans-taco.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Молоток",
+    "Микроскоп",
+    "Телескоп",
+    "Лупа"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Микроскоп, телескоп и лупа — оптические приборы с линзами, молоток — нет.",
+   "image": "media/odd/hammer_magnifying-glass-tilted-left_microscope_telescope.webp",
+   "answer_image": "media/pics/ans-hammer.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Хомяк",
+    "Мышь",
+    "Бурундук",
+    "Кролик"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Кролик — не грызун, а зайцеобразный: у него две пары верхних резцов. Хомяк, мышь и бурундук — грызуны.",
+   "image": "media/odd/chipmunk_hamster_mouse_rabbit.webp",
+   "answer_image": "media/pics/ans-rabbit.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Волк",
+    "Кошка",
+    "Лиса",
+    "Собака"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Волк, лиса и собака — из семейства псовых, а кошка — из кошачьих.",
+   "image": "media/odd/cat_dog_fox_wolf.webp",
+   "answer_image": "media/pics/ans-cat.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Лев",
+    "Тигр",
+    "Волк",
+    "Леопард"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Лев, тигр и леопард — кошачьи, а волк — псовые.",
+   "image": "media/odd/leopard_lion_tiger_wolf.webp",
+   "answer_image": "media/pics/ans-wolf.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Медведь",
+    "Лиса",
+    "Ёж",
+    "Барсук"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Медведь, ёж и барсук зимой впадают в спячку, а лиса всю зиму охотится — даже мышей под снегом.",
+   "image": "media/odd/badger_bear_fox_hedgehog.webp",
+   "answer_image": "media/pics/ans-fox.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Утка",
+    "Лебедь",
+    "Гусь",
+    "Курица"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Утка, лебедь и гусь — водоплавающие птицы с перепонками на лапах, курица — нет.",
+   "image": "media/odd/chicken_duck_goose_swan.webp",
+   "answer_image": "media/pics/ans-chicken.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Нога",
+    "Глаз",
+    "Ухо",
+    "Нос"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Глаз, ухо и нос — органы чувств: зрения, слуха и обоняния. Нога — нет.",
+   "image": "media/odd/ear_eye_leg_nose.webp",
+   "answer_image": "media/pics/ans-leg.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Солнце",
+    "Огонь",
+    "Луна",
+    "Лампочка"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Луна сама не светит — она отражает солнечный свет.",
+   "image": "media/odd/fire_full-moon_light-bulb_sun.webp",
+   "answer_image": "media/pics/ans-full-moon.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Ножницы",
+    "Нож",
+    "Ложка",
+    "Пила"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Ножницы, нож и пила режут, ложка — нет.",
+   "image": "media/odd/carpentry-saw_kitchen-knife_scissors_spoon.webp",
+   "answer_image": "media/pics/ans-spoon.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Ролики",
+    "Коньки",
+    "Лыжи",
+    "Санки"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "На роликах катаются по асфальту, остальное нужно для снега и льда.",
+   "image": "media/odd/ice-skate_roller-skate_skis_sled.webp",
+   "answer_image": "media/pics/ans-roller-skate.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Теннис",
+    "Бадминтон",
+    "Пинг-понг",
+    "Бокс"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "В теннис, бадминтон и пинг-понг играют ракеткой, в боксе её нет.",
+   "image": "media/odd/badminton_boxing-glove_ping-pong_tennis.webp",
+   "answer_image": "media/pics/ans-boxing-glove.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Сова",
+    "Петух",
+    "Летучая мышь",
+    "Ёж"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Сова, летучая мышь и ёж охотятся ночью, а петух — дневная птица.",
+   "image": "media/odd/bat_hedgehog_owl_rooster.webp",
+   "answer_image": "media/pics/ans-rooster.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Манго",
+    "Персик",
+    "Вишня",
+    "Банан"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "У манго, персика и вишни внутри одна большая косточка, у банана — нет.",
+   "image": "media/odd/banana_cherries_mango_peach.webp",
+   "answer_image": "media/pics/ans-banana.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Бургер",
+    "Салат",
+    "Хот-дог",
+    "Картошка фри"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Бургер, хот-дог и картошка фри — фастфуд, а зелёный салат — нет.",
+   "image": "media/odd/french-fries_green-salad_hamburger_hot-dog.webp",
+   "answer_image": "media/pics/ans-green-salad.png"
   }
  ]
 }

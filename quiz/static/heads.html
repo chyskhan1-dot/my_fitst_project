@@ -16,7 +16,7 @@
 <style>
 /* «Слово на лбу» с одного телефона: без комнаты и сервера, телефон передают по кругу. Сколько тем — столько раундов */
 :root {
-  --bg: #0e1330; --bg2: #1a1050; --panel: rgba(255, 255, 255, .08); --ink: #f4f5ff; --muted: #a7aedb;
+  --bg: #0e1330; --bg2: #1a1050; --panel: rgba(255, 255, 255, .08); --ink: #f4f5ff; --muted: #c2c8ec;
   --line: rgba(255, 255, 255, .12); --accent: #ffd23f; --accent-ink: #1a1400;
   --a0: #e5484d; --a1: #3e7bfa; --a2: #f2a516; --a3: #26a269; --good: #3ddc84; --bad: #ff6b6b;
   --display: "Unbounded", "Arial Black", system-ui, sans-serif; --body: "Manrope", "Segoe UI", system-ui, sans-serif;
@@ -50,9 +50,34 @@ p { margin: 0; line-height: 1.5; }
 .seg button.on { background: var(--ink); color: var(--bg); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { font: 700 15px var(--body); padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
-.chip.on { background: rgba(255, 210, 63, .14); border-color: var(--accent); color: var(--ink); }
-.tname { font: 800 18px var(--body); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); border-left: 8px solid var(--c);
+.chip.on { background: rgba(255, 210, 63, .32); border-color: var(--accent); color: #fff; }
+.chip.on::before { content: "✓ "; color: var(--accent); font-weight: 800; }
+.chip .hard { font-size: 11px; font-weight: 800; color: #ffb4b4; margin-left: 4px; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mini { font: 700 14px var(--body); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+/* название команды можно менять: поле с карандашом */
+.tname-wrap { position: relative; }
+.tname { font: 800 18px var(--body); padding: 12px 44px 12px 14px; border-radius: 12px; border: 1px dashed rgba(255, 255, 255, .3); border-left: 8px solid var(--c);
   background: var(--panel); color: var(--ink); width: 100%; }
+.tname:focus { outline: none; border-style: solid; border-color: var(--accent); border-left-color: var(--c); }
+.tname-wrap::after { content: "✏️"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .8; }
+.hint { font-size: 14px; color: var(--muted); }
+/* правила: короткие строки и картинка наклонов */
+.rules-box { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--panel); }
+.rules-box .rl { display: flex; gap: 10px; line-height: 1.35; }
+.tilt { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.tl { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.25; }
+.tl .ar { font: 800 28px var(--display); line-height: 1; }
+.tl b { display: block; font-size: 16px; }
+.tl.ok { background: rgba(61, 220, 132, .16); border: 1px solid rgba(61, 220, 132, .5); }
+.tl.ok .ar { color: var(--good); }
+.tl.pass { background: rgba(255, 107, 107, .14); border: 1px solid rgba(255, 107, 107, .5); }
+.tl.pass .ar { color: var(--bad); }
+/* кнопка «Начать» с подписью про раунды — всегда внизу экрана */
+.dock { position: sticky; bottom: 0; margin: 0 -16px calc(-1 * max(16px, env(safe-area-inset-bottom))); padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(14, 19, 48, .96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; text-align: center; }
+.dock .sum { font-weight: 800; }
+.dock .sum.warn { color: #ffb4b4; }
 .team { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--c); color: #fff; font-weight: 800; }
 .turn { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 6vh; }
 .turn .team { font: 800 30px var(--display); padding: 14px 30px; }
@@ -79,6 +104,10 @@ const SECONDS = 60, READY = 3, KEY = "quiz-heads", DECKS = "quiz-heads-decks";
 const $app = document.getElementById("app");
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
+const plural = (n, one, few, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? few : many}`;
+// угадал/пропуск — картинка со стрелками (в настройках и перед ходом)
+const TILT = `<div class="tilt"><div class="tl ok"><span class="ar">↓</span><span>Наклон вниз<b>угадал</b></span></div>
+  <div class="tl pass"><span class="ar">↑</span><span>Наклон вверх<b>пропуск</b></span></div></div>`;
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // свои названия команд (по умолчанию — цвета); запоминаются на телефоне
 const savedNames = () => { const n = load(KEY + "-names"); return TEAMS.map((x, i) => (n && n[i]) || x[0]); };
@@ -112,15 +141,22 @@ function setupView() {
   $app.innerHTML = `
     <div class="top"><a href="/">← Главная</a></div>
     <div><div class="eyebrow">Один телефон</div><h1>🙆 Слово на лбу</h1></div>
-    <ol class="howto muted"><li>Команды ходят по очереди, телефон передают тому, кто угадывает</li>
-      <li>Он прикладывает телефон ко лбу, своя команда объясняет слово, не называя его</li>
-      <li>Телефон держат горизонтально. Угадал — наклон вниз, не знаешь — вверх. ${SECONDS} секунд</li></ol>
+    <div class="rules-box">
+      <div class="rl"><span>👥</span><span>Команды ходят по очереди, телефон — тому, кто угадывает</span></div>
+      <div class="rl"><span>🗣</span><span>Своя команда объясняет слово, не называя его</span></div>
+      <div class="rl"><span>📱</span><span>Телефон ко лбу, горизонтально · ${SECONDS} секунд</span></div>
+      ${TILT}
+    </div>
     <div class="section"><b>Команды</b><div class="seg">${[2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n}</button>`).join("")}</div>
-      ${d.names.slice(0, d.teams).map((n, i) => `<input class="tname" style="--c:${TEAMS[i][1]}" data-name="${i}" value="${esc(n)}" maxlength="20" aria-label="Название команды ${i + 1}" autocomplete="off">`).join("")}</div>
-    <div class="section"><b>Темы — по одной на раунд</b>
-      <div class="chips">${THEMES.map((t) => `<button type="button" class="chip ${d.themes.includes(t.name) ? "on" : ""}" data-theme="${esc(t.name)}">${t.icon} ${esc(t.name)}</button>`).join("")}</div>
-      <p class="muted">${d.themes.length ? `Раундов: ${d.themes.length} · в каждом все команды ходят по разу` : "Выбери хотя бы одну тему"}</p></div>
-    <button class="btn big" id="go" ${d.themes.length ? "" : "disabled"}>Начать</button>`;
+      <span class="hint">Названия можно поменять — нажми на название</span>
+      ${d.names.slice(0, d.teams).map((n, i) => `<label class="tname-wrap"><input class="tname" style="--c:${TEAMS[i][1]}" data-name="${i}" value="${esc(n)}" maxlength="20"
+        placeholder="${TEAMS[i][0]}" aria-label="Название команды ${i + 1}" autocomplete="off"></label>`).join("")}</div>
+    <div class="section"><div class="sec-head"><b>Темы — одна тема = один раунд</b><button type="button" class="mini" id="random">🎲 Случайные</button></div>
+      <div class="chips">${THEMES.map((t) => `<button type="button" class="chip ${d.themes.includes(t.name) ? "on" : ""}" data-theme="${esc(t.name)}">${t.icon} ${esc(t.name)}${t.hard ? `<span class="hard">сложно</span>` : ""}</button>`).join("")}</div></div>
+    <div class="dock">
+      <span class="sum ${d.themes.length ? "" : "warn"}">${d.themes.length ? `Выбрано ${plural(d.themes.length, "тема", "темы", "тем")} → ${plural(d.themes.length, "раунд", "раунда", "раундов")}` : "Выберите хотя бы одну тему"}</span>
+      <button class="btn big" id="go" ${d.themes.length ? "" : "disabled"}>Начать</button>
+    </div>`;
 }
 
 function turnView() {
@@ -131,7 +167,8 @@ function turnView() {
       <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(theme)}</div>
       ${team(g.team)}
       <h2>Передайте телефон тому, кто угадывает</h2>
-      <p class="muted">Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к своей команде. Угадал — наклони вниз, не знаешь — вверх</p>
+      <p class="muted">Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к своей команде</p>
+      <div style="align-self:stretch">${TILT}</div>
       <button class="btn big" id="start" style="align-self:stretch">▶ Старт</button>
       ${scoresHtml()}
     </div>`;
@@ -214,7 +251,7 @@ async function startTurn() {
     onMark: (ok) => {
       g.cur.push({ word, ok });
       if (ok) g.scores[g.team]++;
-      save(); sound(ok ? "reveal" : "wrong");
+      save(); // звук — в heads-face.js
       word = draw(theme);
       return word;
     },
@@ -250,6 +287,7 @@ document.addEventListener("click", (e) => {
     w.ok = !w.ok; g.scores[g.team] += w.ok ? 1 : -1; save(); return resultView();
   }
   const id = e.target.closest("button, a") && e.target.closest("button, a").id;
+  if (id === "random") { draft.themes = shuffle(THEMES.map((x) => x.name)).slice(0, 3); return setupView(); }
   if (id === "go") newGame(draft.teams, draft.themes, draft.names);
   else if (id === "start") { e.target.disabled = true; startTurn(); }
   else if (id === "next") nextTurn();

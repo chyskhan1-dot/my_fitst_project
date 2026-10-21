@@ -45,6 +45,7 @@ body[data-mood="bad"] { --mood: rgba(255, 107, 107, .3); }
 .app { max-width: 520px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 .top { display: flex; align-items: center; gap: 10px; min-height: 36px; font-weight: 800; }
 .top .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .sc small { font-family: var(--body); font-size: 12px; color: var(--muted); }
 .top .sc { font-family: var(--display); font-size: 15px; padding: 6px 12px; border-radius: 999px; background: var(--panel); font-variant-numeric: tabular-nums; }
 main { flex: 1; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
 h1, h2 { font-family: var(--display); margin: 0; line-height: 1.2; text-wrap: balance; }
@@ -102,6 +103,7 @@ input {
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .2); transition: transform .1s;
 }
 .ans:active { transform: scale(.95); }
+.ans.ink, .topic-btn.ink { color: #10142e; } /* на жёлтом и зелёном белый текст плохо читается */
 .ans:disabled { opacity: .5; }
 .ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
@@ -126,15 +128,20 @@ input {
 .mini .gain.up { color: var(--good); } .mini .gain.down { color: var(--bad); }
 .mini .sc { min-width: 4ch; text-align: right; }
 /* голосование за тему: три большие карточки на весь экран */
-.topic-list { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 62vh; }
+.topic-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.topic-list .topic-btn { min-height: 130px; }
+.topic-list .topic-btn:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 100px; }
 .topic-btn { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   width: 100%; border: 0; border-radius: 22px; padding: 14px; background: var(--c); color: #fff; font: 800 22px/1.15 var(--body);
   text-align: center; cursor: pointer; box-shadow: inset 0 -6px 0 rgba(0,0,0,.2); transition: transform .1s; }
 .topic-btn:active { transform: scale(.97); }
-.topic-btn .ti { font-size: 52px; line-height: 1; }
+.topic-btn .ti { font-size: 40px; line-height: 1; }
 .topic-btn small { position: absolute; top: 10px; right: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.28); font-size: 13px; }
 .topic-btn.on { outline: 4px solid var(--ink); outline-offset: 3px; }
 .topic-list:has(.on) .topic-btn:not(.on) { opacity: .6; }
+.q-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.q-left { font: 800 22px var(--display); min-width: 2ch; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q-left.low { color: var(--bad); font-size: 30px; animation: pop .3s ease both; }
 .topic-res { opacity: 0; transition: opacity .5s; display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%; }
 .topic-res.shown { opacity: 1; }
 .topic-res:not(.shown) { pointer-events: none; } /* пока колесо крутится, ставку не сделать */
@@ -295,8 +302,9 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 body.paused #main { pointer-events: none; }
 #hostbar .btn { flex: 1; max-width: 320px; padding: 12px 16px; }
 #hostbar .hb-note { flex: none; color: var(--muted); font-weight: 700; font-size: 13px; }
-#hostbar .tv { flex: none; color: var(--muted); text-decoration: none; font-size: 22px; padding: 6px; }
-body.has-hostbar { padding-bottom: 84px; }
+#hostbar .tv { flex: none; color: var(--muted); text-decoration: none; font-size: 20px; padding: 2px 6px; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+#hostbar .tv small { font-size: 11px; font-weight: 700; margin-top: 3px; }
+body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 /* пропуск и ставка ×2 */
 .extra { display: flex; gap: 10px; }
 .extra .btn { flex: 1; padding: 12px; font-size: 15px; }
@@ -622,7 +630,7 @@ function trickBox(s, me) {
 function answerControls(s) {
   const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
   const plain = s.me && s.me.trick;
-  const btn = (i, attr, extra = "", n = i) => `<button class="ans rise ${extra} ${plain ? "plain" : ""}" style="--c:var(--a${i});--i:${n}" ${attr}="${i}">
+  const btn = (i, attr, extra = "", n = i) => `<button class="ans rise ${extra} ${plain ? "plain" : i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${n}" ${attr}="${i}">
     ${pic(i)}<span class="tx">${esc(trickText(s, s.options[i]))}</span><span class="badge-num"></span></button>`;
   const order = trickOrder(s);
   if (s.qtype === "multi") {
@@ -1021,11 +1029,12 @@ function hostBar(s) {
   const note = s.phase === "question" ? `Ответили ${s.answered} из ${s.players.length}`
     : s.auto_left != null ? `Дальше через ${Math.ceil(s.auto_left)} с` : "";
   // кнопку пересоздаём, только когда она меняется, — счётчик обновляем текстом, чтобы не терялось нажатие
-  const html = !label && !pz ? "" : `<a class="tv" href="/host?room=${room}" title="Экран ведущего">🖥</a>
+  const html = !label && !pz ? "" : `<a class="tv" href="/host?room=${room}" title="Экран ведущего">🖥<small>Экран</small></a>
     ${pz ? `<button class="btn ghost pz" type="button" data-host="pause" data-on="${s.paused ? 0 : 1}" title="${s.paused ? "Продолжить" : "Пауза"}">${s.paused ? "▶ Продолжить" : "⏸"}</button>` : ""}
     <span class="hb-note"></span>
     ${label ? `<button class="btn ${s.phase === "question" ? "ghost" : ""}" type="button" data-host="${s.phase === "final" ? "reset" : "next"}" ${disabled ? "disabled" : ""}>${label}</button>` : ""}`;
   if (bar.dataset.html !== html) { bar.dataset.html = html; bar.innerHTML = html; }
+  if (bar.offsetHeight) document.body.style.setProperty("--hb", bar.offsetHeight + "px");
   const nt = bar.querySelector(".hb-note");
   if (nt && nt.textContent !== note) nt.textContent = note;
 }
@@ -1119,6 +1128,7 @@ function render(s) {
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
 let hdN = 0; // номер текущего слова у лба: ответ сервера на старый запрос его не перебивает
 async function hdStart() {
+  try { window.QuizMusic && QuizMusic.unlock(); } catch {} // звук «угадал/пропуск» на телефоне у лба
   await QuizHeads.prepare(); // разрешение на датчики (iPhone), экран не гаснет, полный экран — всё по нажатию
   const r = await api("/api/hd/start", { pid }).catch(() => null);
   if (r && r.ok) { lastSig = ""; poll(); }
@@ -1179,7 +1189,7 @@ function draw(s) {
   $main.classList.remove("top-start");
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc">${me.score}</span>`;
+  document.getElementById("top").innerHTML = `${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
   soundtrack(s);
   mood("");
   confetti(false);
@@ -1224,10 +1234,10 @@ function draw(s) {
   } else if (s.phase === "topic_vote") {
     const t = s.topic;
     $main.innerHTML = `
-      <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · <span id="topic-left">${Math.ceil(t.left)} с</span></div>
+      <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · осталось <span id="topic-left">${Math.ceil(t.left)} с</span></div>
+      <div class="timebar" style="width:100%"><i style="animation-duration:${t.left}s"></i></div>
       <h2>Какую тему играем?</h2>
-      <p class="hint">На колесо попадут только темы с голосами</p>
-      <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
+      <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
       ${betBox(me)}`;
   } else if (s.phase === "topic_bet") {
@@ -1235,9 +1245,9 @@ function draw(s) {
     const wheel = document.getElementById("topic-wheel");
     if (!wheel || wheel.dataset.round !== String(t.round)) {
       $main.innerHTML = `<div class="scene"><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div>
-        <div id="topic-wheel" data-round="${t.round}">${QuizWheel.html(t.options, w, 300)}</div>
-        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${QuizWheel.icon(t.options[t.winner])} ${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p><div id="bet-box"></div></div></div>`;
-      QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left);
+        <div id="topic-wheel" data-round="${t.round}">${t.unanimous ? `<span class="big pop">${QuizWheel.icon(t.options[t.winner])}</span>` : QuizWheel.html(t.options, w, 300)}</div>
+        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${t.unanimous ? "" : QuizWheel.icon(t.options[t.winner]) + " "}${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p><div id="bet-box"></div></div></div>`;
+      if (!t.unanimous) QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left); // все за одну — крутить нечего
     }
     document.getElementById("bet-box").innerHTML = betBox(me); // колесо не перерисовываем, а кнопку ставки — да
   } else if (s.phase === "question" && !me.answered) {
@@ -1246,7 +1256,7 @@ function draw(s) {
     const trickName = trick && s.tricks ? (s.tricks.find((k) => k.id === trick) || {}).name : "";
     if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
     $main.innerHTML = `
-      <div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div>
+      <div class="q-top"><div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div><b class="q-left" id="q-left">${Math.ceil(s.left)}</b></div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}</div>` : ""}
       <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
@@ -1457,6 +1467,7 @@ async function pollOnce(seq) {
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     const tw = document.getElementById("trick-left"); if (tw && s.me) tw.textContent = Math.ceil(s.me.trick_wait || 0);
     const tl = document.getElementById("topic-left"); if (tl && s.topic) tl.textContent = `${Math.ceil(s.topic.left)} с`;
+    const ql = document.getElementById("q-left"); if (ql && s.left != null) { ql.textContent = Math.ceil(s.left); ql.classList.toggle("low", s.left <= 5); }
     const tres = document.getElementById("topic-res"); if (tres && s.topic) tres.classList.toggle("shown", s.topic.spin_left <= 0);
     hostBar(s);
   } catch {

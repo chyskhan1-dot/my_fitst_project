@@ -9,6 +9,8 @@
   user-select: none; -webkit-user-select: none; touch-action: none; transition: background .15s; }
 #hd-face[data-flash="ok"] { background: #1f9d57; }
 #hd-face[data-flash="pass"] { background: #c93a3a; }
+#hd-face[data-flash="end"] { background: #6b2fb3; }
+#hd-face[data-flash="end"] .hd-zone { visibility: hidden; }
 #hd-face .hd-word { width: 92vw; height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
   font-family: var(--display); font-weight: 800; line-height: 1.05; overflow: hidden; pointer-events: none; }
 #hd-face .hd-bar { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: rgba(255, 255, 255, .15); }
@@ -31,7 +33,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
 #hd-rotate button { font: 700 15px var(--body); color: #a7aedb; background: transparent; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px; padding: 10px 16px; }
 @keyframes hd-turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 `;
-  const hd = { taps: false, word: null, end: 0, ready: 0, total: 60, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, onMark: null, onEnd: null, ended: false };
+  const hd = { taps: false, word: null, end: 0, ready: 0, total: 60, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, onMark: null, onEnd: null, ended: false, beat: -1 };
   let styled = false;
   const face = () => document.getElementById("hd-face");
   const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
@@ -104,12 +106,28 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     f.querySelector(".hd-word").textContent = ok ? "Угадано! ✓" : "Пропуск";
   }
 
+  // время вышло: «пип-пип-пиииип», длинная вибрация и «Время!» на весь экран — чтобы все поняли, что ход окончен
+  function timeUp() {
+    if (hd.ended) return;
+    hd.ended = true;
+    try { window.QuizMusic && QuizMusic.sting("timeup"); } catch {}
+    buzz([150, 80, 150, 80, 600]);
+    const f = face();
+    if (f) { f.dataset.flash = "end"; f.querySelector(".hd-word").textContent = "⏰ Время!"; f.querySelector(".hd-left").textContent = ""; }
+    hd.flashUntil = Date.now() + 60000;
+  }
+
   function paint() {
     const f = face();
     if (!f) return;
-    if (Date.now() >= hd.end && !hd.ended) { hd.ended = true; if (hd.onEnd) hd.onEnd(); }
+    if (Date.now() >= hd.end && !hd.ended) { timeUp(); if (hd.onEnd) setTimeout(hd.onEnd, 1600); }
     if (!face() || Date.now() < hd.flashUntil) return;
     const left = Math.max(0, (hd.end - Date.now()) / 1000), wait = (hd.ready - Date.now()) / 1000;
+    if (wait <= 0 && left > 0 && left <= 10 && Math.ceil(left) !== hd.beat) { // последние 10 секунд — сердцебиение
+      hd.beat = Math.ceil(left);
+      try { window.QuizMusic && QuizMusic.sting("beat"); } catch {}
+      buzz(25);
+    }
     f.dataset.flash = "";
     const w = f.querySelector(".hd-word"), text = wait > 0 ? `Приложи ко лбу\n${Math.ceil(wait)}` : hd.word || "";
     if (w.textContent !== text) { w.textContent = text; w.style.fontSize = ""; fitWord(w); }
@@ -154,7 +172,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
       f.querySelector(".up").addEventListener("pointerdown", (e) => { e.preventDefault(); mark(true); });
       f.querySelector(".down").addEventListener("pointerdown", (e) => { e.preventDefault(); mark(false); });
       f.classList.toggle("taps", hd.taps); // без датчика — касания подсвечены
-      hd.armed = false; hd.ended = false; clearInterval(hd.timer); hd.timer = setInterval(paint, 200);
+      hd.armed = false; hd.ended = false; hd.beat = -1; hd.flashUntil = 0; clearInterval(hd.timer); hd.timer = setInterval(paint, 200);
     }
     paint();
   }
@@ -162,6 +180,9 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
   function hide() {
     const f = face();
     if (!f) return;
+    // ход закончил сервер (время вышло), а экран ещё не успел показать «Время!» — показать и убрать чуть позже
+    if (!hd.ended && Date.now() >= hd.end - 1500) { timeUp(); clearInterval(hd.timer); setTimeout(hide, 1600); return; }
+    if (hd.ended && f.dataset.flash === "end" && Date.now() < hd.end + 1500) { clearInterval(hd.timer); setTimeout(hide, hd.end + 1600 - Date.now()); return; }
     f.remove(); clearInterval(hd.timer);
     try { hd.wake && hd.wake.release(); } catch {}
     hd.wake = null; hd.word = null;

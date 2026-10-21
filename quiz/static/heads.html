@@ -87,6 +87,7 @@ p { margin: 0; line-height: 1.5; }
 .score.lead b { color: var(--accent); }
 .words { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .words button { font: 800 16px var(--body); padding: 10px 14px; border-radius: 999px; cursor: pointer; color: var(--ink); }
+.tip { margin: 0; font-size: 14px; font-weight: 700; color: #ffe9a8; text-align: center; }
 .words .ok { background: rgba(61, 220, 132, .18); border: 2px solid var(--good); }
 .words .no { background: var(--panel); border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
 .howto { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
@@ -169,6 +170,7 @@ function turnView() {
       <h2>Передайте телефон тому, кто угадывает</h2>
       <p class="muted">Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к своей команде</p>
       <div style="align-self:stretch">${TILT}</div>
+      <p class="tip">📱 Экран переворачивается при наклонах? Включи блокировку поворота экрана (в шторке телефона) — играть можно и вертикально</p>
       <button class="btn big" id="start" style="align-self:stretch">▶ Старт</button>
       ${scoresHtml()}
     </div>`;

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1330">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/media/app/icon-192.png">
@@ -51,6 +51,8 @@ p { margin: 0; line-height: 1.5; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { font: 700 15px var(--body); padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
 .chip.on { background: rgba(255, 210, 63, .14); border-color: var(--accent); color: var(--ink); }
+.tname { font: 800 18px var(--body); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); border-left: 8px solid var(--c);
+  background: var(--panel); color: var(--ink); width: 100%; }
 .team { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--c); color: #fff; font-weight: 800; }
 .turn { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding-top: 6vh; }
 .turn .team { font: 800 30px var(--display); padding: 14px 30px; }
@@ -78,7 +80,10 @@ const $app = document.getElementById("app");
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const team = (i, cls = "team") => `<span class="${cls}" style="--c:${TEAMS[i][1]}">${TEAMS[i][0]}</span>`;
+// свои названия команд (по умолчанию — цвета); запоминаются на телефоне
+const savedNames = () => { const n = load(KEY + "-names"); return TEAMS.map((x, i) => (n && n[i]) || x[0]); };
+const tname = (i) => esc(((g && g.names) || (draft && draft.names) || savedNames())[i] || TEAMS[i][0]);
+const team = (i, cls = "team") => `<span class="${cls}" style="--c:${TEAMS[i][1]}">${tname(i)}</span>`;
 const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
 try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {} // iPhone: звук и при беззвучном режиме
@@ -102,14 +107,16 @@ function draw(theme) {
 function save() { store(KEY, g); }
 
 function setupView() {
-  const d = draft || (draft = { teams: (load(KEY + "-teams") || 2), themes: shuffle(THEMES.map((t) => t.name)).slice(0, 3) });
+  const d = draft || (draft = { teams: (load(KEY + "-teams") || 2), themes: shuffle(THEMES.map((t) => t.name)).slice(0, 3), names: savedNames() });
+  if (!d.names) d.names = savedNames();
   $app.innerHTML = `
     <div class="top"><a href="/">← Главная</a></div>
     <div><div class="eyebrow">Один телефон</div><h1>🙆 Слово на лбу</h1></div>
     <ol class="howto muted"><li>Команды ходят по очереди, телефон передают тому, кто угадывает</li>
       <li>Он прикладывает телефон ко лбу, своя команда объясняет слово, не называя его</li>
-      <li>Угадал — наклон вниз, не знаешь — вверх. ${SECONDS} секунд</li></ol>
-    <div class="section"><b>Команды</b><div class="seg">${[2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n}</button>`).join("")}</div></div>
+      <li>Телефон держат горизонтально. Угадал — наклон вниз, не знаешь — вверх. ${SECONDS} секунд</li></ol>
+    <div class="section"><b>Команды</b><div class="seg">${[2, 3, 4].map((n) => `<button type="button" class="${d.teams === n ? "on" : ""}" data-teams="${n}">${n}</button>`).join("")}</div>
+      ${d.names.slice(0, d.teams).map((n, i) => `<input class="tname" style="--c:${TEAMS[i][1]}" data-name="${i}" value="${esc(n)}" maxlength="20" aria-label="Название команды ${i + 1}" autocomplete="off">`).join("")}</div>
     <div class="section"><b>Темы — по одной на раунд</b>
       <div class="chips">${THEMES.map((t) => `<button type="button" class="chip ${d.themes.includes(t.name) ? "on" : ""}" data-theme="${esc(t.name)}">${t.icon} ${esc(t.name)}</button>`).join("")}</div>
       <p class="muted">${d.themes.length ? `Раундов: ${d.themes.length} · в каждом все команды ходят по разу` : "Выбери хотя бы одну тему"}</p></div>
@@ -124,7 +131,7 @@ function turnView() {
       <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(theme)}</div>
       ${team(g.team)}
       <h2>Передайте телефон тому, кто угадывает</h2>
-      <p class="muted">Нажми «Старт» и приложи телефон ко лбу — экраном к своей команде. Угадал — наклони вниз, не знаешь — вверх</p>
+      <p class="muted">Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к своей команде. Угадал — наклони вниз, не знаешь — вверх</p>
       <button class="btn big" id="start" style="align-self:stretch">▶ Старт</button>
       ${scoresHtml()}
     </div>`;
@@ -132,7 +139,7 @@ function turnView() {
 
 function resultView() {
   const ok = g.cur.filter((w) => w.ok).length, last = isLast();
-  const next = last ? "Итоги" : g.team + 1 < g.teams ? `Дальше: ${TEAMS[g.team + 1][0]}` : "Следующий раунд";
+  const next = last ? "Итоги" : g.team + 1 < g.teams ? `Дальше: ${tname(g.team + 1)}` : "Следующий раунд";
   $app.innerHTML = `
     <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(g.themes[g.round])}</div>
     <div>${team(g.team)}</div>
@@ -149,7 +156,7 @@ function finalView() {
     <div class="turn">
       <div style="font-size:64px">🏆</div>
       <div class="eyebrow">Игра окончена</div>
-      <h1>${winners.length > 1 ? "Ничья!" : `Победили ${TEAMS[winners[0]][0]}`}</h1>
+      <h1>${winners.length > 1 ? "Ничья!" : `Победа: ${tname(winners[0])}`}</h1>
       ${scoresHtml()}
       <div class="row" style="align-self:stretch"><button class="btn ghost" id="setup">Настройки</button><button class="btn" id="again">Сыграть ещё</button></div>
       <a class="muted" href="/">На главную</a>
@@ -159,7 +166,7 @@ function finalView() {
 
 function scoresHtml() {
   const scores = g.scores, best = Math.max(...scores);
-  return `<div class="scores" style="align-self:stretch">${scores.map((s, i) => `<div class="score ${s === best && s > 0 ? "lead" : ""}" style="--c:${TEAMS[i][1]}">${TEAMS[i][0]}<b>${s}</b></div>`).join("")}</div>`;
+  return `<div class="scores" style="align-self:stretch">${scores.map((s, i) => `<div class="score ${s === best && s > 0 ? "lead" : ""}" style="--c:${TEAMS[i][1]}">${tname(i)}<b>${s}</b></div>`).join("")}</div>`;
 }
 
 const isLast = () => g.round + 1 >= g.themes.length && g.team + 1 >= g.teams;
@@ -172,9 +179,10 @@ function render() {
   if (g.stage === "final") return finalView();
 }
 
-function newGame(teams, themes) {
-  g = { stage: "turn", teams, themes, round: 0, team: 0, scores: Array(teams).fill(0), cur: [] };
-  store(KEY + "-teams", teams);
+function newGame(teams, themes, names) {
+  names = names.map((n, i) => n.trim() || TEAMS[i][0]);
+  g = { stage: "turn", teams, themes, names, round: 0, team: 0, scores: Array(teams).fill(0), cur: [] };
+  store(KEY + "-teams", teams); store(KEY + "-names", names);
   save(); render();
 }
 
@@ -205,6 +213,11 @@ function nextTurn() {
   g.stage = "turn"; g.cur = []; save(); render();
 }
 
+// название команды печатают — экран не перерисовываем, чтобы не сбить клавиатуру
+document.addEventListener("input", (e) => {
+  const n = e.target.closest("[data-name]");
+  if (n && draft) draft.names[Number(n.dataset.name)] = n.value;
+});
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-teams]");
   if (t) { draft.teams = Number(t.dataset.teams); return setupView(); }
@@ -221,11 +234,11 @@ document.addEventListener("click", (e) => {
     w.ok = !w.ok; g.scores[g.team] += w.ok ? 1 : -1; save(); return resultView();
   }
   const id = e.target.closest("button, a") && e.target.closest("button, a").id;
-  if (id === "go") newGame(draft.teams, draft.themes);
+  if (id === "go") newGame(draft.teams, draft.themes, draft.names);
   else if (id === "start") { e.target.disabled = true; startTurn(); }
   else if (id === "next") nextTurn();
-  else if (id === "again") newGame(g.teams, g.themes);
-  else if (id === "setup") { draft = { teams: g.teams, themes: g.themes }; g = null; store(KEY); render(); }
+  else if (id === "again") newGame(g.teams, g.themes, g.names || savedNames());
+  else if (id === "setup") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; store(KEY); render(); }
   else if (id === "quit" && !confirm("Выйти из игры? Счёт сохранится — можно будет продолжить")) e.preventDefault();
 });
 
@@ -233,7 +246,7 @@ document.addEventListener("click", (e) => {
   try { THEMES = await (await fetch("/api/heads/words")).json(); } catch { THEMES = []; }
   if (!THEMES.length) { $app.innerHTML = `<p class="muted">Не удалось загрузить слова. Проверь интернет и обнови страницу</p>`; return; }
   if (g && g.themes && g.themes.some((n) => !THEMES.find((t) => t.name === n))) g = null; // темы переименовали — начать заново
-  if (g && g.stage === "final") { draft = { teams: g.teams, themes: g.themes }; g = null; } // прошлая игра закончена — к настройкам
+  if (g && g.stage === "final") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; } // прошлая игра закончена — к настройкам
   render();
 })();
 </script>

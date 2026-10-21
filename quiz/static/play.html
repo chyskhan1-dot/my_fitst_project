@@ -153,6 +153,10 @@ input {
 .teampick small { color: var(--muted); font-weight: 700; }
 .teambadge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; font-weight: 800; background: var(--c); color: #fff; }
 .roles { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.about { text-align: left; margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; line-height: 1.4; }
+.game-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.game-btns .btn { width: 100%; text-align: center; text-decoration: none; }
+.game-about #back { align-self: flex-start; }
 .role {
   display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 14px; text-align: left; align-items: center;
   padding: 18px; border-radius: 18px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
@@ -351,6 +355,21 @@ function setRoom(code) {
   history.replaceState(null, "", code ? "/?room=" + code : "/");
 }
 
+// Главное меню: сначала выбор игры, потом — описание и «Начать» (ведущий, игрок или один телефон)
+const GAMES = [
+  { id: "king", ico: "⛰️", name: "Царь горы", short: "Кто первым наберёт 10 000 очков", room: true,
+    about: ["5 раундов по 3 вопроса, тему раунда выбирают голосованием", "Кто первым наберёт 10 000 очков — тот царь горы", "Вопросы — на большом экране (телевизор или ноутбук), ответы — на телефонах"] },
+  { id: "quiz", ico: "❓", name: "Викторина", short: "Вопросы с вариантами, кто больше наберёт", room: true,
+    about: ["Вопросы — на большом экране, ответы — на телефонах", "Быстрый правильный ответ — больше очков", "Ведущий настраивает команды, темы, сложность и подлянки"] },
+  { id: "heads", ico: "🙆", name: "Слово на лбу", short: "Телефон ко лбу, друзья объясняют слово", room: true, one: true,
+    about: ["Телефон у лба экраном к друзьям — они объясняют слово, не называя его", "Угадал — наклони телефон вниз, не знаешь — вверх. 60 секунд на ход", "Можно с одного телефона, передавая его по кругу, или комнатой с телевизором"] },
+  { id: "jeopardy", ico: "🎯", name: "Своя игра", short: "Табло тем и цен, кнопка «Ответить»", room: true,
+    about: ["Табло тем и цен: кто первым нажал «Ответить», тот и отвечает", "Ошибся — минус стоимость вопроса", "В конце финал со ставками"] },
+  { id: "learn", ico: "📚", name: "Тренировка", short: "Флаги, столицы и страны в своём темпе", href: "/learn",
+    about: ["Играешь один, в своём темпе", "Ошибки возвращаются, пока не выучишь"] },
+];
+let mine = null; // своя игра ведущего на этом устройстве
+
 function startScreen() {
   setRoom("");
   document.getElementById("top").innerHTML = "";
@@ -358,38 +377,53 @@ function startScreen() {
   $main.innerHTML = `
     <div class="scene">
       <div class="eyebrow rise">Квиз</div>
-      <h1 class="rise" style="--i:1">Кто ты сегодня?</h1>
+      <h1 class="rise" style="--i:1">Во что играем?</h1>
       <div class="roles" id="resume"></div>
-      <div class="roles">
-        <button class="role rise" style="--i:2" id="as-player"><span class="ico">📱</span><b>Я игрок</b><small>Есть код комнаты от ведущего</small></button>
-        <button class="role rise" style="--i:3" id="as-host"><span class="ico">🎤</span><b>Я ведущий</b><small>Создать игру и показывать вопросы на большом экране</small></button>
-        <a class="role rise" style="--i:4" href="/heads"><span class="ico">🙆</span><b>Слово на лбу</b><small>С одного телефона: передавайте его по кругу</small></a>
-        <a class="role rise" style="--i:5" href="/learn"><span class="ico">📚</span><b>Тренировка</b><small>Учи флаги, столицы и страны в своём темпе</small></a>
+      <div class="roles">${GAMES.map((g, i) => `
+        <button class="role rise" style="--i:${i + 2}" data-game="${g.id}"><span class="ico">${g.ico}</span><b>${g.name}</b><small>${g.short}</small></button>`).join("")}
       </div>
+      <button class="btn ghost rise" style="--i:8;width:100%" id="as-player" type="button">📱 У меня есть код комнаты</button>
       <div class="error" id="err"></div>
       <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
       <button class="leave" type="button" data-install hidden>📲 Установить на телефон</button>
       <p class="muted install-help" id="install-help" hidden></p>
     </div>`;
   showInstall();
-  const choose = (btn) => document.querySelectorAll(".role").forEach((r) => r.classList.toggle("on", r === btn));
-  document.getElementById("as-player").onclick = (e) => {
-    choose(e.currentTarget);
-    setTimeout(codeForm, 180); // успеть показать выбор
-  };
-  let mine = null; // своя игра ведущего на этом устройстве
-  document.getElementById("as-host").onclick = async (e) => {
+  document.getElementById("as-player").onclick = codeForm;
+  document.querySelectorAll("[data-game]").forEach((b) => (b.onclick = () => gameScreen(b.dataset.game)));
+  resumeOffers().then((m) => { mine = m; });
+}
+
+// Про игру: что это и как начать. Сама игра начинается только по кнопке
+function gameScreen(id) {
+  const g = GAMES.find((x) => x.id === id);
+  const buttons = g.href ? `<a class="btn" href="${g.href}">▶ Начать</a>`
+    : `${g.one ? `<a class="btn" href="/heads">▶ Начать с одного телефона</a>` : ""}
+       <button class="${g.one ? "btn ghost" : "btn"}" id="as-host" type="button">${g.one ? "🎤 Комната с телевизором — я ведущий" : "▶ Начать — я ведущий"}</button>
+       <button class="btn ghost" id="as-player" type="button">📱 Я игрок — есть код</button>`;
+  $main.innerHTML = `
+    <div class="scene game-about">
+      <button class="leave" type="button" id="back">← Все игры</button>
+      <span class="big pop">${g.ico}</span>
+      <h1 class="rise">${g.name}</h1>
+      <ul class="about rise" style="--i:1">${g.about.map((x) => `<li>${x}</li>`).join("")}</ul>
+      <div class="game-btns rise" style="--i:2">${buttons}</div>
+      <div class="error" id="err"></div>
+    </div>`;
+  document.getElementById("back").onclick = startScreen;
+  const pl = document.getElementById("as-player");
+  if (pl) pl.onclick = codeForm;
+  const host = document.getElementById("as-host");
+  if (host) host.onclick = async (e) => {
     if (mine && mine.players && !["setup", "final"].includes(mine.phase)
       && !confirm(`Игра в комнате ${mine.room} ещё идёт. Закончить её и создать новую?`)) return;
-    choose(e.currentTarget);
-    e.currentTarget.disabled = true;
-    e.currentTarget.querySelector("small").textContent = "Создаю комнату…";
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = "Создаю комнату…";
     const res = await api("/api/rooms", {}).catch(() => ({ error: "Нет связи с сервером" }));
-    if (res.error) { document.getElementById("err").textContent = res.error; e.currentTarget.disabled = false; return; }
+    if (res.error) { document.getElementById("err").textContent = res.error; b.disabled = false; b.textContent = "Попробовать ещё раз"; return; }
     try { localStorage.setItem("quiz-host-" + res.room, res.token); } catch {}
-    location.href = "/host?room=" + res.room;
+    location.href = `/host?room=${res.room}&mode=${id}`; // выбранная игра — сразу ко второму шагу меню
   };
-  resumeOffers().then((m) => { mine = m; });
 }
 
 // Кнопки «Вернуться в игру»: ведущему — к своей комнате, игроку — к последней игре
@@ -1085,7 +1119,7 @@ function renderHd(s, me) {
   if (s.phase === "hd_turn") {
     $main.innerHTML = m.is_guesser
       ? `<div class="scene"><div class="eyebrow">${turnLabel}</div><h1>Твой ход! 🙆</h1>
-          <ol class="hd-howto"><li>Нажми «Старт» и приложи телефон ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</li>
+          <ol class="hd-howto"><li>Нажми «Старт», поверни телефон горизонтально и приложи ко лбу — экраном к ${teamMode ? "своей команде" : "друзьям"}</li>
             <li>${teamMode ? "Команда объясняет" : "Друзья объясняют"} слово, не называя его</li><li>Угадал — наклони телефон <b>вниз</b>, не знаешь — <b>вверх</b></li></ol>
           <p class="muted">${h.seconds} секунд. Если наклоны не срабатывают — касайся верха или низа экрана</p>
           <button class="btn big-btn" id="hd-start" type="button">▶ Старт</button></div>`

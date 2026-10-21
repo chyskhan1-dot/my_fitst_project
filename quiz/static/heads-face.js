@@ -19,19 +19,47 @@
 #hd-face .hd-zone.up { top: 0; align-items: flex-start; padding-top: 30px; }
 #hd-face .hd-zone.down { bottom: 0; align-items: flex-end; }
 body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки ведущего не нужны — легко задеть */
+#hd-rotate { position: fixed; inset: 0; z-index: 14; background: #0e1330; color: #fff; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 18px; padding: 24px; text-align: center; font: 700 20px var(--body); }
+#hd-rotate .ph { font-size: 72px; animation: hd-turn 1.6s ease-in-out infinite; }
+#hd-rotate button { font: 700 15px var(--body); color: #a7aedb; background: transparent; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px; padding: 10px 16px; }
+@keyframes hd-turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 `;
   const hd = { word: null, end: 0, ready: 0, total: 60, armed: false, busy: false, flashUntil: 0, timer: null, wake: null, onMark: null, onEnd: null, ended: false };
   let styled = false;
   const face = () => document.getElementById("hd-face");
   const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
 
-  // по нажатию «Старт»: iPhone спрашивает разрешение на датчики, экран не гаснет, на Android — полный экран
+  const portrait = () => innerHeight > innerWidth;
+  // по нажатию «Старт»: iPhone спрашивает разрешение на датчики, экран не гаснет, на Android — полный экран и
+  // закреплённое горизонтальное положение. Играем горизонтально: держать у лба удобнее, и экран не повернётся посреди хода.
   async function prepare() {
+    style();
     try {
       if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function") await DeviceOrientationEvent.requestPermission();
     } catch {}
     try { hd.wake = await navigator.wakeLock.request("screen"); } catch {}
     try { if (document.documentElement.requestFullscreen && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" }); } catch {}
+    try { await screen.orientation.lock("landscape"); } catch {} // iPhone так не умеет — тогда просим повернуть
+    if (portrait()) await askRotate();
+  }
+
+  // «Поверни телефон боком» — ждём горизонтального положения; если автоповорот выключен — можно играть вертикально
+  function askRotate() {
+    return new Promise((done) => {
+      const box = document.createElement("div"); box.id = "hd-rotate";
+      box.innerHTML = `<span class="ph">📱</span><span>Поверни телефон горизонтально</span>
+        <button type="button">Играть вертикально</button>`;
+      document.body.appendChild(box);
+      const finish = () => { removeEventListener("resize", check); box.remove(); done(); };
+      const check = () => { if (!portrait()) setTimeout(finish, 300); }; // дать экрану довернуться
+      addEventListener("resize", check);
+      box.querySelector("button").addEventListener("click", finish);
+    });
+  }
+
+  function style() {
+    if (!styled) { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); styled = true; }
   }
 
   async function mark(ok) {
@@ -74,6 +102,12 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     while (size > 18 && (w.scrollWidth > w.clientWidth || w.scrollHeight > w.clientHeight)) { size *= 0.9; w.style.fontSize = size + "px"; }
   }
 
+  // телефон повернули посреди хода — слово заново подгоняем под экран
+  addEventListener("resize", () => {
+    const f = face(), w = f && f.querySelector(".hd-word");
+    if (w && w.textContent) { w.style.fontSize = ""; fitWord(w); }
+  });
+
   window.addEventListener("deviceorientation", (e) => {
     if (e.beta == null || !face()) return;
     const v = Math.cos(e.beta * Math.PI / 180) * Math.cos(e.gamma * Math.PI / 180);
@@ -84,7 +118,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
   // показать или обновить экран у лба. word — текущее слово (undefined — оставить как есть), left — секунд до конца хода,
   // readyLeft — секунд на «приложи ко лбу», onMark(ok) → следующее слово, onEnd — время вышло (для игры без сервера)
   function show({ word, left, readyLeft = 0, total = 60, onMark, onEnd = null }) {
-    if (!styled) { const st = document.createElement("style"); st.textContent = CSS; document.head.appendChild(st); styled = true; }
+    style();
     hd.total = total; hd.end = Date.now() + left * 1000; hd.ready = Date.now() + readyLeft * 1000;
     hd.onMark = onMark; hd.onEnd = onEnd;
     if (word !== undefined && !hd.busy) hd.word = word;
@@ -107,6 +141,7 @@ body:has(#hd-face) #hostbar { display: none; } /* у лба кнопки вед�
     f.remove(); clearInterval(hd.timer);
     try { hd.wake && hd.wake.release(); } catch {}
     hd.wake = null; hd.word = null;
+    try { screen.orientation.unlock(); } catch {}
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
 

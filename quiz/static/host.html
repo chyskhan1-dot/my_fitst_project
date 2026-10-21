@@ -763,7 +763,12 @@ function draw(s) {
   if (s.phase === "setup") {
     // у «Царя горы» раунды и число вопросов заданы сервером — для других типов игры их не берём
     if (!draft) setupStep = 1;
+    const urlMode = !draft && new URLSearchParams(location.search).get("mode"); // игру уже выбрали на главной
     if (!draft) draft = { ...s.settings, ...(s.settings.mode === "king" ? { rounds: false, count: 10 } : s.settings.mode === "heads" ? { teams: 0 } : {}), ...savedRules() };
+    if (urlMode && MODES.some((m) => m.id === urlMode)) {
+      draft.mode = urlMode; setupStep = 2;
+      history.replaceState(null, "", "/host?room=" + room);
+    }
     if (!MODES.some((m) => m.id === draft.mode)) draft.mode = MODES[0].id; // спрятанный тип игры («100 к 1») — на первый
     renderSetup(s);
   } else if (s.phase === "lobby") {
@@ -1421,7 +1426,7 @@ document.addEventListener("click", (e) => {
   if (t.dataset.teams) draft.teams = Number(t.dataset.teams);
   if (t.dataset.hdteams) draft.hd_teams = Number(t.dataset.hdteams);
   if (t.dataset.seconds) draft.seconds = Number(t.dataset.seconds);
-  if (t.dataset.mode) { draft.mode = t.dataset.mode; return goStep(2); } // выбрал тип игры — сразу к вопросам
+  if (t.dataset.mode) draft.mode = t.dataset.mode; // выбор только отмечает игру — дальше по кнопке «Дальше»
   if (t.dataset.pack && t.dataset.pack !== draft.pack) { draft.pack = t.dataset.pack; draft.themes = []; }
   if (t.dataset.count) draft.count = Number(t.dataset.count);
   if (t.dataset.siround) draft.si_round_min = Number(t.dataset.siround);

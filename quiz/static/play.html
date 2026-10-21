@@ -219,6 +219,12 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .badge-num { position: absolute; top: 8px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 800 16px var(--display); display: grid; place-items: center; }
 .badge-num:empty { display: none; }
 .hint { color: var(--muted); text-align: center; font-weight: 700; font-size: 14px; }
+.odd-pick { position: relative; width: 100%; }
+.odd-pick img { display: block; width: 100%; border-radius: 16px; }
+.odd-grid { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.odd-cell { border: 0; background: transparent; border-radius: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.odd-cell:active, .odd-cell:focus-visible { background: rgba(255, 210, 63, .35); outline: 4px solid var(--accent); outline-offset: -6px; }
+.howto { margin: 0; padding: 12px 14px 12px 32px; border-radius: 14px; background: var(--panel); text-align: left; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .row2 { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 .btn.ghost { background: var(--panel); color: var(--ink); }
 .text-form { display: flex; flex-direction: column; gap: 10px; }
@@ -642,12 +648,25 @@ function trickBox(s, me) {
   return trickHint(s, me);
 }
 // как получить подлянку: подсказка тому, кто уже ошибся, и тому, чья подлянка ждёт очереди
+// «Как играть» в лобби: правила выбранной игры коротко
+function howTo(s) {
+  const g = GAMES.find((x) => x.id === s.settings.mode);
+  const extra = [];
+  if (s.settings.mode !== "heads" && s.settings.mode !== "jeopardy") {
+    if (s.settings.doubles) extra.push("×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 1000");
+    if (s.settings.sabotage && !s.settings.teams) extra.push("😈 Ошибся 2 раза подряд — получаешь подлянку для соперника");
+  }
+  return g ? `<ol class="howto rise" style="--i:2">${g.about.filter((x) => !x.startsWith("Ведущий")).concat(extra).map((x) => `<li>${x}</li>`).join("")}</ol>` : "";
+}
 function trickHint(s, me) {
   if (!s.trick_streak || s.index + 1 >= s.total) return "";
   if (me.trick_charge) return `<p class="trick-hint">😈 У тебя есть подлянка — кинешь, когда снова будет можно</p>`;
   const left = s.trick_streak - (me.misses || 0);
   return me.misses > 0 && left > 0 ? `<p class="trick-hint">😈 Ещё ${left === 1 ? "одна ошибка" : left + " ошибки"} подряд — и получишь подлянку</p>` : "";
 }
+
+// «Убери лишнее»: варианты нарисованы на картинке 2×2 (по порядку вариантов) — нажимают прямо на картинку
+const oddPick = (s) => s.theme === "Убери лишнее" && s.qtype === "choice" && s.image && s.options.length === 4 && !(s.me && s.me.trick);
 
 function answerControls(s) {
   const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
@@ -682,7 +701,13 @@ function answerControls(s) {
       <button class="btn" type="submit">Ответить</button></form>
       <p class="hint">Регистр и небольшие опечатки не важны</p>`;
   }
-  return `<div class="answers">${order.map((i, n) => btn(i, "data-choice", "", n)).join("")}</div>`;
+  if (oddPick(s)) {
+    return `<div class="odd-pick rise"><img src="${esc(mediaSrc(s.image))}" alt="Картинка с вариантами">
+      <div class="odd-grid">${s.options.map((o, i) => `<button class="odd-cell" type="button" data-choice="${i}" aria-label="${esc(o)}"></button>`).join("")}</div></div>
+      <p class="hint">👆 Нажми на лишнюю картинку</p>`;
+  }
+  return `<div class="answers">${order.map((i, n) => btn(i, "data-choice", "", n)).join("")}</div>
+    <p class="hint">${s.settings && s.settings.speed ? "Выбери ответ — чем быстрее, тем больше очков" : "Выбери ответ"}</p>`;
 }
 
 // номера на кнопках «по порядку»
@@ -1258,6 +1283,7 @@ function draw(s) {
         ${myTeam ? `<span class="teambadge rise" style="--c:${TEAM_COLORS[me.team]}">Команда: ${esc(myTeam)}</span>
           <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
         <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
+        ${howTo(s)}
         <div class="lobby-people rise" style="--i:2"><div class="eyebrow">В игре: ${s.players.length}</div>
           <div class="people">${s.players.slice().sort((a, b) => (a.name === me.name ? -1 : b.name === me.name ? 1 : 0)).map((p) => `
             <span class="person ${p.name === me.name ? "me" : ""} ${p.online ? "" : "off"}" ${p.team != null && TEAM_COLORS[p.team] ? `style="--c:${TEAM_COLORS[p.team]}"` : ""}>${avaP(p)}${esc(p.name)}${p.name === me.name ? " (ты)" : ""}</span>`).join("")}</div></div>
@@ -1275,6 +1301,7 @@ function draw(s) {
       <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · осталось <span id="topic-left">${Math.ceil(t.left)} с</span></div>
       <div class="timebar" style="width:100%"><i style="animation-duration:${t.left}s"></i></div>
       <h2>Какую тему играем?</h2>
+      <p class="hint">Нажми на тему. Чем больше за неё голосов, тем больше её сектор на колесе. Передумать можно</p>
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
       ${betBox(me)}`;
@@ -1284,7 +1311,7 @@ function draw(s) {
     if (!wheel || wheel.dataset.round !== String(t.round)) {
       $main.innerHTML = `<div class="scene"><div class="eyebrow">Раунд ${t.round} из ${t.rounds}</div>
         <div id="topic-wheel" data-round="${t.round}">${t.unanimous ? `<span class="big pop">${QuizWheel.icon(t.options[t.winner])}</span>` : QuizWheel.html(t.options, w, 300)}</div>
-        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${t.unanimous ? "" : QuizWheel.icon(t.options[t.winner]) + " "}${esc(t.options[t.winner])}</h2><p class="muted">Приготовься!</p><div id="bet-box"></div></div></div>`;
+        <div class="topic-res" id="topic-res">${t.unanimous ? `<div class="eyebrow">Единогласно!</div>` : ""}<h2>${t.unanimous ? "" : QuizWheel.icon(t.options[t.winner]) + " "}${esc(t.options[t.winner])}</h2><p class="muted">Приготовься! Дальше ${t.unanimous ? "" : "— "}3 вопроса на эту тему</p><div id="bet-box"></div></div></div>`;
       if (!t.unanimous) QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left); // все за одну — крутить нечего
     }
     document.getElementById("bet-box").innerHTML = betBox(me); // колесо не перерисовываем, а кнопку ставки — да
@@ -1299,14 +1326,15 @@ function draw(s) {
       ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}${tk.tip ? `<small>${esc(tk.tip)}</small>` : ""}</div>` : ""}
       <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
       <h2>${esc(s.question)}</h2>
-      ${s.image ? fxImg(s, "Картинка к вопросу") : ""}
+      ${s.image && !oddPick(s) ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
       ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
       </div>
       ${me.doubled ? `<span class="pill x2">×2 ставка на этот вопрос</span>` : ""}
-      ${waiting ? "" : `<div class="extra"><button class="btn ghost" id="skip" type="button">Пропустить</button></div>`}`;
+      ${waiting ? "" : `<div class="extra"><button class="btn ghost" id="skip" type="button">Пропустить</button></div>
+        ${s.settings && s.settings.penalty ? `<p class="hint">Ошибка — минус очки, пропуск — без штрафа</p>` : ""}`}`;
     if (!waiting && (s.qtype === "text" || s.qtype === "number")) {
       const input = document.getElementById("answer-text");
       input.value = typed;
@@ -1408,6 +1436,7 @@ function draw(s) {
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
+        ${s.settings.race && me.score < s.settings.race ? `<p class="hint">⛰️ До вершины: ${s.settings.race - me.score} очков — кто первым доберётся, тот царь горы</p>` : ""}
         ${moveText(me)}
         ${phoneRope(s, me)}
         ${me.can_trick ? "" : trickBox(s, me)}

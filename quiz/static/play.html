@@ -426,6 +426,9 @@ function gameScreen(id) {
   };
 }
 
+const gameName = (mode) => (GAMES.find((g) => g.id === mode) || { name: "Игра" }).name;
+const phaseName = (ph) => (ph === "setup" ? "выбор правил" : ph === "lobby" ? "ждём игроков" : ph === "final" ? "игра окончена" : "идёт игра");
+
 // Кнопки «Вернуться в игру»: ведущему — к своей комнате, игроку — к последней игре
 async function resumeOffers() {
   const box = document.getElementById("resume");
@@ -434,7 +437,7 @@ async function resumeOffers() {
   if (host.room) {
     try { localStorage.setItem("quiz-host-" + host.room, host.token); } catch {}
     offers.push(`<a class="role on rise" href="/host?room=${host.room}"><span class="ico">↩️</span><b>Вернуться к своей игре</b>
-      <small>Комната ${host.room} · ${esc(host.title)} · игроков: ${host.players}</small></a>`);
+      <small>${gameName(host.mode)} · комната ${host.room} · ${phaseName(host.phase)} · игроков: ${host.players}</small></a>`);
   }
   const last = recall("quiz-last-room"), lastPid = last ? recall("quiz-pid-" + last) : "";
   if (last && lastPid && last !== host.room) {
@@ -442,7 +445,7 @@ async function resumeOffers() {
       .then((r) => r.json()).catch(() => ({}));
     if (s.me && s.phase !== "final") {
       offers.push(`<button class="role on rise" data-resume="${last}"><span class="ico">↩️</span><b>Вернуться в игру</b>
-        <small>Комната ${last} · ${esc(s.title)} · ты — ${esc(s.me.name)}, ${s.me.score} очков</small></button>`);
+        <small>${gameName(s.settings.mode)} · комната ${last} · ты — ${esc(s.me.name)}, ${s.me.score} очков</small></button>`);
     }
   }
   if (box && document.body.contains(box)) {
@@ -1401,7 +1404,7 @@ async function pollOnce(seq) {
       if (!document.getElementById("gone")) {
         document.getElementById("top").innerHTML = ""; mood("");
         $main.innerHTML = `<div class="scene" id="gone"><h1>Комната закрыта</h1>
-          <p class="muted">Ведущий закончил игру или ввёл другой код.</p><button class="btn" id="restart">На главную</button></div>`;
+          <p class="muted">Ведущий начал новую игру, или сервер перезапускался — тогда игры начинаются заново. Попроси у ведущего новый код.</p><button class="btn" id="restart">На главную</button></div>`;
         document.getElementById("restart").onclick = startScreen;
       }
       return;

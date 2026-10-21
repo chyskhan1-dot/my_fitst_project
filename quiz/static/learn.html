@@ -118,6 +118,39 @@ const setBox = (packId, q, v) => { (progress[packId] = progress[packId] || {})[q
 
 let packs = [], cur = { pack: null, data: null, themes: [], level: "any", count: 10 };
 let session = null;
+// незаконченная тренировка хранится на телефоне: вернулся — «Продолжить» или «Начать заново»
+const SESSION = "quiz-learn-session";
+function persist() {
+  const s = session, qs = cur.data.questions, ix = (q) => qs.indexOf(q);
+  try {
+    localStorage.setItem(SESSION, JSON.stringify({ pack: cur.pack, total: s.total, firstTry: s.firstTry, at: Date.now(),
+      queue: s.queue.map(ix), done: [...s.done].map(ix), mistakes: [...s.mistakes].map(([q, n]) => [ix(q), n]) }));
+  } catch {}
+}
+const dropSession = () => { try { localStorage.removeItem(SESSION); } catch {} };
+function savedSession() {
+  try {
+    const x = JSON.parse(localStorage.getItem(SESSION) || "null"), qs = cur.data.questions, ok = (i) => i >= 0 && i < qs.length;
+    if (!x || x.pack !== cur.pack || !x.queue.length || !x.queue.every(ok)) return null;
+    return x;
+  } catch { return null; }
+}
+function resumeView(x) {
+  const mins = Math.round((Date.now() - (x.at || Date.now())) / 60000);
+  const ago = mins < 1 ? "только что" : mins < 60 ? `${mins} мин назад` : mins < 1440 ? `${Math.round(mins / 60)} ч назад` : `${Math.round(mins / 1440)} дн назад`;
+  $main.innerHTML = `
+    <div><div class="eyebrow">Незаконченная тренировка · ${ago}</div><h1>🌍 Страны мира</h1>
+      <p class="muted">Пройдено ${x.done.length} из ${x.total}</p></div>
+    <div class="progress"><i style="--w:${(x.done.length / x.total) * 100}%"></i></div>
+    <button class="btn" id="resume-learn">▶ Продолжить</button>
+    <button class="btn ghost" id="restart-learn">Начать заново</button>`;
+}
+function resumeSession(x) {
+  const qs = cur.data.questions;
+  session = { queue: x.queue.map((i) => qs[i]), total: x.total, done: new Set(x.done.map((i) => qs[i])), firstTry: x.firstTry,
+    mistakes: new Map(x.mistakes.map(([i, n]) => [qs[i], n])), answered: false, picks: [] };
+  next();
+}
 
 // Тренировка — только по подборкам: темы из пакета (в викторине они — внутри «Общих знаний»)
 const COLLECTIONS = [
@@ -133,6 +166,8 @@ async function start() {
   try { Object.assign(cur, JSON.parse(localStorage.getItem("quiz-learn-choice")) || {}); } catch {}
   if (!packs.some((p) => p.id === cur.pack)) cur.pack = packs[0].id;
   await choosePack(cur.pack, true);
+  const saved = savedSession();
+  if (saved) resumeView(saved);
 }
 
 async function choosePack(id, keepThemes) {
@@ -181,6 +216,7 @@ function begin(list) {
     .sort((a, c) => a.b - c.b || a.r - c.r).map((x) => x.q);
   const take = list ? pool : pool.slice(0, cur.count || pool.length);
   session = { queue: take.slice(), total: take.length, done: new Set(), firstTry: 0, mistakes: new Map(), answered: false, picks: [] };
+  persist();
   next();
 }
 
@@ -245,6 +281,7 @@ async function judge(value) {
     setBox(cur.store, q, 0);
     s.queue.splice(Math.min(3, s.queue.length), 0, q); // вернётся через пару вопросов
   }
+  if (s.queue.length) persist(); else dropSession();
   mood(ok ? "good" : "bad");
   try { navigator.vibrate && navigator.vibrate(ok ? 30 : [60, 40, 60]); } catch {}
   document.querySelectorAll(".ans").forEach((b) => {
@@ -278,6 +315,7 @@ function answerOf(q) {
 
 function finish() {
   const s = session;
+  dropSession();
   mood("good"); $counter.textContent = "";
   const wrong = [...s.mistakes.keys()];
   $main.innerHTML = `
@@ -304,6 +342,8 @@ document.addEventListener("click", async (e) => {
   if (lv) { cur.level = lv.dataset.level; return menu(); }
   const ct = t.closest("[data-count]");
   if (ct) { cur.count = Number(ct.dataset.count); return menu(); }
+  if (t.closest("#resume-learn")) { const x = savedSession(); return x ? resumeSession(x) : menu(); }
+  if (t.closest("#restart-learn")) { dropSession(); return menu(); }
   if (t.closest("#go") || t.closest("#again")) return begin();
   if (t.closest("#again-wrong")) return begin(session.wrongList);
   if (t.closest("#to-menu")) return menu();

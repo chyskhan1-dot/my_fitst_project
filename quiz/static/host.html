@@ -1516,7 +1516,7 @@ async function pollOnce(seq) {
     const s = await (await fetch("/api/state?room=" + encodeURIComponent(room), { cache: "no-store", signal: timeout(5000) })).json();
     if (seq !== pollSeq) return; // запрос устарел — уже ушёл новый
     fails = 0;
-    if (s.phase === "gone") return stop("Эта комната закрылась", "Комнаты без активности удаляются через 3 часа, а при обновлении сервера — сразу.");
+    if (s.phase === "gone") return stop("Эта комната закрылась", GONE_TEXT);
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
@@ -1610,6 +1610,8 @@ document.addEventListener("click", async (e) => {
 });
 
 let timer = null;
+// комната пропала: прошло 3 часа без игры, сервер уснул (бесплатный Render — через 15 минут без игры) или обновился
+const GONE_TEXT = "Комнаты без игры закрываются через 3 часа, а когда сервер засыпает или обновляется — сразу. Создай новую игру — это быстро.";
 function stop(title, text) {
   clearInterval(timer);
   $main.innerHTML = `<h2 class="error">${esc(title)}</h2><p class="muted">${esc(text)}</p>`;
@@ -1618,7 +1620,7 @@ function stop(title, text) {
 
 (async () => {
   const check = await post("check").catch(() => ({ error: "Нет связи с сервером." }));
-  if (check.error) return stop(check.error, "Создай свою игру на главной странице: нажми «Я ведущий».");
+  if (check.error) return stop(/Комнаты/.test(check.error) ? "Эта комната закрылась" : check.error, GONE_TEXT);
   poll();
   timer = setInterval(pollTick, 500);
 })();

@@ -52,6 +52,11 @@
     Пауза (`/api/host/pause` {on}, кнопка «⏸ Пауза» у ведущего и в `hostBar`): `Game.paused_at`, игровое время — `Game.clock()`
     (на паузе стоит; движки «Своей игры» и «100 к 1» тоже берут `self.g.clock()`), `tick()` ничего не делает, ответы и «Дальше»
     не принимаются; после паузы все сроки сдвигаются (`pause(False)`, `shift(dt)` у движков). На экранах — `pauseView()`.
+    Память вопросов: устройство помнит последние `SEEN_MAX`=1500 увиденных вопросов (`static/seen.js`, localStorage `quiz-seen`,
+    ключ — `qkey()` от текста и картинки; в состоянии `qkey`, в «Своей игре» `si.cur.key`/`si.final.key`), входя в комнату,
+    один раз шлёт их `/api/seen` → `Game.seen_by`; `Game.seen()` — сколько устройств (ведущий + игроки) видели вопрос;
+    `balanced_sample`/`finish_vote`/`si_from_quiz` берут сначала невиденные (`fresh_first`). Поэтому вопросы выбираются заново
+    при старте, когда игроки уже вошли: `pick_questions(commit=True)` в `next()` из лобби, `build_si(commit=True)`.
     Время ответа (`time`, с) — в `player_answers`/`number_answers`/`map_answers`/`text_answers` и `me.answer_time`.
     В таблице лидеров у каждого `marks` — как ответил (в раундах — все вопросы раунда), `marks_range()`.
     После вопроса видны ответы всех: `number_answers`/`map_answers` (по точности), `text_answers`, `player_answers`

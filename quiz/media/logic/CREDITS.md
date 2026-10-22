@@ -47,3 +47,6 @@
 | fox2.jpg | https://commons.wikimedia.org/wiki/File%3AVulpes_vulpes_ssp_fulvus_26568101.jpg | cc-zero |
 | clover.jpg | https://commons.wikimedia.org/wiki/File%3AFour-leaf_Clover_Trifolium_repens_2.jpg | PD-self |
 | horseshoe.jpg | https://commons.wikimedia.org/wiki/File%3ABaekje_Iron_Horseshoe_%2829564608573%29.jpg | cc-zero |
+| hen.jpg | https://commons.wikimedia.org/wiki/File%3AKorean_native_hen_from_Guri_Insectarium_%282%29.jpg | CC0 |
+| frog.jpg | https://commons.wikimedia.org/wiki/File%3ARana_temporaria_Simo_20120512_01.JPG | CC0 (обрезано) |
+| statue-of-liberty.jpg | https://commons.wikimedia.org/wiki/File%3AStatue_of_Liberty_frontal_2_crop.JPG | Public domain |

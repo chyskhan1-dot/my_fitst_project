@@ -361,6 +361,7 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/seen.js"></script>
 <script src="/static/logic.js"></script>
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
@@ -1522,6 +1523,7 @@ async function pollOnce(seq) {
       return;
     }
     lastState = s;
+    QuizSeen.track(room, s); // запомнить вопрос, чтобы в следующих играх он не повторялся
     if (!pid) {
       const hb = document.getElementById("hostbar");
       if (hb) { hb.innerHTML = ""; delete hb.dataset.html; document.body.classList.remove("has-hostbar"); }

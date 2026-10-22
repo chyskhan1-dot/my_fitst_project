@@ -47700,6 +47700,335 @@
    "level": "normal",
    "note": "Найти четырёхлистный клевер или подкову — к удаче. Подкову вешают над дверью.",
    "answer_image": "media/logic/clover.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Восток-1»",
+    "«Аполлон-13»",
+    "«Аполлон-11»",
+    "«Союз — Аполлон»"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/moon.jpg",
+    "media/space/aldrin.jpg",
+    "media/people/armstrong.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "В июле 1969 года Нил Армстронг и Базз Олдрин на «Аполлоне-11» первыми прошлись по Луне.",
+   "answer_image": "media/people/armstrong.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Евгений Онегин»",
+    "«Борис Годунов»",
+    "«Руслан и Людмила»",
+    "«Моцарт и Сальери»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/people/mozart.jpg",
+    "media/people/pushkin.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Одна из «Маленьких трагедий» Пушкина: завистник Сальери отравляет гениального Моцарта.",
+   "answer_image": "media/people/pushkin.jpg"
+  },
+  {
+   "q": "Что объединяет этих правителей?",
+   "options": [
+    "Династия Романовых",
+    "Династия Рюриковичей",
+    "Основали Петербург",
+    "Победили Наполеона"
+   ],
+   "answer": 0,
+   "images": [
+    "media/people/mikhail-romanov.jpg",
+    "media/people/peter1.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Михаил Фёдорович — первый царь из Романовых (1613), Пётр I — его внук.",
+   "answer_image": "media/people/peter1.jpg"
+  },
+  {
+   "q": "Что объединяет этих людей?",
+   "options": [
+    "«Анна Каренина»",
+    "«Война и мир»",
+    "«Бородино»",
+    "«Капитанская дочка»"
+   ],
+   "answer": 1,
+   "images": [
+    "media/people/kutuzov.jpg",
+    "media/people/tolstoy.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Фельдмаршал Кутузов — один из героев романа Льва Толстого о войне 1812 года.",
+   "answer_image": "media/people/tolstoy.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Сказка «Репка»",
+    "Сказка «Теремок»",
+    "Сказка «Курочка Ряба»",
+    "Сказка «Колобок»"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/mouse.jpg",
+    "media/logic/hen.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Мышка бежала, хвостиком махнула — и золотое яичко курочки Рябы разбилось.",
+   "answer_image": "media/logic/hen.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Царевна-лягушка»",
+    "Сказка «Теремок»",
+    "«Принцесса на горошине»",
+    "«Снегурочка»"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/crown.jpg",
+    "media/logic/frog.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Иван-царевич пустил стрелу, её подобрала лягушка — заколдованная Василиса Премудрая.",
+   "answer_image": "media/logic/frog.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Обе — чудеса света",
+    "Архитектор Огюст Монферран",
+    "Самые высокие постройки XIX века",
+    "Инженер Гюстав Эйфель"
+   ],
+   "answer": 3,
+   "images": [
+    "media/logic/statue-of-liberty.jpg",
+    "media/places/eiffel.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Эйфель рассчитал железный каркас внутри статуи Свободы (1886), а через три года построил свою башню в Париже.",
+   "answer_image": "media/places/eiffel.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Роман «С Земли на Луну»",
+    "«Вокруг света за 80 дней»",
+    "«Незнайка на Луне»",
+    "«Двадцать тысяч льё под водой»"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/moon.jpg",
+    "media/people/verne.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "В романе Жюля Верна 1865 года людей отправляют к Луне выстрелом из гигантской пушки.",
+   "answer_image": "media/people/verne.jpg"
+  },
+  {
+   "q": "Какое слово Оксфордский словарь назвал словом 2013 года?",
+   "options": [
+    "Хештег",
+    "Селфи",
+    "Твит",
+    "Мем"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "За 2013 год слово selfie стали употреблять в 170 раз чаще, чем годом раньше.",
+   "answer_image": "media/pics/ans-selfie.png"
+  },
+  {
+   "q": "Что снято в самом первом ролике на YouTube (2005)?",
+   "options": [
+    "Кот играет на пианино",
+    "Малыш кусает брата за палец",
+    "Танец под «Gangnam Style»",
+    "Парень у слонов в зоопарке"
+   ],
+   "answer": 3,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Ролик «Me at the zoo» длится 19 секунд; снял его один из основателей YouTube Джавед Карим.",
+   "answer_image": "media/pics/ans-elephant.png"
+  },
+  {
+   "q": "Чья фамилия спрятана в слове «капча» (CAPTCHA)?",
+   "options": [
+    "Джона фон Неймана",
+    "Ады Лавлейс",
+    "Алана Тьюринга",
+    "Чарльза Бэббиджа"
+   ],
+   "answer": 2,
+   "theme": "Интернет",
+   "level": "hard",
+   "note": "CAPTCHA — «полностью автоматический публичный тест Тьюринга, чтобы отличить компьютер от человека».",
+   "answer_image": "media/pics/ans-robot.png"
+  },
+  {
+   "q": "Что значит сетевое «ИМХО»?",
+   "options": [
+    "Извините, мне хочется отдохнуть",
+    "По моему скромному мнению",
+    "Именно так, хорошо",
+    "Интернет может хранить ошибки"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Это русская запись английского IMHO — In My Humble Opinion.",
+   "answer_image": "media/pics/ans-thinking-face.png"
+  },
+  {
+   "q": "Какой мем зашифрован смайликами?",
+   "options": [
+    "Nyan Cat",
+    "Grumpy Cat",
+    "Кот Шрёдингера",
+    "Keyboard Cat"
+   ],
+   "answer": 3,
+   "emoji": "🐱🎹",
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Кот в голубой футболке «играет» на синтезаторе. Этот ролик клеили в конец чужих неудачных видео: «уводите его со сцены».",
+   "answer_image": "media/pics/ans-musical-keyboard.png"
+  },
+  {
+   "q": "Какой мем зашифрован смайликами?",
+   "options": [
+    "Charlie bit my finger",
+    "Baby Shark",
+    "Танцующий младенец",
+    "Gangnam Style"
+   ],
+   "answer": 0,
+   "emoji": "👶👆🦷",
+   "theme": "Интернет",
+   "level": "hard",
+   "note": "Ролик 2007 года: малыш Чарли кусает старшего брата за палец. Одно из первых домашних видео с сотнями миллионов просмотров.",
+   "answer_image": "media/pics/ans-baby.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Слон",
+    "Носорог",
+    "Мамонт",
+    "Бегемот"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Мамонты вымерли: последние жили на острове Врангеля около 4000 лет назад. Слон, носорог и бегемот живут и сейчас.",
+   "image": "media/odd/elephant_hippopotamus_mammoth_rhinoceros.webp",
+   "answer_image": "media/pics/ans-mammoth.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Дракон",
+    "Динозавр",
+    "Единорог",
+    "Тролль"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Динозавры жили на самом деле — от них остались кости. Дракон, единорог и тролль придуманы людьми.",
+   "image": "media/odd/dragon_sauropod_troll_unicorn.webp",
+   "answer_image": "media/pics/ans-sauropod.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Улитка",
+    "Божья коровка",
+    "Жук",
+    "Бабочка"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Улитка — моллюск, родственник осьминога. Божья коровка, жук и бабочка — насекомые с шестью ногами.",
+   "image": "media/odd/beetle_butterfly_lady-beetle_snail.webp",
+   "answer_image": "media/pics/ans-snail.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Жираф",
+    "Зебра",
+    "Носорог",
+    "Белый медведь"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Белый медведь живёт в Арктике, а жираф, зебра и носорог — в жаркой Африке.",
+   "image": "media/odd/giraffe_polar-bear_rhinoceros_zebra.webp",
+   "answer_image": "media/pics/ans-polar-bear.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Футбол",
+    "Баскетбол",
+    "Теннис",
+    "Волейбол"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "В теннис играют ракеткой. В футбол, баскетбол и волейбол — без ракетки, командами по 5–11 человек.",
+   "image": "media/odd/basketball_soccer-ball_tennis_volleyball.webp",
+   "answer_image": "media/pics/ans-tennis.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Кукуруза",
+    "Картофель",
+    "Помидор",
+    "Морковь"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Кукурузу, картофель и помидоры привезли в Европу из Америки, а морковь родом из Азии.",
+   "image": "media/odd/carrot_ear-of-corn_potato_tomato.webp",
+   "answer_image": "media/pics/ans-carrot.png"
   }
  ]
 }

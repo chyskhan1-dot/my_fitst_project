@@ -47186,66 +47186,6 @@
    "answer_image": "media/pics/ans-water-wave.png"
   },
   {
-   "q": "Что объединяет эти картинки?",
-   "options": [
-    "Микеланджело",
-    "Рафаэль",
-    "Леонардо да Винчи",
-    "Сандро Боттичелли"
-   ],
-   "answer": 2,
-   "images": [
-    "media/art/mona-lisa.jpg",
-    "media/art/last-supper.jpg",
-    "media/art/vitruvian-man.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "easy",
-   "note": "«Мона Лиза», «Тайная вечеря» и рисунок «Витрувианский человек» — всё работы Леонардо.",
-   "answer_image": "media/art/vitruvian-man.jpg",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти картины?",
-   "options": [
-    "Иероним Босх",
-    "Рембрандт",
-    "Ян Вермеер",
-    "Питер Брейгель Старший"
-   ],
-   "answer": 3,
-   "images": [
-    "media/art/hunters-in-snow.jpg",
-    "media/art/babel.jpg",
-    "media/art/peasant-wedding.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "hard",
-   "note": "«Охотники на снегу», «Вавилонская башня» и «Крестьянская свадьба» — фламандец Брейгель, XVI век.",
-   "answer_image": "media/art/hunters-in-snow.jpg",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти картинки?",
-   "options": [
-    "Поль Гоген",
-    "Клод Моне",
-    "Винсент ван Гог",
-    "Поль Сезанн"
-   ],
-   "answer": 2,
-   "images": [
-    "media/art/sunflowers.jpg",
-    "media/art/starry-night.jpg",
-    "media/art/van-gogh-self.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "easy",
-   "note": "«Подсолнухи», «Звёздная ночь» и автопортрет — всё ван Гог.",
-   "answer_image": "media/art/van-gogh-self.jpg",
-   "seconds": 30
-  },
-  {
    "q": "Что объединяет этих людей?",
    "options": [
     "Писали детективы",
@@ -47302,66 +47242,6 @@
    "level": "normal",
    "note": "Пушкин погиб в 1837 году, Лермонтов — в 1841-м. Лермонтов написал на смерть Пушкина «Смерть поэта». Лицей окончил только Пушкин.",
    "answer_image": "media/pics/ans-crossed-swords.png",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти планеты?",
-   "options": [
-    "Планеты земной группы",
-    "Газовые гиганты",
-    "Карликовые планеты",
-    "Спутники Юпитера"
-   ],
-   "answer": 0,
-   "images": [
-    "media/space/mercury.jpg",
-    "media/space/venus.jpg",
-    "media/space/mars.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "normal",
-   "note": "Меркурий, Венера, Земля и Марс — каменные планеты с твёрдой поверхностью.",
-   "answer_image": "media/space/earth.jpg",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти небесные тела?",
-   "options": [
-    "Планеты земной группы",
-    "Планеты без спутников",
-    "Планеты-гиганты",
-    "Карликовые планеты"
-   ],
-   "answer": 2,
-   "images": [
-    "media/space/jupiter.jpg",
-    "media/space/saturn.jpg",
-    "media/space/neptune.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "normal",
-   "note": "Юпитер, Сатурн, Уран и Нептун — огромные планеты без твёрдой поверхности.",
-   "answer_image": "media/space/saturn.jpg",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти фотографии?",
-   "options": [
-    "«Аполлон-13»",
-    "«Восток-1»",
-    "«Союз — Аполлон»",
-    "«Аполлон-11»"
-   ],
-   "answer": 3,
-   "images": [
-    "media/space/apollo11-launch.jpg",
-    "media/people/armstrong.jpg",
-    "media/space/aldrin.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "normal",
-   "note": "Ракета «Сатурн-5» унесла к Луне Армстронга и Олдрина; 20 июля 1969 года они высадились на Луну.",
-   "answer_image": "media/pics/ans-full-moon.png",
    "seconds": 30
   },
   {
@@ -47425,66 +47305,6 @@
    "seconds": 30
   },
   {
-   "q": "Что объединяет эти места?",
-   "options": [
-    "Семь чудес света",
-    "Постройки инков",
-    "Древние постройки из огромных камней",
-    "Древние храмы"
-   ],
-   "answer": 2,
-   "images": [
-    "media/places/stonehenge.jpg",
-    "media/places/giza.jpg",
-    "media/places/moai-easter.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "normal",
-   "note": "Стоунхендж, пирамиды и статуи моаи — каменные гиганты, о строительстве которых спорят до сих пор. Из семи чудес — только пирамиды.",
-   "answer_image": "media/pics/ans-rock.png",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти картинки?",
-   "options": [
-    "Вулканы",
-    "Древний Рим",
-    "Землетрясения",
-    "Камчатка"
-   ],
-   "answer": 0,
-   "images": [
-    "media/art/pompeii.jpg",
-    "media/places/pompeii.jpg",
-    "media/places/klyuchevskaya.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "normal",
-   "note": "Картина Брюллова и руины Помпеев — о гибели города от Везувия в 79 году; Ключевская Сопка — действующий вулкан Камчатки.",
-   "answer_image": "media/pics/ans-volcano.png",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти картины?",
-   "options": [
-    "Картины Айвазовского",
-    "Японская гравюра",
-    "Морская буря",
-    "Морские сражения"
-   ],
-   "answer": 2,
-   "images": [
-    "media/art/ninth-wave.jpg",
-    "media/art/great-wave.jpg",
-    "media/art/storm-galilee.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "easy",
-   "note": "«Девятый вал» Айвазовского, «Большая волна» Хокусая и «Буря на море Галилейском» — единственный морской пейзаж Рембрандта.",
-   "answer_image": "media/pics/ans-water-wave.png",
-   "seconds": 30
-  },
-  {
    "q": "Что объединяет эти картинки?",
    "options": [
     "Исаак Ньютон",
@@ -47522,26 +47342,6 @@
    "level": "hard",
    "note": "Столица США — Вашингтон, округ Колумбия: город назван в честь первого президента, округ — в честь Колумба.",
    "answer_image": "media/pics/ans-classical-building.png",
-   "seconds": 30
-  },
-  {
-   "q": "Что объединяет эти портреты?",
-   "options": [
-    "Картины из Лувра",
-    "Женские портреты",
-    "Голландская живопись",
-    "Картины эпохи Возрождения"
-   ],
-   "answer": 1,
-   "images": [
-    "media/art/girl-with-peaches.jpg",
-    "media/art/pearl-earring.jpg",
-    "media/art/mona-lisa.jpg"
-   ],
-   "theme": "Где логика",
-   "level": "easy",
-   "note": "Серов, Вермеер и Леонардо. В Лувре из них только «Мона Лиза».",
-   "answer_image": "media/pics/ans-framed-picture.png",
    "seconds": 30
   },
   {
@@ -47583,6 +47383,323 @@
    "note": "Моцарт (1791), Бетховен (1827) и Вивальди (1741) умерли в Вене. Родились они в Зальцбурге, Бонне и Венеции.",
    "answer_image": "media/pics/ans-musical-notes.png",
    "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Высадка на Луну",
+    "Изобретение телескопа",
+    "Закон всемирного тяготения",
+    "Смена времён года"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/apple.jpg",
+    "media/logic/newton.jpg",
+    "media/logic/moon.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "По легенде, Ньютон задумался о тяготении, увидев падающее яблоко. Та же сила держит Луну на орбите вокруг Земли.",
+   "answer_image": "media/logic/newton.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Робин Гуд",
+    "Швейцарский нож",
+    "Вильгельм Телль",
+    "Яблоко раздора"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/apple.jpg",
+    "media/logic/crossbow.jpg",
+    "media/flags/switzerland.svg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Швейцарский герой-стрелок по приказу наместника сбил арбалетным болтом яблоко с головы собственного сына.",
+   "answer_image": "media/flags/switzerland.svg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Никола Тесла",
+    "Томас Эдисон",
+    "Бенджамин Франклин",
+    "Алессандро Вольта"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/kite.jpg",
+    "media/logic/key.jpg",
+    "media/logic/lightning.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "В 1752 году Франклин запустил в грозу воздушного змея с металлическим ключом на бечёвке и доказал, что молния — это электричество.",
+   "answer_image": "media/logic/lightning.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Исаак Ньютон",
+    "Пифагор",
+    "Архимед",
+    "Король Артур"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/bathtub.jpg",
+    "media/logic/crown.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Царь Гиерон попросил проверить, не подмешал ли ювелир серебро в золотую корону. Решение пришло Архимеду в ванне — «Эврика!».",
+   "answer_image": "media/logic/bathtub.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Хеллоуин",
+    "«Спящая красавица»",
+    "«Алиса в Стране чудес»",
+    "«Золушка»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/logic/pumpkin.jpg",
+    "media/logic/clock.jpg",
+    "media/logic/shoe.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "Тыква стала каретой, в полночь чары исчезли, а принц нашёл Золушку по туфельке.",
+   "answer_image": "media/logic/shoe.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Басня «Лисица и виноград»",
+    "Сказка «Колобок»",
+    "Басня «Ворона и Лисица»",
+    "Басня «Мартышка и очки»"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/crow.jpg",
+    "media/logic/cheese.jpg",
+    "media/logic/fox.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Вороне где-то бог послал кусочек сыру…» — басня Ивана Крылова о лести.",
+   "answer_image": "media/logic/fox.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Басня «Лебедь, Рак и Щука»",
+    "Сказка «По щучьему велению»",
+    "Сказка «Гадкий утёнок»",
+    "Басня «Квартет»"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/swan.jpg",
+    "media/logic/crayfish.jpg",
+    "media/logic/pike.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«…Лебедь рвётся в облака, Рак пятится назад, а Щука тянет в воду». Басня Крылова о том, что без согласия дела не будет.",
+   "answer_image": "media/logic/swan.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Бременские музыканты»",
+    "«Кот в сапогах»",
+    "«Дон Кихот»",
+    "«Кошкин дом»"
+   ],
+   "answer": 1,
+   "images": [
+    "media/logic/cat.jpg",
+    "media/logic/boots.jpg",
+    "media/logic/windmill.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Кот достался младшему сыну мельника и в сапогах сделал хозяина маркизом де Карабасом. Сказку записал Шарль Перро.",
+   "answer_image": "media/logic/boots.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Спящая красавица»",
+    "«Дюймовочка»",
+    "«Золушка»",
+    "«Принцесса на горошине»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/logic/peas.jpg",
+    "media/logic/bed.jpg",
+    "media/logic/crown.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "Настоящая принцесса почувствовала горошину сквозь двадцать тюфяков. Сказка Андерсена.",
+   "answer_image": "media/logic/peas.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Теремок»",
+    "«Кот в сапогах»",
+    "Сказка «Репка»",
+    "«Курочка Ряба»"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/turnip.jpg",
+    "media/logic/cat2.jpg",
+    "media/logic/mouse.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "Тянут-потянут, вытянуть не могут — пока не прибежала мышка.",
+   "answer_image": "media/logic/turnip.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Остров сокровищ»",
+    "«Робинзон Крузо»",
+    "«Дети капитана Гранта»",
+    "«Пираты Карибского моря»"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/parrot.jpg",
+    "media/logic/chest.jpg",
+    "media/logic/treasure-map.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "У одноногого Джона Сильвера был попугай Капитан Флинт, а карта вела к кладу. На третьей картинке — карта из самой книги Стивенсона.",
+   "answer_image": "media/logic/treasure-map.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Условный рефлекс",
+    "«Собака Баскервилей»",
+    "«Каштанка»",
+    "Белка и Стрелка"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/dog.jpg",
+    "media/logic/bell.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Иван Павлов показал: если звонить перед кормлением, у собаки потечёт слюна от одного звонка. За работы о пищеварении он получил Нобелевскую премию.",
+   "answer_image": "media/logic/dog.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Электричество",
+    "Магнитное поле Земли",
+    "Туризм",
+    "Полярная ночь"
+   ],
+   "answer": 1,
+   "images": [
+    "media/logic/compass.jpg",
+    "media/logic/magnet.jpg",
+    "media/logic/aurora.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Стрелка компаса — маленький магнит, а полярное сияние появляется там, где магнитное поле Земли направляет частицы солнечного ветра в атмосферу.",
+   "answer_image": "media/logic/aurora.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Транссибирская магистраль",
+    "Путешествия Марко Поло",
+    "«Книга джунглей»",
+    "«Вокруг света за 80 дней»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/logic/globe.jpg",
+    "media/logic/elephant.jpg",
+    "media/logic/locomotive.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Филеас Фогг у Жюля Верна объезжал мир на поездах и пароходах, а в Индии — на слоне.",
+   "answer_image": "media/logic/globe.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Заюшкина избушка»",
+    "Басня «Ворона и Лисица»",
+    "Сказка «Колобок»",
+    "«Теремок»"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/bread.jpg",
+    "media/logic/hare.jpg",
+    "media/logic/fox2.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "Колобок ушёл от зайца, волка и медведя, а лиса его съела.",
+   "answer_image": "media/logic/bread.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Ирландия",
+    "Талисманы на удачу",
+    "Конный спорт",
+    "Весна"
+   ],
+   "answer": 1,
+   "images": [
+    "media/logic/clover.jpg",
+    "media/logic/horseshoe.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Найти четырёхлистный клевер или подкову — к удаче. Подкову вешают над дверью.",
+   "answer_image": "media/logic/clover.jpg"
   }
  ]
 }

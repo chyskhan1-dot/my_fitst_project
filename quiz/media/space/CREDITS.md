@@ -15,4 +15,3 @@
 | saturn.jpg | https://commons.wikimedia.org/wiki/File%3ASaturn_during_Equinox.jpg |
 | uranus.jpg | https://commons.wikimedia.org/wiki/File%3AUranus2.jpg |
 | venus.jpg | https://commons.wikimedia.org/wiki/File%3AVenus-real_color.jpg |
-| apollo11-launch.jpg | https://commons.wikimedia.org/wiki/File%3AApollo_11_Launch_-_GPN-2000-000630.jpg |

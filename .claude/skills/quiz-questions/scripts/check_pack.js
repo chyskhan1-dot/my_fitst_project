@@ -18,11 +18,10 @@ pack.questions.forEach((q, i) => {
     else { if (q.options.length === 4) pos[q.answer]++; if (new Set(q.options).size !== q.options.length) problems.push(`${at}: одинаковые варианты`); }
   }
   if (type === 'map' && q.theme !== 'Где на карте') problems.push(`${at}: карта не в теме «Где на карте»`);
-  for (const k of ['image', 'answer_image']) {
-    const v = q[k];
+  for (const v of [q.image, q.answer_image, ...(q.images || [])]) {
     if (v && !/^(https?:|data:)/.test(v) && !fs.existsSync(process.cwd() + '/quiz/' + v)) problems.push(`${at}: нет файла ${v}`);
   }
-  const key = q.q.trim().toLowerCase() + (q.image || '');
+  const key = q.q.trim().toLowerCase() + (q.image || '') + (q.emoji || '') + (q.images || []).join('|'); // один текст с разными картинками или ребусами — разные вопросы
   if (seen.has(key)) problems.push(`${at}: повтор вопроса ${seen.get(key) + 1}`); else seen.set(key, i);
 });
 const csv = P.packToCSV(pack);

@@ -514,6 +514,8 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/seen.js"></script>
+<script src="/static/logic.js"></script>
 <script src="/static/wheel.js"></script>
 <script src="/static/rope.js"></script>
 <script>
@@ -580,6 +582,7 @@ function dots(s) {
 
 function media(s) {
   const emoji = s.emoji ? `<div class="emoji-pic rise" aria-label="Картинка из эмодзи">${QuizEmoji.html(s.emoji)}</div>` : "";
+  if (s.images) return emoji + QuizLogic.html(s, (p) => esc(QuizPack.mediaSrc(p))); // «Где логика»: картинки по одной
   if (s.melody) return emoji + `<div class="melody rise"><span class="eq"><i></i><i></i><i></i><i></i></span> Слушай мелодию
     <button class="btn ghost small" data-replay type="button">▶ Ещё раз</button></div>`;
   if (!s.image && !s.audio) return emoji;
@@ -1501,6 +1504,7 @@ document.addEventListener("click", (e) => {
 
 
 function live(s) {
+  QuizLogic.update(s);
   const rt = document.getElementById("si-round-time"), rl = s.si && s.si.round_left;
   if (rt) {
     rt.textContent = rl != null ? `· ⏱ ${Math.floor(rl / 60)}:${String(rl % 60).padStart(2, "0")}` : "";
@@ -1592,6 +1596,7 @@ async function pollOnce(seq) {
     if (version && s.version !== version) return location.reload(); // сервер обновился
     version = s.version;
     lastState = s;
+    QuizSeen.track(room, s); // запомнить вопрос, чтобы в следующих играх он не повторялся
     const siKey = s.si ? JSON.stringify(s.si, (k, v) => (k === "left" || k === "buzz_in" || k === "round_left" ? undefined : v)) : "";
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const hdKey = s.hd ? JSON.stringify(s.hd, (k, v) => (k === "left" || k === "ready_left" ? undefined : v)) : "";

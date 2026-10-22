@@ -330,11 +330,14 @@ def clean_pack(data, store=None, scope="_", limit=MAX_QUESTIONS):
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
+                # «Где логика»: три картинки появляются по очереди, игроки ищут, что их связывает
+                "images": [media_ref(x, "image", store, scope) for x in q["images"][:3]]
+                if isinstance(q.get("images"), list) and len(q["images"]) >= 2 else None,
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
                 "place": str(q.get("place") or "").strip()[:80] or None,  # для карты: что это за место
-                "si": q.get("si") is not False,  # False — без вариантов вопрос не сыграть в «Своей игре»
+                "si": q.get("si") is not False and not q.get("images"),  # без вариантов или с картинками-тройкой в «Своей игре» не сыграть
                 "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
                 # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
                 "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
@@ -424,9 +427,10 @@ def si_question(q, answers, price):
             "answer": answers, "answer_text": answers[0], "answer_image": q.get("answer_image"), "answer_audio": None, "answer_note": q.get("note")}
 
 
-def si_from_quiz(pack, used=frozenset()):
+def si_from_quiz(pack, used=frozenset(), seen=None):
     """Случайная «Своя игра»: 2 раунда по 6 тем × 5 вопросов + финал. Цена растёт со сложностью,
-    в раунде один кот в мешке и один аукцион. used — уже сыгранные в этой комнате вопросы, их — в последнюю очередь."""
+    в раунде один кот в мешке и один аукцион. used — уже сыгранные в этой комнате вопросы, их — в последнюю очередь;
+    seen — ключ → сколько устройств игроков уже видели вопрос (тоже ближе к концу)."""
     themes = collections.defaultdict(list)
     for q in pack["questions"]:
         a = si_answers(q)
@@ -434,11 +438,11 @@ def si_from_quiz(pack, used=frozenset()):
             themes[q.get("theme") or "Разное"].append((q, a))
     names = [t for t, items in themes.items() if len(items) >= 5]
     random.shuffle(names)
-    key = lambda q: q["q"] + (q["image"] or "")
+    key = lambda q: qkey(q["q"], q["image"])
 
     def take(items, n):
         fresh = [x for x in items if key(x[0]) not in used]
-        pick = random.sample(fresh if len(fresh) >= n else items, n)
+        pick = fresh_first(fresh if len(fresh) >= n else list(items), seen or {}, lambda x: key(x[0]))[:n]
         return sorted(pick, key=lambda x: (SI_LEVEL.get(x[0].get("level"), 1), random.random()))
 
     rounds = []
@@ -501,13 +505,30 @@ except (OSError, ValueError, KeyError) as e:
     print(f"Слова «Слова на лбу» не загрузились: {e}", flush=True)
 
 
-def balanced_sample(indexes, n, questions):
-    """Случайные вопросы поровну из каждой темы: большая тема (флаги, столицы) не вытесняет остальные."""
+SEEN_MAX = 1500  # сколько последних вопросов помнит устройство (localStorage `quiz-seen`, static/seen.js)
+
+
+def qkey(text, image=None):
+    """Короткий ключ вопроса: по нему устройства запоминают, что уже видели."""
+    return hashlib.sha1(((text or "") + (image or "")).encode("utf-8")).hexdigest()[:8]
+
+
+def fresh_first(items, seen, key=lambda x: x):
+    """Перемешиваем, но сначала то, что видело меньше всего устройств в комнате."""
+    random.shuffle(items)
+    items.sort(key=lambda x: seen.get(key(x), 0))
+    return items
+
+
+def balanced_sample(indexes, n, questions, seen=None):
+    """Случайные вопросы поровну из каждой темы: большая тема (флаги, столицы) не вытесняет остальные.
+    seen — ключ вопроса → сколько устройств в комнате его уже видели: такие — в последнюю очередь."""
     groups = collections.defaultdict(list)
     for i in indexes:
         groups[questions[i].get("theme") or ""].append(i)
     for g in groups.values():
-        random.shuffle(g)
+        fresh_first(g, seen or {}, lambda i: qkey(questions[i]["q"], questions[i]["image"]))
+        g.reverse()  # pop() берёт с конца
     themes = list(groups)
     random.shuffle(themes)
     out = []
@@ -923,7 +944,7 @@ class SiEngine:
                    "answerer": self.name(c["answerer"]), "exclusive": c["exclusive"],
                    "tried": list(c["tried"]), "max_stake": max(self.players().get(self.chooser, {}).get("score", 0), q["price"])}
             if ph in ("si_question", "si_answer", "si_reveal"):
-                cur.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"],
+                cur.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"], key=qkey(q["text"], q["image"]),
                            melody=q.get("melody"), tempo=q.get("tempo"), instrument=q.get("instrument"))
                 cur["buzz_open"] = now >= c["buzz_at"]
                 cur["buzz_in"] = max(0, round(c["buzz_at"] - now, 1))
@@ -938,7 +959,7 @@ class SiEngine:
             f = {"theme": theme, "eligible": [self.name(x) for x in self.eligible() if ph == "si_final_bet"] or [self.name(x) for x in self.bets],
                  "bets_done": list(self.bets), "answered": list(self.final_answers)}
             if ph in ("si_final_q", "si_final_reveal"):
-                f.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"],
+                f.update(text=q["text"], image=q["image"], audio=q["audio"], video=q["video"], key=qkey(q["text"], q["image"]),
                          left=max(0, round(self.cur["deadline"] - now, 1)) if ph == "si_final_q" else 0)
             if ph == "si_final_reveal":
                 f["answer"] = q["answer_text"]
@@ -1449,6 +1470,7 @@ class Game:
         self.custom = None  # свой пакет, загруженный ведущим
         self.media = {}  # файлы из своего пакета
         self.used = {}  # пакет -> номера вопросов, которые уже были в этой комнате
+        self.seen_by = {}  # устройство -> ключи вопросов, которые оно уже видело (присылает само, /api/seen)
         self.selected = []
         self.si = None  # «Своя игра», если выбран этот режим
         self.fd = None  # «100 к 1»
@@ -1552,12 +1574,23 @@ class Game:
             elif self.settings["mode"] == "100to1" and self.fd_pack:
                 self.fd = FeudEngine(self, self.fd_pack)
             elif self.settings["mode"] == "jeopardy" and self.si_pack:
-                if self.settings["si_pack"] == SI_AUTO:  # новое табло на каждую игру, сыгранные вопросы — в конец очереди
-                    self.si_auto = si_from_quiz(PACKS[SI_AUTO_SRC], self.si_used)
-                    self.si_used |= {q["text"] + (q["image"] or "") for r in self.si_auto["rounds"] for t in r["themes"] for q in t["questions"]}
-                self.si = SiEngine(self, self.si_pack)
+                self.build_si()
             else:
                 self.pick_questions()
+
+    def seen(self):
+        """Ключ вопроса → сколько устройств в комнате (ведущий и игроки) его уже видели в прошлых играх."""
+        devices = {self.host_device} | {p["device"] for p in self.players.values()}
+        return collections.Counter(k for d in devices for k in self.seen_by.get(d, ()))
+
+    def build_si(self, commit=False):
+        """«Своя игра». Случайное табло из «Общих знаний» — новое на каждую игру; собираем заново при старте,
+        когда игроки уже вошли: сыгранные вопросы и те, что игроки видели раньше, — в конец очереди."""
+        if self.settings["si_pack"] == SI_AUTO:
+            self.si_auto = si_from_quiz(PACKS[SI_AUTO_SRC], self.si_used, self.seen())
+            if commit:
+                self.si_used |= {qkey(q["text"], q["image"]) for r in self.si_auto["rounds"] for t in r["themes"] for q in t["questions"]}
+        self.si = SiEngine(self, self.si_pack)
 
     def pool(self):
         """Номера вопросов пакета, подходящих под выбранные темы и сложность."""
@@ -1568,8 +1601,9 @@ class Game:
               if (not themes or q.get("theme") in themes) and (not q.get("level") or q["level"] in levels)]
         return ok or list(range(len(allq)))  # ничего не подошло — играем весь пакет
 
-    def pick_questions(self):
-        """Выбираем вопросы на игру: случайные и по возможности те, что ещё не попадались."""
+    def pick_questions(self, commit=False):
+        """Выбираем вопросы на игру: случайные и по возможности те, что ещё не попадались.
+        В лобби — черновик; при старте (commit) выбираем заново, уже зная, что видели вошедшие игроки."""
         allq = self.pack["questions"]
         pool = self.pool()
         n = self.settings["count"]
@@ -1586,8 +1620,9 @@ class Game:
         if len(fresh) < n:  # вопросы закончились — начинаем круг заново
             used.difference_update(pool)
             fresh = list(pool)
-        chosen = balanced_sample(fresh, n, allq)
-        used.update(chosen)
+        chosen = balanced_sample(fresh, n, allq, self.seen())
+        if commit:
+            used.update(chosen)
         self.selected = [allq[i] for i in chosen]
 
     @property
@@ -1635,7 +1670,7 @@ class Game:
         avail = self.round_themes()[opts[winner]]
         fresh = [i for i in avail if i not in used] or avail
         k = min(ROUND_SIZE, self.target - len(self.selected), len(avail))
-        chosen = random.sample(fresh, min(k, len(fresh)))
+        chosen = fresh_first(fresh, self.seen(), lambda i: qkey(allq[i]["q"], allq[i]["image"]))[:k]
         chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
         used.update(chosen)
         self.selected += [allq[i] for i in chosen]
@@ -1895,6 +1930,8 @@ class Game:
         return bool(self.settings.get("rounds")) and self.index + 1 >= len(self.selected)
 
     def next(self):
+        if self.phase == "lobby" and not self.settings.get("rounds"):
+            self.pick_questions(commit=True)  # игроки уже вошли — учитываем, что они видели раньше
         if self.phase == "topic_vote":
             return self.finish_vote()
         if self.phase == "topic_bet":
@@ -2094,6 +2131,8 @@ class Game:
             s["melody"] = q.get("melody")
             s["tempo"] = q.get("tempo")
             s["emoji"] = q.get("emoji")
+            s["images"] = q.get("images")  # «Где логика»: картинки открываются по одной, шаг — четверть времени
+            s["qkey"] = qkey(q["q"], q["image"])  # устройства запоминают увиденные вопросы (static/seen.js)
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
             s["doubled_now"] = [p["name"] for p in self.players.values() if p.get("bet")]  # кто поставил ×2 на этот вопрос
@@ -2567,6 +2606,12 @@ class Handler(BaseHTTPRequestHandler):
                 game.tick()
                 return self.send_json({"ok": bool(ok)})
 
+            if path == "/api/seen":  # какие вопросы это устройство видело в прошлых играх (localStorage)
+                keys = data.get("keys")
+                keys = keys[-SEEN_MAX:] if isinstance(keys, list) else []
+                game.seen_by[device] = {k for k in keys if isinstance(k, str) and re.fullmatch(r"[0-9a-f]{8}", k)}
+                return self.send_json({"ok": True})
+
             if path == "/api/avatar":
                 pid, avatar = data.get("pid"), data.get("avatar")
                 ok = game.owns(pid, device) and avatar in AVATARS
@@ -2693,6 +2738,7 @@ class Handler(BaseHTTPRequestHandler):
         elif action == "si_override" and game.si:
             game.si.override(data.get("index"))
         elif action == "next" and game.si and game.phase == "lobby":
+            game.build_si(commit=True)  # табло заново: игроки уже вошли
             game.si.start()
         elif action == "next" and game.si and game.phase.startswith("si_"):
             game.tick()

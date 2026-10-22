@@ -4,7 +4,7 @@
   const MAX_IMAGE_SIDE = 1280; // картинки больше уменьшаем, чтобы пакет грузился быстро
   const MAX_AUDIO_MB = 8;
 
-  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)", "Картинка к ответу", "Картинки к вариантам", "Пояснение"];
+  const CSV_HEADER = ["Вопрос", "Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4", "Правильный (1-4)", "Картинка (ссылка)", "Аудио (ссылка)", "Тип", "Тема", "Сложность", "Время (с)", "Картинка к ответу", "Картинки к вариантам", "Пояснение", "Картинки «Где логика»"];
   // Тип: пусто — один верный; «несколько» — верных несколько (номера через запятую);
   // «порядок» — варианты записаны в правильном порядке; «текст» — в вариантах верные написания ответа;
   // «число» — в «Варианте 1» правильное число, в «Варианте 2» единицы (м, км, год), побеждает ближайший;
@@ -116,6 +116,8 @@
         q.options = filled;
         q.answer = options[answer] ? filled.indexOf(options[answer]) : -1;
       }
+      const logic = String(r[15] || "").split("|").map((v) => v.trim()).filter(Boolean); // «Где логика»: 2–3 картинки по очереди
+      if (logic.length >= 2) q.images = logic.slice(0, 3);
       if (q.options && pics.some(Boolean)) q.option_images = options.map((o, k) => (o ? pics[k] || "" : null)).filter((v) => v !== null);
       questions.push(q);
     });
@@ -132,7 +134,7 @@
       const media = (v) => (v && !String(v).startsWith("data:") ? v : "");
       const right = type === "multi" ? q.answer.map((a) => a + 1).join(",") : type === "choice" ? q.answer + 1 : "";
       rows.push([q.q, ...opts.map((o) => (o == null ? "" : o)), right, media(q.image), media(q.audio), TYPE_NAMES[type], q.theme || "", LEVEL_NAMES[q.level] || "", q.seconds || "", media(q.answer_image),
-        (q.option_images || []).map(media).join(" | "), q.note || ""]);
+        (q.option_images || []).map(media).join(" | "), q.note || "", (q.images || []).map(media).join(" | ")]);
     }
     return rows.map((r) => r.map(csvCell).join(";")).join("\r\n");
   }

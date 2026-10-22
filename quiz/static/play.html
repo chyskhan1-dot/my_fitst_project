@@ -1057,8 +1057,9 @@ function soundtrack(s) {
   else if (s.phase === "hd_result") { M.stop(0.1); if (!(s.hd && s.hd.me && s.hd.me.is_guesser)) M.sting("timeup"); } // у лба «пип-пип» играет сам экран со словом
   else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
 }
-// браузер включает звук только после нажатия — открываем его при первом касании
-["pointerdown", "touchend", "click"].forEach((t) => document.addEventListener(t, () => { if (window.QuizMusic) QuizMusic.unlock(); }, true));
+// значок звука: 🔈 — браузер ещё не открыл звук (нужно любое касание)
+const soundIcon = () => QuizMusic.muted ? "🔇" : QuizMusic.blocked ? "🔈" : "🔊";
+window.addEventListener("quizsound", () => { const b = document.getElementById("phone-sound"); if (b) b.textContent = soundIcon(); });
 
 // Пауза: таймеры на сервере стоят, на экране — табличка поверх всего
 const PAUSABLE = (s) => !["setup", "lobby", "final"].includes(s.phase);
@@ -1261,7 +1262,7 @@ function draw(s) {
   $main.classList.remove("top-start");
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `<a class="home-btn" href="/" title="Главное меню — в игру можно вернуться">⌂</a>${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${QuizMusic.muted ? "🔇" : "🔊"}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
+  document.getElementById("top").innerHTML = `<a class="home-btn" href="/" title="Главное меню — в игру можно вернуться">⌂</a>${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${soundIcon()}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
   soundtrack(s);
   mood("");
   confetti(false);
@@ -1664,7 +1665,10 @@ document.addEventListener("click", async (e) => {
   const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер
   if (trk) { buzz([20, 40, 20]); trk.disabled = true; await api("/api/trick", { pid, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");
-  if (snd && window.QuizMusic) { snd.textContent = QuizMusic.toggle() ? "🔇" : "🔊"; return; }
+  if (snd && window.QuizMusic) { // звук был закрыт браузером — нажатие его открывает, а не выключает
+    if (!(QuizMusic.justUnlocked && !QuizMusic.muted)) QuizMusic.toggle();
+    snd.textContent = soundIcon(); return;
+  }
   const here = e.target.closest("[data-play-here]");
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)

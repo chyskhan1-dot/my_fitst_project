@@ -741,6 +741,7 @@ function soundtrack(s) {
   else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
 }
 
+window.addEventListener("quizsound", () => soundButton());
 function soundButton() {
   const b = document.getElementById("sound"), M = window.QuizMusic;
   if (!b || !M) return;
@@ -1647,7 +1648,8 @@ const shareText = (text, url) => (navigator.share ? navigator.share({ title: "К
 
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
-  if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
+  // звук был закрыт браузером — нажатие его открывает, а не выключает
+  if (e.target.closest("#sound")) { if (!(QuizMusic.justUnlocked && !QuizMusic.muted)) QuizMusic.toggle(); soundButton(); return; }
   if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
   const pick = e.target.closest("[data-si-pick]");
   if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }

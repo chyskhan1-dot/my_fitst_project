@@ -29,3 +29,6 @@
 | vivaldi.jpg | https://commons.wikimedia.org/wiki/File%3AVivaldi.jpg |
 | washington.jpg | https://commons.wikimedia.org/wiki/File%3AGilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg |
 | dostoevsky.jpg | https://commons.wikimedia.org/wiki/File%3AVasily_Perov_-_%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82_%D0%A4.%D0%9C.%D0%94%D0%BE%D1%81%D1%82%D0%BE%D0%B5%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE_-_Google_Art_Project.jpg |
+| galileo.jpg | https://commons.wikimedia.org/wiki/File%3AJustus_Sustermans_-_Portrait_of_Galileo_Galilei%2C_1636.jpg |
+| conan-doyle.jpg | https://commons.wikimedia.org/wiki/File%3AArthur_Conan_Doyle_by_Walter_Benington%2C_1914.png |
+| schiller.jpg | https://commons.wikimedia.org/wiki/File%3AAnton_Graff_-_Friedrich_Schiller.jpg |

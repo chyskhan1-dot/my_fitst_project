@@ -330,11 +330,14 @@ def clean_pack(data, store=None, scope="_", limit=MAX_QUESTIONS):
                 "audio": media_ref(q.get("audio"), "audio", store, scope),
                 **dict(zip(("melody", "tempo"), clean_melody(q.get("melody"), q.get("tempo")))),
                 "emoji": str(q.get("emoji") or "").strip()[:40] or None,  # картинка-ребус из эмодзи
+                # «Где логика»: три картинки появляются по очереди, игроки ищут, что их связывает
+                "images": [media_ref(x, "image", store, scope) for x in q["images"][:3]]
+                if isinstance(q.get("images"), list) and len(q["images"]) >= 2 else None,
                 "theme": str(q.get("theme") or "").strip()[:40] or None,  # тема — пригодится для «Своей игры»
                 "level": q.get("level") if q.get("level") in LEVELS else None,
                 "unit": str(q.get("unit") or "").strip()[:12] or None,  # для чисел: «м», «км», «год»
                 "place": str(q.get("place") or "").strip()[:80] or None,  # для карты: что это за место
-                "si": q.get("si") is not False,  # False — без вариантов вопрос не сыграть в «Своей игре»
+                "si": q.get("si") is not False and not q.get("images"),  # без вариантов или с картинками-тройкой в «Своей игре» не сыграть
                 "seconds": clean_seconds(q.get("seconds")),  # своё время на этот вопрос
                 # эффект картинки: blur — размыта и проясняется, zoom — виден кусочек (focus, в %), потом отдаляется
                 "image_fx": q.get("image_fx") if q.get("image_fx") in ("blur", "zoom") else None,
@@ -2094,6 +2097,7 @@ class Game:
             s["melody"] = q.get("melody")
             s["tempo"] = q.get("tempo")
             s["emoji"] = q.get("emoji")
+            s["images"] = q.get("images")  # «Где логика»: картинки открываются по одной, шаг — четверть времени
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
             s["doubled_now"] = [p["name"] for p in self.players.values() if p.get("bet")]  # кто поставил ×2 на этот вопрос

@@ -361,6 +361,7 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/logic.js"></script>
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
 <script src="/static/rope.js"></script>
@@ -1335,6 +1336,7 @@ function draw(s) {
       <h2>${esc(s.question)}</h2>
       ${s.image && !oddPick(s) ? fxImg(s, "Картинка к вопросу") : ""}
       ${s.emoji ? `<div class="emoji-pic">${QuizEmoji.html(s.emoji)}</div>` : ""}
+      ${s.images ? QuizLogic.html(s, (p) => esc(mediaSrc(p))) : ""}
       ${s.melody || s.audio ? (speaker(s) ? `<button class="btn ghost small" data-listen type="button">🔁 Ещё раз</button>`
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
@@ -1541,6 +1543,7 @@ async function pollOnce(seq) {
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     const tw = document.getElementById("trick-left"); if (tw && s.me) tw.textContent = Math.ceil(s.me.trick_wait || 0);
     const tl = document.getElementById("topic-left"); if (tl && s.topic) tl.textContent = `${Math.ceil(s.topic.left)} с`;
+    QuizLogic.update(s);
     const ql = document.getElementById("q-left"); if (ql && s.left != null) { ql.textContent = Math.ceil(s.left); ql.classList.toggle("low", s.left <= 5); }
     const tres = document.getElementById("topic-res"); if (tres && s.topic) tres.classList.toggle("shown", s.topic.spin_left <= 0);
     hostBar(s);

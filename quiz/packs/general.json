@@ -47184,6 +47184,405 @@
    "level": "easy",
    "note": "Подкова — канадская часть, Американский и Фата — американские.",
    "answer_image": "media/pics/ans-water-wave.png"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Микеланджело",
+    "Рафаэль",
+    "Леонардо да Винчи",
+    "Сандро Боттичелли"
+   ],
+   "answer": 2,
+   "images": [
+    "media/art/mona-lisa.jpg",
+    "media/art/last-supper.jpg",
+    "media/art/vitruvian-man.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Мона Лиза», «Тайная вечеря» и рисунок «Витрувианский человек» — всё работы Леонардо.",
+   "answer_image": "media/art/vitruvian-man.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картины?",
+   "options": [
+    "Иероним Босх",
+    "Рембрандт",
+    "Ян Вермеер",
+    "Питер Брейгель Старший"
+   ],
+   "answer": 3,
+   "images": [
+    "media/art/hunters-in-snow.jpg",
+    "media/art/babel.jpg",
+    "media/art/peasant-wedding.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "«Охотники на снегу», «Вавилонская башня» и «Крестьянская свадьба» — фламандец Брейгель, XVI век.",
+   "answer_image": "media/art/hunters-in-snow.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Поль Гоген",
+    "Клод Моне",
+    "Винсент ван Гог",
+    "Поль Сезанн"
+   ],
+   "answer": 2,
+   "images": [
+    "media/art/sunflowers.jpg",
+    "media/art/starry-night.jpg",
+    "media/art/van-gogh-self.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Подсолнухи», «Звёздная ночь» и автопортрет — всё ван Гог.",
+   "answer_image": "media/art/van-gogh-self.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет этих людей?",
+   "options": [
+    "Писали детективы",
+    "Получили Нобелевскую премию",
+    "Жили в Лондоне",
+    "По профессии — врачи"
+   ],
+   "answer": 3,
+   "images": [
+    "media/people/chekhov.jpg",
+    "media/people/conan-doyle.jpg",
+    "media/people/schiller.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Чехов лечил земских крестьян, Конан Дойл был окулистом, Шиллер — полковым лекарем.",
+   "answer_image": "media/pics/ans-stethoscope.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет этих людей?",
+   "options": [
+    "Радиоактивность",
+    "Нобелевская премия",
+    "Таблица Менделеева",
+    "Рентгеновские лучи"
+   ],
+   "answer": 1,
+   "images": [
+    "media/people/becquerel.jpg",
+    "media/people/curie.jpg",
+    "media/people/nobel.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Беккерель и Мария Кюри — нобелевские лауреаты по физике 1903 года, а Альфред Нобель учредил саму премию.",
+   "answer_image": "media/pics/ans-1st-place-medal.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет этих поэтов?",
+   "options": [
+    "Учились в Царскосельском лицее",
+    "Погибли на дуэли",
+    "Служили на Кавказе",
+    "Были в ссылке в Сибири"
+   ],
+   "answer": 1,
+   "images": [
+    "media/people/pushkin.jpg",
+    "media/people/lermontov.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Пушкин погиб в 1837 году, Лермонтов — в 1841-м. Лермонтов написал на смерть Пушкина «Смерть поэта». Лицей окончил только Пушкин.",
+   "answer_image": "media/pics/ans-crossed-swords.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти планеты?",
+   "options": [
+    "Планеты земной группы",
+    "Газовые гиганты",
+    "Карликовые планеты",
+    "Спутники Юпитера"
+   ],
+   "answer": 0,
+   "images": [
+    "media/space/mercury.jpg",
+    "media/space/venus.jpg",
+    "media/space/mars.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Меркурий, Венера, Земля и Марс — каменные планеты с твёрдой поверхностью.",
+   "answer_image": "media/space/earth.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти небесные тела?",
+   "options": [
+    "Планеты земной группы",
+    "Планеты без спутников",
+    "Планеты-гиганты",
+    "Карликовые планеты"
+   ],
+   "answer": 2,
+   "images": [
+    "media/space/jupiter.jpg",
+    "media/space/saturn.jpg",
+    "media/space/neptune.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Юпитер, Сатурн, Уран и Нептун — огромные планеты без твёрдой поверхности.",
+   "answer_image": "media/space/saturn.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти фотографии?",
+   "options": [
+    "«Аполлон-13»",
+    "«Восток-1»",
+    "«Союз — Аполлон»",
+    "«Аполлон-11»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/space/apollo11-launch.jpg",
+    "media/people/armstrong.jpg",
+    "media/space/aldrin.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Ракета «Сатурн-5» унесла к Луне Армстронга и Олдрина; 20 июля 1969 года они высадились на Луну.",
+   "answer_image": "media/pics/ans-full-moon.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Круг на флаге",
+    "Островные государства",
+    "Страны Азии",
+    "Красный и белый цвета"
+   ],
+   "answer": 0,
+   "images": [
+    "media/flags/japan.svg",
+    "media/flags/bangladesh.svg",
+    "media/flags/palau.svg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Япония — красный круг на белом, Бангладеш — на зелёном, Палау — жёлтый на голубом. Бангладеш не остров, Палау — в Океании.",
+   "answer_image": "media/pics/ans-red-circle.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Звёзды на флаге",
+    "Растения на флаге",
+    "Страны Средиземноморья",
+    "Бывшие колонии Франции"
+   ],
+   "answer": 1,
+   "images": [
+    "media/flags/canada.png",
+    "media/flags/lebanon.png",
+    "media/flags/cyprus.png"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "У Канады — кленовый лист, у Ливана — кедр, у Кипра — оливковые ветви.",
+   "answer_image": "media/pics/ans-maple-leaf.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Вертикальные полосы",
+    "Герб на флаге",
+    "Страны Европы",
+    "Зелёный, белый и красный цвета"
+   ],
+   "answer": 3,
+   "images": [
+    "media/flags/italy.svg",
+    "media/flags/mexico.png",
+    "media/flags/hungary.svg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "У Венгрии полосы горизонтальные, герб есть только у Мексики, а Мексика — не Европа.",
+   "answer_image": "media/pics/ans-artist-palette.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти места?",
+   "options": [
+    "Семь чудес света",
+    "Постройки инков",
+    "Древние постройки из огромных камней",
+    "Древние храмы"
+   ],
+   "answer": 2,
+   "images": [
+    "media/places/stonehenge.jpg",
+    "media/places/giza.jpg",
+    "media/places/moai-easter.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Стоунхендж, пирамиды и статуи моаи — каменные гиганты, о строительстве которых спорят до сих пор. Из семи чудес — только пирамиды.",
+   "answer_image": "media/pics/ans-rock.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Вулканы",
+    "Древний Рим",
+    "Землетрясения",
+    "Камчатка"
+   ],
+   "answer": 0,
+   "images": [
+    "media/art/pompeii.jpg",
+    "media/places/pompeii.jpg",
+    "media/places/klyuchevskaya.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Картина Брюллова и руины Помпеев — о гибели города от Везувия в 79 году; Ключевская Сопка — действующий вулкан Камчатки.",
+   "answer_image": "media/pics/ans-volcano.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картины?",
+   "options": [
+    "Картины Айвазовского",
+    "Японская гравюра",
+    "Морская буря",
+    "Морские сражения"
+   ],
+   "answer": 2,
+   "images": [
+    "media/art/ninth-wave.jpg",
+    "media/art/great-wave.jpg",
+    "media/art/storm-galilee.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Девятый вал» Айвазовского, «Большая волна» Хокусая и «Буря на море Галилейском» — единственный морской пейзаж Рембрандта.",
+   "answer_image": "media/pics/ans-water-wave.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Исаак Ньютон",
+    "Галилео Галилей",
+    "Николай Коперник",
+    "Леонардо да Винчи"
+   ],
+   "answer": 1,
+   "images": [
+    "media/places/pisa.jpg",
+    "media/space/jupiter.jpg",
+    "media/people/galileo.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Галилей родился в Пизе, по легенде бросал шары с Пизанской башни и в 1610 году открыл четыре спутника Юпитера.",
+   "answer_image": "media/people/galileo.jpg",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Открытие Америки",
+    "Президенты США",
+    "Нью-Йорк",
+    "Столица США"
+   ],
+   "answer": 3,
+   "images": [
+    "media/people/washington.jpg",
+    "media/people/columbus.jpg",
+    "media/flags/usa.svg"
+   ],
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Столица США — Вашингтон, округ Колумбия: город назван в честь первого президента, округ — в честь Колумба.",
+   "answer_image": "media/pics/ans-classical-building.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет эти портреты?",
+   "options": [
+    "Картины из Лувра",
+    "Женские портреты",
+    "Голландская живопись",
+    "Картины эпохи Возрождения"
+   ],
+   "answer": 1,
+   "images": [
+    "media/art/girl-with-peaches.jpg",
+    "media/art/pearl-earring.jpg",
+    "media/art/mona-lisa.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "Серов, Вермеер и Леонардо. В Лувре из них только «Мона Лиза».",
+   "answer_image": "media/pics/ans-framed-picture.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет этих учёных?",
+   "options": [
+    "В их честь назвали химические элементы",
+    "Нобелевские лауреаты",
+    "Физики",
+    "Работали в Германии"
+   ],
+   "answer": 0,
+   "images": [
+    "media/people/mendeleev.jpg",
+    "media/people/curie.jpg",
+    "media/people/einstein.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Менделевий, кюрий и эйнштейний. Менделеев Нобелевскую премию так и не получил.",
+   "answer_image": "media/pics/ans-test-tube.png",
+   "seconds": 30
+  },
+  {
+   "q": "Что объединяет этих композиторов?",
+   "options": [
+    "Родились в Австрии",
+    "Потеряли слух",
+    "Жили в XIX веке",
+    "Умерли в Вене"
+   ],
+   "answer": 3,
+   "images": [
+    "media/people/mozart.jpg",
+    "media/people/beethoven.jpg",
+    "media/people/vivaldi.jpg"
+   ],
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Моцарт (1791), Бетховен (1827) и Вивальди (1741) умерли в Вене. Родились они в Зальцбурге, Бонне и Венеции.",
+   "answer_image": "media/pics/ans-musical-notes.png",
+   "seconds": 30
   }
  ]
 }

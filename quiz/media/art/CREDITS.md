@@ -47,3 +47,6 @@
 | wanderer.jpg | https://commons.wikimedia.org/wiki/File%3ACaspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg | Public domain (PD-Art) |
 | water-lilies.jpg | https://commons.wikimedia.org/wiki/File%3AClaude_Monet_-_Water_Lilies_-_Google_Art_Project_%28462013%29.jpg | Public domain (PD-Art) |
 | whistler-mother.jpg | https://commons.wikimedia.org/wiki/File%3AWhistlers_Mother_high_res.jpg | Public domain (PD-Art) |
+| vitruvian-man.jpg | https://commons.wikimedia.org/wiki/File%3ADa_Vinci_Vitruve_Luc_Viatour.jpg | Public domain (PD-Art) |
+| storm-galilee.jpg | https://commons.wikimedia.org/wiki/File%3ARembrandt_Christ_in_the_Storm_on_the_Lake_of_Galilee.jpg | Public domain (PD-Art) |
+| peasant-wedding.jpg | https://commons.wikimedia.org/wiki/File%3APieter_Bruegel_the_Elder_-_Peasant_Wedding_-_Google_Art_Project_2.jpg | Public domain (PD-Art) |

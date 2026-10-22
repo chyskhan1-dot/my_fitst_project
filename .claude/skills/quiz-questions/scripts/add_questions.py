@@ -64,7 +64,7 @@ pack = json.load(open(pack_path, encoding="utf-8"))
 Q = pack["questions"]
 themes = {q.get("theme") for q in Q if q.get("theme")} | ({new_theme} if new_theme else set())
 qkey = lambda text, image, emoji="": text.strip().lower() + "|" + (image or "") + (emoji or "")  # один текст с разными картинками или ребусами — разные вопросы
-have = {qkey(q["q"], q.get("image"), q.get("emoji")) for q in Q}
+have = {qkey(q["q"], q.get("image"), q.get("emoji")) + "|".join(q.get("images") or []) for q in Q}
 counts = collections.Counter(q["answer"] for q in Q if q.get("type", "choice") == "choice")
 right_of = lambda q: q["options"][q["answer"]] if q.get("type", "choice") == "choice" else None
 by_answer = collections.defaultdict(list)  # (тема, верный ответ) → вопросы: ловим повторы другими словами
@@ -79,7 +79,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
     image = item.get("image")
     if image and image.startswith("emoji:"):
         image = picture(image)
-    if qkey(text, image, item.get("emoji")) in have:
+    if qkey(text, image, item.get("emoji")) + "|".join(item.get("images") or []) in have:
         skipped.append(text)
         continue
     if item.get("theme") not in themes:
@@ -102,6 +102,10 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
         q = {"q": text, "options": wrong[:a] + [item["right"]] + wrong[a:], "answer": a}
         if item.get("emoji"):
             q["emoji"] = item["emoji"]  # ребус из смайликов
+        if item.get("images"):
+            q["images"] = item["images"]  # «Где логика»: 2–3 картинки по очереди
+        if item.get("seconds"):
+            q["seconds"] = item["seconds"]  # своё время на вопрос
         for old_q in by_answer[(item["theme"], item["right"].lower())]:
             similar.append((text, old_q))
     else:
@@ -113,7 +117,7 @@ for n, item in enumerate(json.load(open(new_path, encoding="utf-8")), 1):
         if p:
             q[key] = p
     Q.append(q)
-    have.add(qkey(text, q.get("image"), q.get("emoji")))
+    have.add(qkey(text, q.get("image"), q.get("emoji")) + "|".join(q.get("images") or []))
     added.append(text)
 json.dump(pack, open(pack_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(f"добавлено: {len(added)} | уже были: {len(skipped)} | всего: {len(Q)} | позиции верных: {dict(sorted(counts.items()))}")

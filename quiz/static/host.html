@@ -529,21 +529,21 @@ let version = null, lastSig = "", draft = null, lastState = null;
 const TEAM_COLORS = ["var(--a0)", "var(--a1)", "var(--a2)", "var(--a3)"];
 // «100 к 1» пока спрятан (решение владельца): { id: "100to1", ico: "💯", name: "100 к 1", desc: "Две команды угадывают популярные ответы", ready: true }
 const MODES = [
-  { id: "king", ico: "⛰️", name: "Царь горы", desc: "Кто первым наберёт 10 000 очков — 5 раундов по 3 вопроса", ready: true },
+  { id: "king", ico: "⛰️", name: "Царь горы", desc: "Кто первым наберёт 50 очков — 5 раундов по 3 вопроса", ready: true },
   { id: "quiz", ico: "❓", name: "Викторина", desc: "Варианты ответов, кто больше наберёт", ready: true },
   { id: "heads", ico: "🙆", name: "Слово на лбу", desc: "Телефон ко лбу, друзья объясняют слово", ready: true },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", desc: "Табло тем и цен, кнопка «Ответить»", ready: true },
 ];
-const KING_GOAL = 10000;
+const KING_GOAL = 50;
 // «1 слово», «2 слова», «5 слов» — очки в «Слове на лбу»
 const wordsN = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "слова" : "слов"}`;
 const RULES = [
   { id: "rounds", name: "Раунды по темам 🎡", desc: "Перед каждыми 3 вопросами игроки голосуют за тему, крутится колесо" },
   { id: "sabotage", name: "Подлянки 😈", desc: "Кто ошибся 2 раза подряд, получает подлянку и кидает её любому игроку на следующий вопрос: ответы позже, без гласных, вверх ногами, зеркально или в тумане. Не чаще раза в 3 вопроса. Только «каждый за себя»" },
-  { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 300 очков (ниже нуля счёт не опускается)" },
-  { id: "speed", name: "Бонус за скорость", desc: "Быстрый ответ — до 1000 очков. Если выключить, всегда 1000" },
+  { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 1 очко (ниже нуля счёт не опускается)" },
+  { id: "speed", name: "Очки за место", desc: "Первый верный ответ — 5 очков, второй — 4, третий — 3, четвёртый — 2, остальные — 1. Если выключить, всем верным по 5" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
-  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок ставит ×2 вслепую — между вопросами, на следующий: верно — очки ×2, ошибка или пропуск — минус 1000" },
+  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок ставит ×2 вслепую — между вопросами, на следующий: верно — очки ×2, ошибка или пропуск — минус 3" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -737,10 +737,11 @@ function soundtrack(s) {
     else M.sting("start");
   } else if (s.phase === "reveal") { M.stopMelody(); M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders" || s.phase === "topic_vote") M.play("leaders");
-  else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 4300); }
+  else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 3300); }
   else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
 }
 
+window.addEventListener("quizsound", () => soundButton());
 function soundButton() {
   const b = document.getElementById("sound"), M = window.QuizMusic;
   if (!b || !M) return;
@@ -1641,13 +1642,14 @@ function confetti(on) {
 // Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
 const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
 // игра по комнате: приглашение с названием игры. Ссылку кладём в сам текст — иначе мессенджеры часто шлют одну ссылку без текста
-const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 10 000 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
+const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 50 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
 const roomInvite = (code, mode) => `🎉 Привет! Зову тебя в ${GAME_INVITE[mode] || "квиз"}. Отвечаем с телефонов, ничего устанавливать не нужно. Код комнаты: ${code}`;
 const shareText = (text, url) => (navigator.share ? navigator.share({ title: "Квиз", text: text + "\n👉 " + url }) : Promise.reject()).catch(() => {});
 
 document.addEventListener("click", async (e) => {
   if (window.QuizMusic) QuizMusic.unlock(); // браузер разрешает звук только после нажатия
-  if (e.target.closest("#sound")) { QuizMusic.toggle(); soundButton(); return; }
+  // звук был закрыт браузером — нажатие его открывает, а не выключает
+  if (e.target.closest("#sound")) { if (!(QuizMusic.justUnlocked && !QuizMusic.muted)) QuizMusic.toggle(); soundButton(); return; }
   if (e.target.closest("[data-replay]") && lastState && lastState.melody) { QuizMusic.melody(lastState.melody, lastState.tempo, instrumentFor(lastState)); return; }
   const pick = e.target.closest("[data-si-pick]");
   if (pick) { const [ti, qi] = pick.dataset.siPick.split(",").map(Number); await post("si_pick", { theme: ti, question: qi }); lastSig = ""; return poll(); }
@@ -1682,7 +1684,12 @@ document.addEventListener("click", async (e) => {
   const kick = e.target.closest("[data-kick]");
   try {
     if (act && act.dataset.act === "configure") saveRules(draft);
-    if (act) { act.disabled = true; await post(act.dataset.act, act.dataset.act === "configure" ? { settings: draft } : {}); }
+    if (act) {
+      act.disabled = true;
+      // «Дальше» — с какого этапа нажали: если он уже сменился сам, нажатие не перескочит через вопрос
+      const extra = act.dataset.act === "configure" ? { settings: draft } : act.dataset.act === "next" && lastState ? { from: lastState.phase, index: lastState.index } : {};
+      await post(act.dataset.act, extra);
+    }
     if (kick) await post("kick", { pid: kick.dataset.kick });
   } catch {
     // связь пропала: кнопка снова станет активной после перерисовки

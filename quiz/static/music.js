@@ -10,6 +10,7 @@
   const KEY = "quiz-sound";
   let ctx = null, master, musicBus, sfxBus, reverb, noise;
   let muted = (() => { try { return localStorage.getItem(KEY) === "off"; } catch { return false; } })();
+  let resumedAt = 0; // когда в последний раз просили браузер открыть звук
   let mood = null, style = null, timer = null, step = 0, nextTime = 0, tension = false, shift = 0;
   const lastStyle = {};
   let melodyNodes = [];
@@ -30,6 +31,7 @@
       // iPhone глушит звук страниц беззвучным переключателем; режим «playback» — как у плеера, звук идёт всегда
       try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
       ctx = new AC();
+      ctx.onstatechange = () => window.dispatchEvent(new Event("quizsound")); // обновить значок звука
       master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
       const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
       comp.connect(master);
@@ -49,7 +51,13 @@
       const d = noise.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (ctx.state === "suspended") ctx.resume().then(() => { if (mood && !timer) begin(); }).catch(() => {});
+    // "suspended" — ещё не было нажатия; "interrupted" — iPhone: звонок, другое приложение, сворачивание
+    if (ctx.state !== "running" && ctx.state !== "closed") {
+      resumedAt = Date.now();
+      ctx.resume().then(() => { if (mood && !timer) begin(); }).catch(() => {});
+      // iPhone окончательно открывает звук, только если внутри нажатия что-то прозвучало — играем тишину
+      try { const s = ctx.createBufferSource(); s.buffer = ctx.createBuffer(1, 1, 22050); s.connect(ctx.destination); s.start(0); } catch {}
+    }
     return ctx.state === "running";
   }
   const ready = () => ctx && ctx.state === "running";
@@ -443,11 +451,16 @@
     if (!ctx) return;
     if (document.hidden) ctx.suspend().catch(() => {}); else ctx.resume().catch(() => {});
   });
+  window.addEventListener("pageshow", () => { if (ctx && !document.hidden) ctx.resume().catch(() => {}); }); // iPhone: вернулись «Назад»
+  // браузер открывает звук только по нажатию: любое касание, щелчок или кнопка пульта
+  ["pointerdown", "touchend", "click", "keydown"].forEach((t) => document.addEventListener(t, () => unlock(), true));
 
   window.QuizMusic = {
     unlock, play, stop, sting, setTension, melody, stopMelody, MELODY_INSTRUMENTS,
     get muted() { return muted; },
     get blocked() { return !ready(); },
+    // это нажатие только что открыло звук: кнопка звука в этот раз его не выключает
+    get justUnlocked() { return Date.now() - resumedAt < 1500; },
     get styleName() { return style ? style.name : null; },
     toggle() { setMuted(!muted); unlock(); return muted; },
   };

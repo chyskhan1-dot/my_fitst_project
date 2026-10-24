@@ -46,13 +46,13 @@ VERSION = hashlib.md5(
 ).hexdigest()[:8]
 
 REVEAL_PAUSE = 0.8  # пауза перед показом ответа, когда все уже ответили
-REVEAL_SECONDS = 4  # автопереход: сколько показываем правильный ответ
-LEADERS_SECONDS = 5  # автопереход: сколько показываем таблицу лидеров
+REVEAL_SECONDS = 3  # автопереход: сколько показываем правильный ответ (владелец просил быстрее)
+LEADERS_SECONDS = 3  # автопереход: сколько показываем таблицу лидеров
 # «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему и колесо («×2» — как обычно, на один вопрос)
 ROUND_SIZE = 3
-VOTE_SECONDS = 10  # голосование за тему
-SPIN_SECONDS = 4.5  # колесо крутится
-THEME_SHOW = 2.5  # после колеса — показать выпавшую тему
+VOTE_SECONDS = 8  # голосование за тему
+SPIN_SECONDS = 3.5  # колесо крутится
+THEME_SHOW = 1.5  # после колеса — показать выпавшую тему
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
@@ -83,10 +83,11 @@ SI_DIR = BASE / "si"  # пакеты «Своей игры»: .siq из SIGame �
 FD_DIR = BASE / "feud"  # пакеты «100 к 1»
 HEADS_FILE = BASE / "heads" / "words.json"  # «Слово на лбу»: слова по темам
 HD_THEMES = 3  # «Слово на лбу» в комнате: сколько случайных тем (раундов), если ведущий не выбрал
-PENALTY = 300  # сколько очков снимаем за неверный ответ
+PLACE_POINTS = (5, 4, 3, 2, 1)  # очки за верный ответ по месту: первый верный — 5, второй — 4, … остальные — 1
+PENALTY = 1  # сколько очков снимаем за неверный ответ
 DOUBLES = 2  # «Ставка ×2»: сколько раз за игру можно удвоить
-DOUBLE_LOSS = 1000  # сколько теряет удвоивший при неверном ответе
-KING_GOAL = 10000  # «Царь горы»: кто первым наберёт столько очков, тот выиграл
+DOUBLE_LOSS = 3  # сколько теряет удвоивший при неверном ответе
+KING_GOAL = 50  # «Царь горы»: кто первым наберёт столько очков, тот выиграл (из 75 возможных)
 KING_COUNT = 15  # «Царь горы»: 5 раундов по 3 вопроса — если до вершины никто не дошёл, побеждает тот, кто выше
 # «Подлянки»: кто ошибся TRICK_STREAK раз подряд, получает подлянку и может усложнить следующий вопрос любому игроку
 # (это видно только на его телефоне). desc — что случилось, tip — что делать жертве.
@@ -570,9 +571,9 @@ DEFAULTS = {
     "pack": DEFAULT_PACK,
     "penalty": False,  # штраф за неверный ответ
     "teams": 0,  # 0 — каждый сам за себя, иначе число команд (2–4)
-    "speed": True,  # бонус за скорость ответа
+    "speed": True,  # очки за место: кто ответил верно раньше, тому больше (выкл — всем верным по 5)
     "streak": False,  # бонус за серию правильных ответов
-    "doubles": False,  # «Ставка ×2» вслепую на следующий вопрос: верно — очки ×2, ошибка или пропуск — минус 1000, два раза за игру
+    "doubles": False,  # «Ставка ×2» вслепую на следующий вопрос: верно — очки ×2, ошибка или пропуск — минус DOUBLE_LOSS, два раза за игру
     "leaders": True,  # таблица лидеров после каждого вопроса
     "auto": True,  # дальше без нажатий: ответ → лидеры → следующий вопрос
     "seconds": 20,
@@ -1860,10 +1861,10 @@ class Game:
         if not self.settings["auto"] or self.phase not in ("reveal", "leaders"):
             return None
         # верёвка: игроки лезут по очереди — дать досмотреть
-        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS + min(6, 0.7 * len(self.players))
+        wait = REVEAL_SECONDS if self.phase == "reveal" else LEADERS_SECONDS + min(3, 0.4 * len(self.players))
         note = self.question().get("note") if self.phase == "reveal" and self.index >= 0 else None
         if note:
-            wait += min(6, 2 + len(note) / 40)  # успеть прочитать пояснение
+            wait += min(4, 1 + len(note) / 50)  # успеть прочитать пояснение
         if self.phase == ("leaders" if self.settings["leaders"] else "reveal") and self.trick_roles():
             wait += 3  # последнему месту — время выбрать подлянку
         return max(0, round(wait - (self.clock() - self.phase_at), 1))
@@ -1881,9 +1882,13 @@ class Game:
             errs = [distance_km(a["value"], self.question()["answer"]) for a in self.answers.values() if a["value"] is not None]
             self.best_err = min(errs) if errs else 0
         online = set(self.online())
+        # места среди ответивших верно (или частично): точнее, потом быстрее; первый — 5 очков, второй — 4, … остальные — 1
+        fracs = {pid: self.grade(a["value"]) for pid, a in self.answers.items()}
+        ranked = sorted((pid for pid, f in fracs.items() if f > 0), key=lambda pid: (-fracs[pid], self.answers[pid]["time"]))
+        place = {pid: i for i, pid in enumerate(ranked)}
         for pid, p in self.players.items():
             a = self.answers.get(pid)
-            frac = self.grade(a["value"]) if a else 0.0
+            frac = fracs.get(pid, 0.0)
             if self.tricks_on() and (a or pid in online):  # ошибки подряд копят подлянку
                 p["misses"] = 0 if frac > 0 else p.get("misses", 0) + 1
                 if p["misses"] >= TRICK_STREAK and not p.get("trick_charge"):
@@ -1891,21 +1896,17 @@ class Game:
             p["doubled"] = bool(p.get("bet"))  # ставка ×2, сделанная вслепую до вопроса
             points = 0
             if frac > 0:
-                if rules["speed"]:
-                    # Быстрый правильный ответ даёт до 1000 очков, медленный — от 500.
-                    points = round(500 + 500 * max(0.0, 1 - a["time"] / self.seconds))
-                else:
-                    points = 1000
-                points = round(points * frac)  # частично верный ответ — часть очков
+                base = PLACE_POINTS[min(place[pid], len(PLACE_POINTS) - 1)] if rules["speed"] else PLACE_POINTS[0]
+                points = max(1, round(base * frac))  # частично верный ответ — часть очков, но не меньше одного
             if frac == 1:
                 p["streak"] += 1
                 if rules["streak"] and p["streak"] >= 2:
-                    points += min(500, 100 * (p["streak"] - 1))  # +100 за каждый ответ серии, до +500
+                    points += 1  # серия: +1 очко за каждый верный ответ подряд, начиная со второго
             else:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
-            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах, пропуск или «не успел» — минус 1000
+            if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах, пропуск или «не успел» — минус DOUBLE_LOSS
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
             a = a or {}
@@ -2096,8 +2097,8 @@ class Game:
         if self.phase in ("topic_vote", "topic_bet"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
         if not self.si and not self.fd and not self.hd and self.phase in ("reveal", "leaders", "final"):
-            # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 1000 за вопрос)
-            s["rope_top"] = self.settings.get("race") or max(1000, self.total * 1000)
+            # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 5 за вопрос)
+            s["rope_top"] = self.settings.get("race") or max(5, self.total * PLACE_POINTS[0])
             s["race_winner"] = self.race_winner()
         if self.settings.get("rounds") and self.topic and self.topic.get("winner") is not None:
             s["round_theme"] = self.topic["options"][self.topic["winner"]]
@@ -2694,6 +2695,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def host_action(self, game, action, data):
         """Действие ведущего; вызывается под lock."""
+        if action == "next" and data.get("from") and (data["from"] != game.phase or data.get("index", game.index) != game.index):
+            # «Дальше» нажали на экране, который уже устарел (автопереход успел сменить этап) — иначе нажатие
+            # «Следующий вопрос» попадало на начавшийся вопрос и сразу его заканчивало
+            return self.send_json({"ok": True, "stale": True})
         if game.paused_at and action in ("next", "fd_open", "fd_unstrike", "si_pick", "si_override"):
             return self.send_json({"error": "Игра на паузе — сначала нажми «Продолжить»"}, 400)
         if action == "upload":

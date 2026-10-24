@@ -407,10 +407,10 @@ function setRoom(code) {
 
 // Главное меню: сначала выбор игры, потом — описание и «Начать» (ведущий, игрок или один телефон)
 const GAMES = [
-  { id: "king", ico: "⛰️", name: "Царь горы", short: "Гонка до 10 000 очков", c: "#2bb673", t: "rgba(43, 182, 115, .22)", room: true,
-    about: ["5 раундов по 3 вопроса, тему выбирают голосованием", "Первым набрал 10 000 очков — царь горы", "Вопросы на большом экране, ответы — на телефонах"] },
+  { id: "king", ico: "⛰️", name: "Царь горы", short: "Гонка до 50 очков", c: "#2bb673", t: "rgba(43, 182, 115, .22)", room: true,
+    about: ["5 раундов по 3 вопроса, тему выбирают голосованием", "Первым набрал 50 очков — царь горы", "Вопросы на большом экране, ответы — на телефонах"] },
   { id: "quiz", ico: "❓", name: "Викторина", short: "Вопросы и варианты ответов", c: "#3e7bfa", t: "rgba(62, 123, 250, .22)", room: true,
-    about: ["Вопросы — на большом экране, ответы — на телефонах", "Быстрый правильный ответ — больше очков", "Ведущий настраивает команды, темы, сложность и подлянки"] },
+    about: ["Вопросы — на большом экране, ответы — на телефонах", "Первый верный ответ — 5 очков, второй — 4, и так до 1", "Ведущий настраивает команды, темы, сложность и подлянки"] },
   { id: "heads", ico: "🙆", name: "Слово на лбу", short: "Друзья объясняют — ты угадываешь", c: "#f28c28", t: "rgba(242, 140, 40, .22)", room: true, one: true,
     about: ["Телефон у лба, друзья объясняют слово, не называя его", "Угадал — наклон вниз, не знаешь — вверх. 60 секунд на ход", "Можно с одного телефона или комнатой с телевизором"] },
   { id: "jeopardy", ico: "🎯", name: "Своя игра", short: "Табло тем и цен, кто быстрее", c: "#a855f7", t: "rgba(168, 85, 247, .22)", room: true,
@@ -634,7 +634,7 @@ function betBox(me) {
   if (!me.can_bet) return "";
   return me.next_double
     ? `<button class="btn bet-next on" data-bet-next="0" type="button">✓ ×2 на следующий вопрос<small>нажми, чтобы отменить</small></button>`
-    : `<button class="btn ghost bet-next" data-bet-next="1" type="button">×2 на следующий вопрос<small>вслепую: верно — очки ×2, ошибка или пропуск — минус 1000 · осталось ${me.doubles}</small></button>`;
+    : `<button class="btn ghost bet-next" data-bet-next="1" type="button">×2 на следующий вопрос<small>вслепую: верно — очки ×2, ошибка или пропуск — минус 3 · осталось ${me.doubles}</small></button>`;
 }
 
 function trickBox(s, me) {
@@ -662,7 +662,7 @@ function howTo(s) {
   const g = GAMES.find((x) => x.id === s.settings.mode);
   const extra = [];
   if (s.settings.mode !== "heads" && s.settings.mode !== "jeopardy") {
-    if (s.settings.doubles) extra.push("×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 1000");
+    if (s.settings.doubles) extra.push("×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 3");
     if (s.settings.sabotage && !s.settings.teams) extra.push("😈 Ошибся 2 раза подряд — получаешь подлянку для соперника");
   }
   return g ? `<ol class="howto rise" style="--i:2">${g.about.filter((x) => !x.startsWith("Ведущий")).concat(extra).map((x) => `<li>${x}</li>`).join("")}</ol>` : "";
@@ -716,7 +716,7 @@ function answerControls(s) {
       <p class="hint">👆 Нажми на лишнюю картинку</p>`;
   }
   return `<div class="answers">${order.map((i, n) => btn(i, "data-choice", "", n)).join("")}</div>
-    <p class="hint">${s.settings && s.settings.speed ? "Выбери ответ — чем быстрее, тем больше очков" : "Выбери ответ"}</p>`;
+    <p class="hint">${s.settings && s.settings.speed ? "Выбери ответ: первый верный — 5 очков, второй — 4…" : "Выбери ответ"}</p>`;
 }
 
 // номера на кнопках «по порядку»
@@ -969,7 +969,7 @@ async function copyText(text) {
 // Тексты для «Поделиться»: зазывают попробовать игру, ссылка — следом
 const SITE_INVITE = "🎉 Попробуй игру «Квиз»! Собери друзей: вопросы на большом экране, ответы — с телефонов. Флаги, кино, футбол, «Своя игра» и «100 к 1». Ничего устанавливать не нужно, ведущим может быть любой 👇";
 // игра по комнате: приглашение с названием игры. Ссылку кладём в сам текст — иначе мессенджеры часто шлют одну ссылку без текста
-const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 10 000 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
+const GAME_INVITE = { king: "«Царь горы» — кто первым наберёт 50 очков", quiz: "викторину", heads: "«Слово на лбу»", jeopardy: "«Свою игру»", "100to1": "«100 к 1»" };
 const roomInvite = (code, mode) => `🎉 Привет! Зову тебя в ${GAME_INVITE[mode] || "квиз"}. Отвечаем с телефонов, ничего устанавливать не нужно. Код комнаты: ${code}`;
 const shareText = (text, url) => (navigator.share ? navigator.share({ title: "Квиз", text: text + "\n👉 " + url }) : Promise.reject()).catch(() => {});
 
@@ -1051,7 +1051,7 @@ function soundtrack(s) {
     else M.sting("start");
   } else if (s.phase === "reveal") { M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders" || s.phase === "topic_vote") M.play("leaders");
-  else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 4300); }
+  else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 3300); }
   else if (s.phase === "hd_turn") M.play("lobby");
   else if (s.phase === "hd_play") M.play("question");
   else if (s.phase === "hd_result") { M.stop(0.1); if (!(s.hd && s.hd.me && s.hd.me.is_guesser)) M.sting("timeup"); } // у лба «пип-пип» играет сам экран со словом
@@ -1605,7 +1605,9 @@ document.addEventListener("click", async (e) => {
   const hb = e.target.closest("[data-host]");
   if (hb) {
     hb.disabled = true;
-    await api("/api/host/" + hb.dataset.host, { token: hostToken(), on: hb.dataset.on !== "0" }).catch(() => {});
+    // «Дальше» — с какого этапа нажали: если он уже сменился сам, нажатие не перескочит через вопрос
+    const from = hb.dataset.host === "next" && lastState ? { from: lastState.phase, index: lastState.index } : {};
+    await api("/api/host/" + hb.dataset.host, { token: hostToken(), on: hb.dataset.on !== "0", ...from }).catch(() => {});
     delete document.getElementById("hostbar").dataset.html; // перерисовать панель (если не получилось — кнопка снова активна)
     lastSig = ""; return poll();
   }

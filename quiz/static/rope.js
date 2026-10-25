@@ -31,6 +31,10 @@
 .team-face { width: var(--face, 48px); height: var(--face, 48px); border-radius: 50%; background: var(--c); border: 3px solid #fff; display: block; }
 .rope-stage.compact { --face: 34px; font-size: 14px; }
 .rope-stage.compact .ropes { gap: 6px; }
+/* много игроков: аватарки и подписи мельче, чтобы все верёвки влезли в экран */
+.rope-stage.many .ropes { gap: 4px; } .rope-stage.many .rope-name { font-size: .7em; }
+.rope-stage.lots .ropes { gap: 2px; } .rope-stage.lots .rope-name { font-size: .58em; } .rope-stage.lots .crown { right: -.9em; font-size: .9em; }
+.rope-stage.lots .climber .gain { font-size: .65em; padding: 1px 4px; }
 @media (prefers-reduced-motion: reduce) { .climber { transition: none; } }
 `;
   // гора за верёвками: дальний хребет, главная вершина со снежной шапкой — пик ровно на финишной черте
@@ -62,7 +66,11 @@
           ${i === 0 && r.score > 0 ? `<span class="crown">${to >= 1 ? "🏆" : "👑"}</span>` : ""}${gain}<span class="face">${r.face}</span></div></div>
         <div class="rope-name"><span>${esc(r.name)}</span><b>${num(again ? r.score : r.score - (r.last || 0))}</b></div></div>`;
     }).join("");
-    return `<div class="rope-stage ${opts.compact ? "compact" : ""}" data-key="${esc(key)}" style="--h:${opts.height || "46vh"}">
+    // сколько места на одного: ТВ ~ 12 крупных верёвок, телефон ~ 8; дальше — мельче
+    const n = rows.length, fit = opts.compact ? 7 : 12, room = opts.compact ? 330 : 780; // примерная ширина под верёвки, px
+    const dense = n > fit * 1.6 ? "lots" : n > fit ? "many" : "";
+    const face = !dense ? "" : `--face:${Math.max(opts.compact ? 18 : 22, Math.min(opts.compact ? 34 : 48, Math.round(room / n) - 6))}px;`;
+    return `<div class="rope-stage ${opts.compact ? "compact" : ""} ${dense}" data-key="${esc(key)}" style="--h:${opts.height || "46vh"};${face}">
       <div class="rope-top"><span>⛰️ ${opts.race ? "Вершина — царь горы" : "Вершина"}</span><b>${num(top)}</b></div>
       <div class="ropes">${opts.mountain ? MOUNTAIN : ""}${cols}</div></div>`;
   }
@@ -80,7 +88,8 @@
     const key = stage.dataset.key;
     if (shown.has(key) || matchMedia("(prefers-reduced-motion: reduce)").matches) { climbers.forEach(finish); return; }
     shown.add(key);
-    climbers.forEach((el) => setTimeout(() => { if (el.isConnected) finish(el); }, 500 + Number(el.dataset.turn) * 700));
+    const step = Math.min(700, 4200 / climbers.length); // много игроков — лезут чаще, чтобы уложиться в показ таблицы
+    climbers.forEach((el) => setTimeout(() => { if (el.isConnected) finish(el); }, 500 + Number(el.dataset.turn) * step));
   }
 
   window.QuizRope = { html, climb };

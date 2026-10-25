@@ -165,6 +165,13 @@ a.btn { text-decoration: none; display: inline-block; }
 .unanimous { font-size: 9em; line-height: 1; text-align: center; }
 .topic b { font-size: 1.9em; line-height: 1.15; }
 .topic .who { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 2.2em; font-size: 1.2em; }
+.perk-cards { display: flex; gap: 18px; flex-wrap: wrap; }
+.perk-card { flex: 1 1 320px; padding: 20px 24px; border-radius: 20px; background: var(--panel); border: 3px solid var(--accent); display: flex; flex-direction: column; gap: 8px; }
+.perk-card b { font-family: var(--display); font-size: 1.6em; } .perk-card span { color: var(--muted); font-weight: 600; }
+.perk-card p { margin: 0; font-size: 1.15em; } .perk-card .hl { font-family: inherit; font-size: 1em; color: var(--accent); }
+.perk-card.trick { border-color: var(--a0); } .perk-card.trick .hl { color: #ff8a8e; }
+.trick-line.now { display: flex; flex-direction: column; gap: 4px; font-size: 1.25em; }
+.trick-line.now .k { font-size: .8em; color: #ffd0d2; }
 .topic-time { font-family: var(--display); font-weight: 800; font-size: 1.3em; color: var(--accent); }
 .topic-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
 .topic-result { opacity: 0; transform: scale(.8); transition: opacity .5s, transform .5s cubic-bezier(.3, 1.6, .5, 1); }
@@ -683,7 +690,7 @@ const marks = (p) => (p.marks && p.marks.length ? `<span class="marks">${p.marks
 // подлянки: объявляем на большом экране — так веселее
 function trickNow(s) {
   const t = s.trick_now, k = t && s.tricks && s.tricks.find((x) => x.id === t.kind);
-  return k ? `<p class="trick-line pop">😈 Подлянка: <b>${esc(t.by)}</b> → <b>${esc(t.to)}</b> · ${k.name} — ${k.desc}</p>` : "";
+  return k ? `<div class="trick-line now pop"><span>😈 <b>${esc(t.by)}</b> кинул подлянку → <b>${esc(t.to)}</b></span><span class="k">${k.name}: ${k.desc}</span></div>` : "";
 }
 function trickNext(s) {
   const t = s.trick_next;
@@ -737,6 +744,7 @@ function soundtrack(s) {
     else M.sting("start");
   } else if (s.phase === "reveal") { M.stopMelody(); M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders" || s.phase === "topic_vote") M.play("leaders");
+  else if (s.phase === "perks") M.play("lobby");
   else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 3300); }
   else if (s.phase === "final") { M.stop(0.3); M.sting("fanfare"); setTimeout(() => { if (musicKey.startsWith("final")) M.play("final"); }, 2600); }
 }
@@ -884,6 +892,22 @@ function draw(s) {
             <p class="muted">Приготовьтесь!</p></div></div>`;
       if (!t.unanimous) QuizWheel.spin(document.querySelector("#topic-wheel .wheel"), t.winner, w, t.round, t.spin_left); // все за одну — крутить нечего
     }
+    $actions.innerHTML = `<button class="btn" data-act="next">Дальше</button>`;
+  } else if (s.phase === "perks") {
+    // перерыв перед раундом: игроки выбирают на телефонах ×2 на весь раунд и подлянки
+    const t = s.topic, pk = s.perks, theme = t.options[t.winner];
+    const tn = s.trick_next;
+    $main.innerHTML = `
+      <div class="qhead"><div><div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${QuizWheel.icon(theme)} ${esc(theme)}</div><h1 class="rise">Перки на раунд</h1>
+        <p class="muted">Выбирайте на телефонах — время есть</p></div>
+        <span class="topic-time" id="topic-time"></span></div>
+      <div class="perk-cards">
+        ${s.settings.doubles ? `<div class="perk-card pop"><b>×2 на весь раунд</b><span>3 вопроса: верно — очки ×2, ошибка или пропуск — минус 3 за каждый</span>
+          <p>${pk.doubled.length ? `Поставили: <b class="hl">${pk.doubled.map(esc).join(", ")}</b>` : "Пока никто"}</p></div>` : ""}
+        ${tn ? `<div class="perk-card trick pop"><b>😈 Подлянка</b><span>У кого 2 ошибки подряд — испортит первый вопрос раунда любому игроку</span>
+          <p>${tn.chosen ? `<b class="hl">${esc(tn.by)}</b> → <b class="hl">${esc(tn.to)}</b>` : "Решается на телефоне…"}</p></div>` : ""}
+      </div>
+      <p class="muted">${pk.waiting.length ? `Ещё выбирают: <b style="color:var(--ink)">${pk.waiting.map(esc).join(", ")}</b>` : "Все готовы!"}</p>`;
     $actions.innerHTML = `<button class="btn" data-act="next">Начать раунд</button>`;
   } else if (s.phase === "question") {
     $main.innerHTML = `
@@ -891,11 +915,11 @@ function draw(s) {
         <div><div class="eyebrow">${s.round_theme ? `Раунд «${esc(s.round_theme)}» · ` : ""}Вопрос ${s.index + 1}${s.theme ? " · " + esc(s.theme) : ""}${s.level === "hard" ? " · сложный" : ""}</div><h2 class="rise">${esc(s.question)}</h2></div>
         <div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="bar" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg><span id="timer">${Math.ceil(s.left)}</span></div>
       </div>
-      ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
       ${trickNow(s)}
+      ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
       ${questionBody(s)}
       <p class="muted" id="answered"></p>
-      ${(s.doubled_now || []).length ? `<p class="muted">×2 вслепую: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
+      ${(s.doubled_now || []).length ? `<p class="muted">×2: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
     mountMap(s);
     const audio = document.querySelector(".qaudio audio");
     if (audio) audio.play().catch(() => {}); // если браузер не дал включить звук сам — есть кнопка ▶
@@ -923,7 +947,7 @@ function draw(s) {
     const title = won ? `👑 ${esc(won)} — царь горы!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
     const rows = s.settings.teams
       ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
-      : s.players.slice(0, 14).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
+      : s.players.slice(0, 30).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
     $main.innerHTML = `
       <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1></div>
       <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, mountain: true })}
@@ -1542,7 +1566,8 @@ function live(s) {
     ring.classList.toggle("low", s.left <= 5);
   }
   const tt = document.getElementById("topic-time");
-  if (tt && s.topic) tt.textContent = `${Math.ceil(s.topic.left)} с`;
+  if (tt && s.perks) tt.textContent = `${Math.ceil(s.perks.left)} с`;
+  else if (tt && s.topic) tt.textContent = `${Math.ceil(s.topic.left)} с`;
   const tr = document.getElementById("topic-result");
   if (tr && s.topic) tr.classList.toggle("shown", s.topic.spin_left <= 0);
   const a = document.getElementById("answered");
@@ -1602,7 +1627,7 @@ async function pollOnce(seq) {
     const fdKey = s.fd ? JSON.stringify(s.fd, (k, v) => (k === "left" ? undefined : v)) : "";
     const hdKey = s.hd ? JSON.stringify(s.hd, (k, v) => (k === "left" || k === "ready_left" ? undefined : v)) : "";
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" ? undefined : v)) : "";
-    const sig = JSON.stringify([s.phase, s.index, s.paused, s.players, s.join, s.trick_next, s.trick_now]) + siKey + fdKey + hdKey + topicKey;
+    const sig = JSON.stringify([s.phase, s.index, s.paused, s.players, s.join, s.trick_next, s.trick_now, s.perks && [s.perks.waiting, s.perks.doubled]]) + siKey + fdKey + hdKey + topicKey;
     if (sig !== lastSig) { lastSig = sig; render(s); }
     live(s);
   } catch {

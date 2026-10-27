@@ -33,8 +33,8 @@ def emoji(folder):
     if os.path.exists(dst):
         return rel
     base = "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/"
-    name = folder.lower().replace(" ", "_").replace("-", "_")
-    for path in (f"{folder}/3D/{name}_3d.png", f"{folder}/Default/3D/{name}_3d_default.png"):
+    names = {folder.lower().replace(" ", "_").replace("-", "_"), folder.lower().replace(" ", "_")}  # дефис в имени файла бывает и так, и так
+    for path in [p for n in names for p in (f"{folder}/3D/{n}_3d.png", f"{folder}/Default/3D/{n}_3d_default.png")]:
         try:
             with urllib.request.urlopen(base + urllib.parse.quote(path), timeout=30) as r:
                 data = r.read()

@@ -49431,6 +49431,1008 @@
    "note": "Стадион «Боруссии» — «Сигнал Идуна Парк» — самый вместительный в Германии.",
    "image": "media/stadiums/signal-iduna-park.jpg",
    "answer_image": "media/flags/germany.svg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Лондон",
+    "Изобретение телефона",
+    "Часы",
+    "Слово bell — «колокол»"
+   ],
+   "answer": 3,
+   "images": [
+    "media/logic/bell.jpg",
+    "media/places/big-ben.jpg",
+    "media/people/bell.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Bell по-английски «колокол»; Биг-Бен — имя большого колокола часовой башни, а Александр Белл изобрёл телефон.",
+   "answer_image": "media/places/big-ben.jpg"
+  },
+  {
+   "q": "Что объединяет эти планеты?",
+   "options": [
+    "Газовые гиганты",
+    "Ближе к Солнцу, чем Земля",
+    "Названы в честь римских богов",
+    "У всех есть спутники"
+   ],
+   "answer": 2,
+   "images": [
+    "media/space/mars.jpg",
+    "media/space/venus.jpg",
+    "media/space/jupiter.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Марс — бог войны, Венера — богиня любви, Юпитер — царь богов. У Венеры спутников нет.",
+   "answer_image": "media/space/jupiter.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Нидерланды",
+    "Испания",
+    "Бельгия",
+    "Дания"
+   ],
+   "answer": 0,
+   "images": [
+    "media/logic/windmill.jpg",
+    "media/art/pearl-earring.jpg",
+    "media/art/night-watch.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Ветряные мельницы — символ Голландии; «Девушку с жемчужной серёжкой» написал Вермеер, «Ночной дозор» — Рембрандт.",
+   "answer_image": "media/flags/netherlands.svg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Италия",
+    "Париж",
+    "Лондон",
+    "Рим"
+   ],
+   "answer": 1,
+   "images": [
+    "media/art/mona-lisa.jpg",
+    "media/art/liberty.jpg",
+    "media/places/eiffel.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "«Мона Лиза» и «Свобода, ведущая народ» висят в Лувре, а Эйфелева башня — символ Парижа.",
+   "answer_image": "media/places/eiffel.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Самые большие в своём роде",
+    "Находятся в ОАЭ",
+    "Покорены в 1953 году",
+    "Построены людьми"
+   ],
+   "answer": 0,
+   "images": [
+    "media/places/burj-khalifa.jpg",
+    "media/places/everest.jpg",
+    "media/space/jupiter.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Бурдж-Халифа — самое высокое здание, Эверест — самая высокая гора, Юпитер — самая большая планета.",
+   "answer_image": "media/places/everest.jpg"
+  },
+  {
+   "q": "Что объединяет эти картины?",
+   "options": [
+    "Японская живопись",
+    "Рассвет над морем",
+    "Русская живопись",
+    "Огромные морские волны"
+   ],
+   "answer": 3,
+   "images": [
+    "media/art/ninth-wave.jpg",
+    "media/art/great-wave.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Девятый вал» Айвазовского и «Большая волна в Канагаве» Хокусая — две самые знаменитые волны в живописи.",
+   "answer_image": "media/art/great-wave.jpg"
+  },
+  {
+   "q": "Что объединяет эти картины?",
+   "options": [
+    "Работы Леонардо да Винчи",
+    "Сюжеты из Библии",
+    "Фрески Ватикана",
+    "Голландская живопись"
+   ],
+   "answer": 1,
+   "images": [
+    "media/art/creation-of-adam.jpg",
+    "media/art/last-supper.jpg",
+    "media/art/prodigal-son.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Сотворение Адама, Тайная вечеря и притча о блудном сыне — сюжеты Библии. Картины написали Микеланджело, Леонардо и Рембрандт.",
+   "answer_image": "media/art/last-supper.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Построены из белого мрамора",
+    "Стоят на берегу Нила",
+    "Это гробницы",
+    "Построены при Александре Македонском"
+   ],
+   "answer": 2,
+   "images": [
+    "media/places/giza.jpg",
+    "media/places/taj-mahal.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Пирамиды Гизы — гробницы фараонов, Тадж-Махал — мавзолей жены падишаха Шах-Джахана.",
+   "answer_image": "media/places/taj-mahal.jpg"
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Красный и белый цвета",
+    "Это страны Африки",
+    "Полумесяц со звездой",
+    "Зелёный цвет"
+   ],
+   "answer": 2,
+   "images": [
+    "media/flags/turkey.svg",
+    "media/flags/pakistan.svg",
+    "media/flags/tunisia.svg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Полумесяц со звездой — символ, который часто встречается у стран с мусульманским большинством.",
+   "answer_image": "media/flags/turkey.svg"
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Синий и жёлтый цвета",
+    "Скандинавский крест",
+    "Страны Евросоюза",
+    "Королевства"
+   ],
+   "answer": 1,
+   "images": [
+    "media/flags/sweden.svg",
+    "media/flags/norway.svg",
+    "media/flags/finland.svg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Крест, сдвинутый к древку, есть на флагах всех северных стран: Дании, Швеции, Норвегии, Финляндии и Исландии. Норвегия не в Евросоюзе, Финляндия — не королевство.",
+   "answer_image": "media/flags/norway.svg"
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Голубой и белый цвета",
+    "Страны Южной Америки",
+    "Чемпионы мира по футболу",
+    "Солнце на флаге"
+   ],
+   "answer": 3,
+   "images": [
+    "media/flags/argentina.png",
+    "media/flags/uruguay.png",
+    "media/flags/kazakhstan.png"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Солнце — на флагах Аргентины, Уругвая и Казахстана. Казахстан — не в Южной Америке и не чемпион мира.",
+   "answer_image": "media/flags/kazakhstan.png"
+  },
+  {
+   "q": "Что объединяет эти флаги?",
+   "options": [
+    "Британский флаг в углу",
+    "Звёзды Южного Креста",
+    "Острова в Атлантике",
+    "Синий и белый цвета"
+   ],
+   "answer": 0,
+   "images": [
+    "media/flags/australia.svg",
+    "media/flags/new-zealand.svg",
+    "media/flags/fiji.png"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Австралия, Новая Зеландия и Фиджи были британскими колониями. Созвездия Южного Креста на флаге Фиджи нет.",
+   "answer_image": "media/flags/uk.svg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "«Времена года»",
+    "Русские композиторы",
+    "Осень",
+    "Умерли в Вене"
+   ],
+   "answer": 0,
+   "images": [
+    "media/people/vivaldi.jpg",
+    "media/people/tchaikovsky.jpg",
+    "media/art/golden-autumn.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "«Времена года» есть и у Вивальди (четыре концерта), и у Чайковского (12 пьес по месяцам). «Золотая осень» — картина Левитана.",
+   "answer_image": "media/art/golden-autumn.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Изобретение паровоза",
+    "Нобелевская премия",
+    "Часовые пояса",
+    "Теория относительности"
+   ],
+   "answer": 3,
+   "images": [
+    "media/people/einstein.jpg",
+    "media/logic/clock.jpg",
+    "media/logic/locomotive.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Эйнштейн объяснял теорию относительности на примерах с часами и движущимися поездами: время в них идёт по-разному.",
+   "answer_image": "media/people/einstein.jpg"
+  },
+  {
+   "q": "Что объединяет эти планеты?",
+   "options": [
+    "Есть твёрдая поверхность",
+    "У всех есть кольца",
+    "Ближе к Солнцу, чем Земля",
+    "Названы в честь греческих богов"
+   ],
+   "answer": 1,
+   "images": [
+    "media/space/saturn.jpg",
+    "media/space/uranus.jpg",
+    "media/space/neptune.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Кольца Сатурна видно в телескоп, а у Урана и Нептуна они тонкие и тёмные. По-гречески назван только Уран.",
+   "answer_image": "media/space/saturn.jpg"
+  },
+  {
+   "q": "Что объединяет эти планеты?",
+   "options": [
+    "Газовые гиганты",
+    "Есть кольца",
+    "Нет ни одного спутника",
+    "Самые холодные планеты"
+   ],
+   "answer": 2,
+   "images": [
+    "media/space/mercury.jpg",
+    "media/space/venus.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "У Меркурия и Венеры спутников нет, у Земли — один, у Марса — два.",
+   "answer_image": "media/space/mercury.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Землетрясение",
+    "Древний Рим",
+    "Камчатка",
+    "Извержение вулкана"
+   ],
+   "answer": 3,
+   "images": [
+    "media/places/pompeii.jpg",
+    "media/art/pompeii.jpg",
+    "media/places/klyuchevskaya.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Помпеи погибли при извержении Везувия в 79 году (картина Брюллова «Последний день Помпеи»); Ключевская сопка — самый высокий действующий вулкан Евразии.",
+   "answer_image": "media/places/klyuchevskaya.jpg"
+  },
+  {
+   "q": "Что объединяет эти картины?",
+   "options": [
+    "Охотники",
+    "Зима",
+    "Русские художники",
+    "Ночь"
+   ],
+   "answer": 0,
+   "images": [
+    "media/art/hunters-in-snow.jpg",
+    "media/art/hunters-at-rest.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "easy",
+   "note": "«Охотники на снегу» Брейгеля и «Охотники на привале» Перова.",
+   "answer_image": "media/art/hunters-at-rest.jpg"
+  },
+  {
+   "q": "Что объединяет этих писателей?",
+   "options": [
+    "Погибли на дуэли",
+    "Сюжет «Ревизора»",
+    "Родились в Москве",
+    "Писали басни"
+   ],
+   "answer": 1,
+   "images": [
+    "media/people/gogol.jpg",
+    "media/people/pushkin.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Сюжет «Ревизора» (и «Мёртвых душ») Гоголю подсказал Пушкин.",
+   "answer_image": "media/people/gogol.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Открытие Америки",
+    "Кругосветное плавание",
+    "Поиски морского пути в Индию",
+    "Африка"
+   ],
+   "answer": 2,
+   "images": [
+    "media/people/columbus.jpg",
+    "media/places/cape-good-hope.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Колумб искал путь в Индию на запад и открыл Америку, а Васко да Гама обогнул мыс Доброй Надежды и доплыл до Индии.",
+   "answer_image": "media/places/cape-good-hope.jpg"
+  },
+  {
+   "q": "Что объединяет эти стадионы?",
+   "options": [
+    "Финалы чемпионатов мира",
+    "Домашние стадионы клубов",
+    "Олимпийские игры 1980 года",
+    "Стадионы в Европе"
+   ],
+   "answer": 0,
+   "images": [
+    "media/stadiums/maracana.jpg",
+    "media/stadiums/wembley.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "На «Маракане» играли финалы ЧМ-1950 и 2014, на «Уэмбли» — финал ЧМ-1966.",
+   "answer_image": "media/pics/ans-trophy.png"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Изобретение кровати",
+    "Нобелевская премия",
+    "Открытие во сне (по легенде)",
+    "Изобретение будильника"
+   ],
+   "answer": 2,
+   "images": [
+    "media/logic/bed.jpg",
+    "media/chem/table.svg",
+    "media/people/mendeleev.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "По легенде, периодическая таблица приснилась Менделееву. Сам он говорил, что думал над ней много лет, а во сне только сложилось.",
+   "answer_image": "media/people/mendeleev.jpg"
+  },
+  {
+   "q": "Что объединяет эти горы?",
+   "options": [
+    "Находятся на Кавказе",
+    "Это вулканы",
+    "Находятся на Камчатке",
+    "Самые высокие горы мира"
+   ],
+   "answer": 1,
+   "images": [
+    "media/places/elbrus.jpg",
+    "media/places/klyuchevskaya.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Ключевская сопка — действующий вулкан, а Эльбрус — спящий: последнее извержение было около 2000 лет назад.",
+   "answer_image": "media/places/elbrus.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Построены инками",
+    "Буддийские храмы",
+    "Стоят у моря",
+    "Построены высоко в горах"
+   ],
+   "answer": 3,
+   "images": [
+    "media/places/machu-picchu.jpg",
+    "media/places/potala.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Мачу-Пикчу — на высоте около 2400 м в Андах, дворец Потала — около 3700 м в Тибете.",
+   "answer_image": "media/places/potala.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Находятся в Индии",
+    "Исламская архитектура",
+    "Находятся в Испании",
+    "Это гробницы"
+   ],
+   "answer": 1,
+   "images": [
+    "media/places/alhambra.jpg",
+    "media/places/taj-mahal.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "hard",
+   "note": "Альгамбру строили мавританские эмиры в Испании, Тадж-Махал — правители Великих Моголов в Индии.",
+   "answer_image": "media/places/alhambra.jpg"
+  },
+  {
+   "q": "Что объединяет эти картинки?",
+   "options": [
+    "Италия",
+    "Греция",
+    "Античность",
+    "Средние века"
+   ],
+   "answer": 2,
+   "images": [
+    "media/places/acropolis.jpg",
+    "media/places/colosseum.jpg"
+   ],
+   "seconds": 30,
+   "theme": "Где логика",
+   "level": "normal",
+   "note": "Акрополь построен в Древней Греции, Колизей — в Древнем Риме: обе постройки античные.",
+   "answer_image": "media/places/acropolis.jpg"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Лев",
+    "Зебра",
+    "Жираф",
+    "Кенгуру"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Лев, зебра и жираф живут в Африке, а кенгуру — в Австралии.",
+   "image": "media/odd/giraffe_kangaroo_lion_zebra.webp",
+   "answer_image": "media/pics/ans-kangaroo.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Морковь",
+    "Яблоко",
+    "Груша",
+    "Вишня"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Яблоко, груша и вишня — фрукты, морковь — овощ.",
+   "image": "media/odd/carrot_cherries_pear_red-apple.webp",
+   "answer_image": "media/pics/ans-carrot.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Сыр",
+    "Молоко",
+    "Масло",
+    "Хлеб"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Сыр, молоко и масло — молочные продукты, хлеб пекут из муки.",
+   "image": "media/odd/bread_butter_cheese-wedge_glass-of-milk.webp",
+   "answer_image": "media/pics/ans-bread.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Корова",
+    "Лошадь",
+    "Волк",
+    "Овца"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Корова, лошадь и овца — домашние животные, волк — дикий хищник.",
+   "image": "media/odd/cow_ewe_horse_wolf.webp",
+   "answer_image": "media/pics/ans-wolf.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Самолёт",
+    "Ракета",
+    "Спутник",
+    "Сатурн"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Ракета, спутник и Сатурн бывают в космосе, а самолёт летает только в атмосфере.",
+   "image": "media/odd/airplane_ringed-planet_rocket_satellite.webp",
+   "answer_image": "media/pics/ans-airplane.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Огурец",
+    "Клубника",
+    "Перец",
+    "Морковь"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Огурец, перец и морковь — овощи, клубника — ягода.",
+   "image": "media/odd/carrot_cucumber_hot-pepper_strawberry.webp",
+   "answer_image": "media/pics/ans-strawberry.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Хоккей",
+    "Серфинг",
+    "Коньки",
+    "Лыжи"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Хоккей, коньки и лыжи — зимний спорт на льду и снегу, серфинг — на морских волнах.",
+   "image": "media/odd/ice-hockey_ice-skate_person-surfing_skis.webp",
+   "answer_image": "media/pics/ans-person-surfing.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Нож",
+    "Ложка",
+    "Молоток",
+    "Палочки"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Нож, ложка и палочки нужны, чтобы есть, молоток — инструмент.",
+   "image": "media/odd/chopsticks_hammer_kitchen-knife_spoon.webp",
+   "answer_image": "media/pics/ans-hammer.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Лыжи",
+    "Скейтборд",
+    "Ролики",
+    "Самокат"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "На скейтборде, роликах и самокате катаются на колёсах, а на лыжах — по снегу.",
+   "image": "media/odd/kick-scooter_roller-skate_skateboard_skis.webp",
+   "answer_image": "media/pics/ans-skis.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Пианино",
+    "Гитара",
+    "Барабан",
+    "Микрофон"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Пианино, гитара и барабан — музыкальные инструменты, микрофон только усиливает звук.",
+   "image": "media/odd/drum_guitar_microphone_musical-keyboard.webp",
+   "answer_image": "media/pics/ans-microphone.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Снеговик",
+    "Снежинка",
+    "Подсолнух",
+    "Ёлка"
+   ],
+   "answer": 2,
+   "theme": "Убери лишнее",
+   "level": "easy",
+   "note": "Снеговик, снежинка и ёлка — про зиму, подсолнух цветёт летом.",
+   "image": "media/odd/christmas-tree_snowflake_snowman_sunflower.webp",
+   "answer_image": "media/pics/ans-sunflower.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Корова",
+    "Лошадь",
+    "Зебра",
+    "Осёл"
+   ],
+   "answer": 0,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Лошадь, зебра и осёл — родственники из семейства лошадиных, а корова — из полорогих.",
+   "image": "media/odd/cow_donkey_horse_zebra.webp",
+   "answer_image": "media/pics/ans-cow.png"
+  },
+  {
+   "q": "Что лишнее?",
+   "options": [
+    "Арбуз",
+    "Дыня",
+    "Огурец",
+    "Виноград"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "hard",
+   "note": "Арбуз, дыня и огурец — родственники из семейства тыквенных, а виноград — из виноградовых.",
+   "image": "media/odd/cucumber_grapes_melon_watermelon.webp",
+   "answer_image": "media/pics/ans-grapes.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Пингвин",
+    "Верблюд",
+    "Белый медведь",
+    "Тюлень"
+   ],
+   "answer": 1,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Пингвин, белый медведь и тюлень живут среди льдов, верблюд — в пустыне.",
+   "image": "media/odd/camel_penguin_polar-bear_seal.webp",
+   "answer_image": "media/pics/ans-camel.png"
+  },
+  {
+   "q": "Кто лишний?",
+   "options": [
+    "Улитка",
+    "Черепаха",
+    "Ленивец",
+    "Леопард"
+   ],
+   "answer": 3,
+   "theme": "Убери лишнее",
+   "level": "normal",
+   "note": "Улитка, черепаха и ленивец — известные медлительные животные, леопард — быстрый хищник.",
+   "image": "media/odd/leopard_sloth_snail_turtle.webp",
+   "answer_image": "media/pics/ans-leopard.png"
+  },
+  {
+   "q": "Что в соцсетях значит «ЛС»?",
+   "options": [
+    "Лучший стример",
+    "Личные сообщения",
+    "Лайк и сохранение",
+    "Лента событий"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "easy",
+   "note": "«Напиши в ЛС» — значит в личную переписку, а не в комментарии.",
+   "answer_image": "media/pics/ans-envelope.png"
+  },
+  {
+   "q": "Что значит «AFK» в играх и чатах?",
+   "options": [
+    "Отошёл от клавиатуры",
+    "Всё в порядке",
+    "Играю в команде",
+    "Очень быстро"
+   ],
+   "answer": 0,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Away From Keyboard — «вдали от клавиатуры»: игрок отошёл.",
+   "answer_image": "media/pics/ans-keyboard.png"
+  },
+  {
+   "q": "Что такое «спойлер»?",
+   "options": [
+    "Рекламная вставка",
+    "Смешная картинка",
+    "Раскрытие сюжета заранее",
+    "Короткое видео"
+   ],
+   "answer": 2,
+   "theme": "Интернет",
+   "level": "easy",
+   "note": "От английского spoil — «портить»: спойлер портит удовольствие от фильма или книги.",
+   "answer_image": "media/pics/ans-clapper-board.png"
+  },
+  {
+   "q": "Что такое «стрим»?",
+   "options": [
+    "Длинный пост",
+    "Музыкальный альбом",
+    "Прямая трансляция в интернете",
+    "Видео с монтажом"
+   ],
+   "answer": 2,
+   "theme": "Интернет",
+   "level": "easy",
+   "note": "Stream — «поток»: игры, концерты и разговоры показывают в прямом эфире.",
+   "answer_image": "media/pics/ans-video-camera.png"
+  },
+  {
+   "q": "Кого в интернете называют «троллем»?",
+   "options": [
+    "Модератора чата",
+    "Того, кто нарочно провоцирует ссоры",
+    "Новичка",
+    "Того, кто много ставит лайков"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Тролли пишут обидное или нелепое, чтобы вывести других из себя.",
+   "answer_image": "media/pics/ans-troll.png"
+  },
+  {
+   "q": "Кто в 2007 году предложил использовать хештеги в Twitter?",
+   "options": [
+    "Крис Мессина",
+    "Джек Дорси",
+    "Илон Маск",
+    "Марк Цукерберг"
+   ],
+   "answer": 0,
+   "theme": "Интернет",
+   "level": "hard",
+   "note": "Дизайнер Крис Мессина предложил метку # для тем; сама Twitter сначала идею не оценила.",
+   "answer_image": "media/pics/ans-bird.png"
+  },
+  {
+   "q": "Какая компания создала TikTok?",
+   "options": [
+    "Meta (США)",
+    "Google (США)",
+    "Tencent (Китай)",
+    "ByteDance (Китай)"
+   ],
+   "answer": 3,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "TikTok выпустила китайская ByteDance; в Китае у приложения своя версия — Douyin.",
+   "answer_image": "media/pics/ans-mobile-phone.png"
+  },
+  {
+   "q": "Как с 2023 года называется соцсеть Twitter?",
+   "options": [
+    "Meta",
+    "Threads",
+    "Bluesky",
+    "X"
+   ],
+   "answer": 3,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "После покупки Илоном Маском Twitter переименовали в X, а синюю птицу убрали.",
+   "answer_image": "media/pics/ans-cross-mark.png"
+  },
+  {
+   "q": "Что значит «имба» в играх?",
+   "options": [
+    "Слишком сильный, нечестно сильный",
+    "Новичок",
+    "Ошибка в игре",
+    "Красивый костюм"
+   ],
+   "answer": 0,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "От английского imbalance — «нарушение баланса»: персонаж или оружие сильнее остальных.",
+   "answer_image": "media/pics/ans-flexed-biceps.png"
+  },
+  {
+   "q": "Что значит «агриться»?",
+   "options": [
+    "Соглашаться",
+    "Смеяться",
+    "Злиться, нападать",
+    "Уходить из игры"
+   ],
+   "answer": 2,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "От английского aggressive: в играх так говорят о монстре, который бросился на игрока.",
+   "answer_image": "media/pics/ans-pouting-face.png"
+  },
+  {
+   "q": "Кого называют «крашем»?",
+   "options": [
+    "Того, кто всё ломает",
+    "Того, в кого влюблён",
+    "Лучшего друга",
+    "Соперника"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "От английского crush — «влюблённость».",
+   "answer_image": "media/pics/ans-smiling-face-with-heart-eyes.png"
+  },
+  {
+   "q": "Откуда взялось слово «спам»?",
+   "options": [
+    "Из скетча «Монти Пайтон» про консервы SPAM",
+    "Сокращение «спец. рассылка»",
+    "Имя первого хакера",
+    "Название вируса"
+   ],
+   "answer": 0,
+   "theme": "Интернет",
+   "level": "hard",
+   "note": "В скетче 1970 года в кафе все блюда со SPAM, а викинги заглушают всех песней «Спам-спам-спам».",
+   "answer_image": "media/pics/ans-canned-food.png"
+  },
+  {
+   "q": "Когда зарегистрировали домен .ru?",
+   "options": [
+    "В 1991 году",
+    "В 1998 году",
+    "В 2000 году",
+    "В 1994 году"
+   ],
+   "answer": 3,
+   "theme": "Интернет",
+   "level": "hard",
+   "note": "Домен .ru зарегистрировали 7 апреля 1994 года — этот день считают днём рождения Рунета.",
+   "answer_image": "media/flags/russia.svg"
+  },
+  {
+   "q": "Что значит «рофл»?",
+   "options": [
+    "Обида",
+    "Ошибка",
+    "Шутка, прикол",
+    "Победа"
+   ],
+   "answer": 2,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "ROFL — Rolling On the Floor Laughing, «катаюсь по полу от смеха».",
+   "answer_image": "media/pics/ans-rolling-on-the-floor-laughing.png"
+  },
+  {
+   "q": "Что такое «лайфхак»?",
+   "options": [
+    "Взлом сайта",
+    "Полезная хитрость",
+    "Видео про жизнь",
+    "Новый телефон"
+   ],
+   "answer": 1,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Life hack — простой способ решить бытовую задачу.",
+   "answer_image": "media/pics/ans-light-bulb.png"
+  },
+  {
+   "q": "Что значит смайлик 💀 в переписке?",
+   "options": [
+    "Мне страшно",
+    "Я заболел",
+    "Это опасно",
+    "Умираю со смеху"
+   ],
+   "answer": 3,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Молодёжь ставит череп вместо «ахаха» — «я умер от смеха».",
+   "answer_image": "media/pics/ans-skull.png"
+  },
+  {
+   "q": "Что обычно значит смайлик 🫡?",
+   "options": [
+    "Есть! Принято",
+    "Мне жарко",
+    "Я сплю",
+    "Отличная идея"
+   ],
+   "answer": 0,
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Это отдание чести: «понял, сделаю».",
+   "answer_image": "media/pics/ans-saluting-face.png"
+  },
+  {
+   "q": "Какое выражение зашифровано смайликами?",
+   "options": [
+    "Иду в кино",
+    "Запасаюсь попкорном",
+    "Есть охота",
+    "Мне скучно"
+   ],
+   "answer": 1,
+   "emoji": "🍿😏",
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "Так говорят, когда собираются с интересом наблюдать за чужим спором.",
+   "answer_image": "media/pics/ans-popcorn.png"
+  },
+  {
+   "q": "Какое выражение зашифровано смайликами?",
+   "options": [
+    "Ice Bucket Challenge",
+    "Nyan Cat",
+    "To the moon",
+    "Coffin Dance"
+   ],
+   "answer": 2,
+   "emoji": "📈🚀🌕",
+   "theme": "Интернет",
+   "level": "normal",
+   "note": "«До Луны!» — так в криптовалютах и акциях говорят про стремительный рост.",
+   "answer_image": "media/pics/ans-rocket.png"
   }
  ]
 }

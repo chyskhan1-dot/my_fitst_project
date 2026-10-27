@@ -337,6 +337,16 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 .perk-x2 b { font-size: 22px; } .perk-x2 small { font-weight: 600; font-size: 13px; color: var(--muted); }
 .perk-x2.on { background: var(--accent); color: var(--accent-ink); } .perk-x2.on small { color: var(--accent-ink); }
 .perk-done { width: 100%; }
+.chase { margin: 0; padding: 10px 14px; border-radius: 12px; background: rgba(255, 210, 63, .14); color: var(--accent); font-weight: 800; text-align: center; }
+.reacts { display: flex; justify-content: center; gap: 10px; }
+.reacts button { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel); display: grid; place-items: center; padding: 0; cursor: pointer; font-size: 28px; }
+.reacts button:active { transform: scale(1.25); }
+.final-x2 { padding: 8px 14px; border-radius: 12px; background: linear-gradient(90deg, #ff7a18, #e5484d); color: #fff; font-weight: 800; text-align: center; }
+.adapt { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); }
+.awards { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.award { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); text-align: left; }
+.award .ai { font-size: 30px; } .award b { display: block; } .award small { color: var(--muted); font-weight: 600; }
+.award.mine { border: 2px solid var(--accent); }
 .pill.x2 { background: var(--accent); color: var(--accent-ink); font-family: var(--display); }
 /* новости после вопроса */
 .news { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
@@ -1173,6 +1183,23 @@ function othersAnswers(s, me) {
   return `<div class="others"><div class="eyebrow">${s.qtype === "number" || s.qtype === "map" ? "Кто ближе" : "Кто что ответил"}</div><ol class="mini">${rows.join("")}</ol></div>`;
 }
 
+// ближайшая цель вместо места в общей таблице: сравнение с соседом мотивирует сильнее (исследования таблиц лидеров)
+function chase(s, me) {
+  const rows = s.players, i = rows.findIndex((p) => p.name === me.name);
+  if (i < 0 || rows.length < 2) return "";
+  const pts = (n) => n + " " + QuizComments.plural(n, "очко", "очка", "очков");
+  if (i === 0) {
+    const gap = me.score - rows[1].score;
+    return `<p class="chase rise">${gap > 0 ? `🏆 Ты лидер! Отрыв — ${pts(gap)}, следом ${esc(rows[1].name)}` : `🤝 Первое место поровну: ты и ${esc(rows[1].name)}`}</p>`;
+  }
+  const up = rows[i - 1], gap = up.score - me.score;
+  return `<p class="chase rise">${gap > 0 ? `🎯 ${esc(up.name)} впереди на ${pts(gap)}. Обгони!` : `🤝 Поровну: ты и ${esc(up.name)}`}</p>`;
+}
+// реакции: всплывают на большом экране
+const REACTS = ["👏", "😂", "😱", "🔥"];
+const reactBar = () => `<div class="reacts">${REACTS.map((e) => `<button type="button" data-react="${e}" aria-label="Реакция">${QuizEmoji.html(e)}</button>`).join("")}</div>`;
+// финальный раунд — очки ×2
+const finalTag = (s) => (s.final_x2 ? `<div class="final-x2 pop">🔥 Финальный раунд — очки ×2</div>` : "");
 function moveText(me) {
   if (!me.prev || me.prev === me.place) return "";
   const d = me.prev - me.place, n = Math.abs(d);
@@ -1319,7 +1346,9 @@ function draw(s) {
     $main.innerHTML = `
       <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · осталось <span id="topic-left">${Math.ceil(t.left)} с</span></div>
       <div class="timebar" style="width:100%"><i style="animation-duration:${t.left}s"></i></div>
+      ${finalTag(s)}
       <h2>Какую тему играем?</h2>
+      ${s.underdog === me.name ? `<p class="chase">🎯 Твой голос считается за два — ты сейчас последний</p>` : s.underdog ? `<p class="hint">Голос ${esc(s.underdog)} считается за два — он сейчас последний</p>` : ""}
       <p class="hint">Нажми на тему. Чем больше за неё голосов, тем больше её сектор на колесе. Передумать можно</p>
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
@@ -1332,6 +1361,7 @@ function draw(s) {
     $main.classList.add("top-start");
     $main.innerHTML = `<div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${QuizWheel.icon(theme)} ${esc(theme)}</div>
       <div class="timebar" style="width:100%"><i style="animation-duration:${pk.left}s"></i></div>
+      ${finalTag(s)}
       <h2>${mine ? "Выбери перки на раунд" : "Перки выбраны"}</h2>
       ${mine ? `<p class="hint">Есть ${Math.ceil(pk.left)} с. Не нужно — просто жми «Готово»</p>
         ${betBox(me, s)}
@@ -1356,7 +1386,9 @@ function draw(s) {
     const tk = (trick && s.tricks && s.tricks.find((k) => k.id === trick)) || {}, trickName = tk.name || "";
     if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
     $main.innerHTML = `
+      ${finalTag(s)}
       <div class="q-top"><div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div><b class="q-left" id="q-left">${Math.ceil(s.left)}</b></div>
+      ${s.adapt ? `<p class="adapt">${s.adapt === "harder" ? "😈 Прошлый взяли все — этот посложнее" : "🙂 Прошлый не взял никто — этот попроще"}</p>` : ""}
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}${tk.tip ? `<small>${esc(tk.tip)}</small>` : ""}</div>` : ""}
       <div class="qbody ${trick ? "trick-" + trick : ""}" style="--fog-d:${-(s.seconds - s.left)}s">
@@ -1433,6 +1465,8 @@ function draw(s) {
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
         ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
         ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
+        ${reactBar()}
+        ${chase(s, me)}
         ${me.can_trick ? "" : trickBox(s, me)}
         ${betBox(me)}
         ${othersAnswers(s, me)}
@@ -1472,9 +1506,12 @@ function draw(s) {
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
+        ${chase(s, me)}
+        ${finalTag(s)}
         ${s.settings.race && me.score < s.settings.race ? `<p class="hint">⛰️ До вершины: ${s.settings.race - me.score} очков — кто первым доберётся, тот царь горы</p>` : ""}
         ${moveText(me)}
         ${phoneRope(s, me)}
+        ${reactBar()}
         ${me.can_trick ? "" : trickBox(s, me)}
         ${betBox(me)}
         ${news(s)}
@@ -1490,7 +1527,10 @@ function draw(s) {
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
         ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${s.settings.mode === "heads" ? wordsN(me.score) : me.score + " очков"}. Спасибо за игру!</p>
+        ${(s.awards || []).length ? `<div class="awards">${s.awards.map((a, i) => `<div class="award rise ${a.name === me.name ? "mine" : ""}" style="--i:${i + 2}">
+          <span class="ai">${a.icon}</span><span><b>${esc(a.title)}</b><small>${esc(a.name)} · ${esc(a.detail)}</small></span></div>`).join("")}</div>` : ""}
         ${standings(s, me)}
+        ${reactBar()}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>
       </div>`;
     if (place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
@@ -1701,6 +1741,8 @@ document.addEventListener("click", async (e) => {
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const pr = e.target.closest("[data-perks-ready]"); // перки выбраны
   if (pr) { buzz(15); pr.disabled = true; await api("/api/perks_ready", { pid }).catch(() => {}); lastSig = ""; poll(); return; }
+  const rc = e.target.closest("[data-react]"); // реакция — летит на большой экран
+  if (rc) { buzz(10); rc.animate([{ transform: "scale(1.4)" }, { transform: "scale(1)" }], 250); api("/api/react", { pid, e: rc.dataset.react }).catch(() => {}); return; }
   const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)
   if (bn) { buzz(bn.dataset.betNext === "1" ? [30, 50, 30] : 15); bn.disabled = true; await api("/api/double", { pid, on: bn.dataset.betNext === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const choice = e.target.closest("[data-choice]");

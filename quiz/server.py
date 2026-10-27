@@ -53,6 +53,9 @@ ROUND_SIZE = 3
 VOTE_SECONDS = 8  # голосование за тему
 SPIN_SECONDS = 3.5  # колесо крутится
 THEME_SHOW = 1.5  # после колеса — показать выпавшую тему
+FINAL_X2 = 3  # финал: последний раунд (без раундов — последние 3 вопроса) — очки ×2 (правило «пик и конец»)
+REACTIONS = ["👏", "😂", "😱", "🔥"]  # реакции с телефона, всплывают на большом экране
+ADAPT_HIGH = 0.8  # подстройка сложности: верно ответили столько — следующий вопрос сложнее
 PERKS_SECONDS = 15  # перед раундом: выбрать перки (×2 на раунд, подлянка); раньше — если все нажали «Готово»
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
@@ -1551,7 +1554,8 @@ class Game:
 
     def reset(self, phase="setup"):
         for p in self.players.values():
-            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, next_double=False, bet=False, marks={})
+            p.update(score=0, last_points=0, prev_place=0, streak=0, doubles=DOUBLES, doubled=False, next_double=False, bet=False, marks={},
+                     n_right=0, t_right=0.0, worst=0, tricks_thrown=0, x2_won=0)  # для наград в конце игры
         self.team_prev = {}
         self.phase = phase  # setup -> lobby -> question -> reveal -> leaders -> ... -> final
         self.phase_at = time.time()
@@ -1565,6 +1569,9 @@ class Game:
         self.votes = {}  # id -> тема, за которую голос
         self.perks_ready = set()  # перерыв на перки: кто нажал «Готово»
         self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
+        self.last_acc = None  # доля верных ответов на прошлый вопрос — для подстройки сложности
+        self.adapt = None  # этот вопрос подобран сложнее («harder») или проще («easier»)
+        self.reactions = []  # реакции с телефонов: {"id", "e", "name", "at"}
         self.trick_at = -99  # номер последнего вопроса с подлянкой (подлянки не чаще раза в TRICK_GAP вопросов)
         self.active_trick = None  # подлянка на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
@@ -1641,6 +1648,83 @@ class Game:
                 out[allq[i].get("theme") or "Разное"].append(i)
         return out
 
+    def underdog(self):
+        """Кто сейчас один на последнем месте (из трёх и больше игроков на связи) — его голос за тему считается за два."""
+        online = [pid for pid in self.online() if pid in self.players]
+        if len(online) < 3 or self.index < 0:
+            return None
+        scores = sorted(self.players[pid]["score"] for pid in online)
+        if scores[0] == scores[1] or scores[0] == scores[-1]:
+            return None
+        return next(pid for pid in online if self.players[pid]["score"] == scores[0])
+
+    def final_x2(self, index):
+        """Финальный раунд ×2: последний раунд по темам, а без раундов — последние FINAL_X2 вопроса (если игра не короче 6)."""
+        if self.si or self.fd or self.hd or self.total < 6 or index < 0:
+            return False
+        if self.settings.get("rounds"):
+            return index // ROUND_SIZE == (self.target - 1) // ROUND_SIZE
+        return index >= self.total - FINAL_X2
+
+    def adapt_next(self):
+        """Подстройка сложности: на прошлый вопрос верно ответили почти все — следующий берём сложнее,
+        никто — проще (из тех же темы и разрешённых сложностей, по возможности ещё не виденный)."""
+        self.adapt = None
+        i, acc = self.index + 1, self.last_acc
+        if acc is None or i >= len(self.selected) or self.si or self.fd or self.hd:
+            return
+        q, levels = self.selected[i], set(self.settings.get("levels") or LEVELS)
+        order = ["easy", "normal", "hard"]
+        if not q.get("level") or q["level"] not in order:
+            return
+        cur = order.index(q["level"])
+        if acc >= ADAPT_HIGH:
+            want, mode = {l for l in order[cur + 1:] if l in levels}, "harder"
+        elif acc == 0:
+            want, mode = {l for l in order[:cur] if l in levels}, "easier"
+        else:
+            return
+        if not want:
+            return
+        allq, taken = self.pack["questions"], {id(x) for x in self.selected}
+        used = self.used.setdefault(self.settings["pack"], set())
+        cands = [k for k in self.pool() if allq[k].get("level") in want and allq[k].get("theme") == q.get("theme")
+                 and id(allq[k]) not in taken and k not in used]
+        if not cands:
+            return
+        k = fresh_first(cands, self.seen(), lambda k: qkey(allq[k]["q"], allq[k]["image"]))[0]
+        used.add(k)
+        self.selected[i] = allq[k]
+        self.adapt = mode
+
+    def awards(self):
+        """Шуточные номинации в конце игры (правило «пик и конец»): у каждой — победитель и подробность."""
+        if self.si or self.fd or self.hd or len(self.players) < 2:
+            return []
+        ps = list(self.players.values())
+        place = {r["id"]: i for i, r in enumerate(self.leaderboard(), 1)}
+        pid_of = {id(p): pid for pid, p in self.players.items()}
+        out = []
+        def add(icon, title, p, detail):
+            out.append({"icon": icon, "title": title, "name": p["name"], "avatar": p.get("avatar"), "detail": detail})
+        fast = [p for p in ps if p.get("n_right", 0) >= 2]
+        if fast:
+            p = min(fast, key=lambda p: p["t_right"] / p["n_right"])
+            add("⚡", "Самый быстрый", p, f"верно в среднем за {p['t_right'] / p['n_right']:.1f} с".replace(".", ","))
+        p = max(ps, key=lambda p: p.get("n_right", 0))
+        if p.get("n_right", 0):
+            add("🎯", "Снайпер", p, f"верных ответов: {p['n_right']} из {self.index + 1}")
+        climb = max(ps, key=lambda p: p.get("worst", 0) - place[pid_of[id(p)]])
+        if climb.get("worst", 0) - place[pid_of[id(climb)]] >= 2:
+            add("🚀", "Камбэк вечера", climb, f"с {climb['worst']}-го места на {place[pid_of[id(climb)]]}-е")
+        p = max(ps, key=lambda p: p.get("tricks_thrown", 0))
+        if p.get("tricks_thrown", 0):
+            add("😈", "Король подлянок", p, f"кинул подлянок: {p['tricks_thrown']}")
+        p = max(ps, key=lambda p: p.get("x2_won", 0))
+        if p.get("x2_won", 0) > 0:
+            add("🎲", "Рисковый", p, f"на ставках ×2: +{p['x2_won']}")
+        return out
+
     def start_vote(self):
         """Новый раунд: три темы на выбор — голосование с телефонов."""
         for p in self.players.values():
@@ -1666,7 +1750,8 @@ class Game:
         """Рулетка: на колесе только темы с голосами, сектор = число голосов (никто не голосовал — все поровну).
         Все за одну тему — колесо не крутится. Победителя решает сервер."""
         opts = self.topic["options"]
-        counts = [sum(1 for v in self.votes.values() if v == t) for t in opts]
+        under = self.underdog()  # голос последнего места — за два: шанс увести тему в свою сторону
+        counts = [sum(2 if pid == under else 1 for pid, v in self.votes.items() if v == t) for t in opts]
         weights = counts if any(counts) else [1] * len(opts)
         winner = random.choices(range(len(opts)), weights=weights)[0]
         spin = SPIN_SECONDS if sum(1 for w in weights if w) > 1 else 0  # единогласно — без колеса
@@ -1920,6 +2005,13 @@ class Game:
                 p["streak"] = 0
                 if a and frac == 0 and rules["penalty"] and not a.get("skip"):
                     points = -min(PENALTY, p["score"])  # ниже нуля не опускаемся
+            if points > 0 and self.final_x2(self.index):
+                points *= 2  # финальный раунд — очки ×2 всем
+            if frac == 1:
+                p["n_right"] = p.get("n_right", 0) + 1
+                p["t_right"] = p.get("t_right", 0.0) + a["time"]
+            if p["doubled"] and frac > 0:
+                p["x2_won"] = p.get("x2_won", 0) + points  # половина — заслуга ставки, но считаем весь выигрыш вопроса
             if p["doubled"]:  # ставка ×2 на этот вопрос: выигрыш удваивается, а промах, пропуск или «не успел» — минус DOUBLE_LOSS
                 points = points * 2 if frac > 0 else -min(DOUBLE_LOSS, p["score"])
             skipped = bool(a and a.get("skip"))
@@ -1930,6 +2022,11 @@ class Game:
             p["last_points"] = points
             p["score"] += points
             p.setdefault("marks", {})[self.index] = a["result"]  # для таблицы: кто как ответил
+        for place, row in enumerate(self.leaderboard(), 1):  # худшее место за игру — для награды «Камбэк вечера»
+            p = self.players[row["id"]]
+            p["worst"] = max(p.get("worst", 0), place)
+        right = sum(1 for pid in online if fracs.get(pid, 0) == 1)
+        self.last_acc = right / len(online) if len(online) >= 2 else None
         self.set_phase("reveal")
 
     def race_winner(self):
@@ -2010,6 +2107,7 @@ class Game:
         return True
 
     def start_question(self):
+        self.adapt_next()
         first = (self.index + 1) % ROUND_SIZE == 0  # раунды: первый вопрос раунда — ставки ×2 «на раунд» начинают действовать
         for p in self.players.values():  # ставки ×2 «на следующий вопрос» начинают действовать
             if not self.settings.get("rounds"):
@@ -2143,6 +2241,17 @@ class Game:
                     s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
         if self.phase in ("topic_vote", "topic_bet", "perks"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
+        if not self.si and not self.fd and not self.hd and self.phase not in ("setup", "lobby", "final"):
+            # финальный раунд ×2: на вопросе — про этот вопрос, между вопросами — про следующий
+            ahead = self.phase in ("topic_vote", "topic_bet", "perks", "leaders")
+            s["final_x2"] = self.final_x2(self.index + 1 if ahead else self.index)
+        if self.phase == "topic_vote":
+            u = self.underdog()
+            s["underdog"] = self.players[u]["name"] if u else None  # голос последнего места — за два
+        now = time.time()
+        s["reactions"] = [{"id": r["id"], "e": r["e"], "name": r["name"]} for r in self.reactions if now - r["at"] < 4]
+        if self.phase == "final":
+            s["awards"] = self.awards()
         if self.phase == "perks":
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             s["perks"] = {"left": max(0, round(PERKS_SECONDS - (self.clock() - self.phase_at), 1)),
@@ -2185,6 +2294,7 @@ class Game:
             s["tempo"] = q.get("tempo")
             s["emoji"] = q.get("emoji")
             s["images"] = q.get("images")  # «Где логика»: картинки открываются по одной, шаг — четверть времени
+            s["adapt"] = self.adapt  # подстройка сложности: «harder» / «easier»
             s["qkey"] = qkey(q["q"], q["image"])  # устройства запоминают увиденные вопросы (static/seen.js)
             s["instrument"] = q.get("instrument")
             s["left"] = max(0, round(self.seconds - (self.clock() - self.started_at), 1))
@@ -2702,6 +2812,17 @@ class Handler(BaseHTTPRequestHandler):
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 
+            if path == "/api/react":  # реакция с телефона — всплывает на большом экране (не чаще раза в 0,7 с)
+                pid, e = data.get("pid"), data.get("e")
+                p = game.players.get(pid)
+                ok = bool(p) and game.owns(pid, device) and e in REACTIONS and time.time() - p.get("reacted", 0) >= 0.7
+                if ok:
+                    p["reacted"] = time.time()
+                    game.react_n = getattr(game, "react_n", 0) + 1
+                    game.reactions = [r for r in game.reactions if time.time() - r["at"] < 5][-30:]
+                    game.reactions.append({"id": game.react_n, "e": e, "name": p["name"], "at": time.time()})
+                return self.send_json({"ok": ok})
+
             if path == "/api/perks_ready":  # перерыв на перки: игрок выбрал всё, что хотел
                 pid = data.get("pid")
                 ok = game.phase == "perks" and game.owns(pid, device)
@@ -2730,6 +2851,7 @@ class Handler(BaseHTTPRequestHandler):
                 if ok:
                     game.trick = {"by": pid, "to": to, "kind": kind}
                     game.players[pid]["trick_charge"] = False
+                    game.players[pid]["tricks_thrown"] = game.players[pid].get("tricks_thrown", 0) + 1
                     game.tick()  # перерыв на перки: если выбирать больше некому — сразу к вопросу
                 return self.send_json({"ok": ok})
 

@@ -273,8 +273,9 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .ans.plain { background: #4a4f72; }
 .trick-flip .ans .tx { display: inline-block; transform: rotate(180deg); }
 .trick-mirror .ans .tx { display: inline-block; transform: scaleX(-1); }
-.trick-fog .answers, .trick-fog .text-form { animation: defog 14s linear both; animation-delay: var(--fog-d, 0s); }
-@keyframes defog { from { filter: blur(9px); } 70% { filter: blur(3px); } to { filter: blur(0); } }
+/* туман: первые 5 с ответов не разобрать, потом за секунду проясняется (раньше рассеивался 14 с — было непонятно) */
+.trick-fog .answers, .trick-fog .text-form { animation: defog 6s linear both; animation-delay: var(--fog-d, 0s); }
+@keyframes defog { from { filter: blur(12px); } 80% { filter: blur(11px); } to { filter: blur(0); } }
 .lobby-people { width: 100%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .people { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .person { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; background: var(--panel);
@@ -332,6 +333,10 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 .bet-next small { font-weight: 600; font-size: 12px; color: var(--muted); }
 .bet-next.on { background: var(--accent); color: var(--accent-ink); }
 .bet-next.on small { color: var(--accent-ink); }
+.perk-x2 { width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 16px; background: #2a2f5a; border: 2px solid var(--accent); color: var(--ink); }
+.perk-x2 b { font-size: 22px; } .perk-x2 small { font-weight: 600; font-size: 13px; color: var(--muted); }
+.perk-x2.on { background: var(--accent); color: var(--accent-ink); } .perk-x2.on small { color: var(--accent-ink); }
+.perk-done { width: 100%; }
 .pill.x2 { background: var(--accent); color: var(--accent-ink); font-family: var(--display); }
 /* новости после вопроса */
 .news { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
@@ -630,8 +635,11 @@ function trickOrder(s) {
   return ids;
 }
 // «Ставка ×2» вслепую: делается между вопросами, на следующий (его ещё никто не видел); передумать — до начала вопроса
-function betBox(me) {
+function betBox(me, s) {
   if (!me.can_bet) return "";
+  if (s && s.phase === "perks") return me.next_double
+    ? `<button class="btn perk-x2 on" data-bet-next="0" type="button"><b>✓ ×2 включено</b><small>на все 3 вопроса раунда · нажми, чтобы отменить</small></button>`
+    : `<button class="btn perk-x2" data-bet-next="1" type="button"><b>×2 на весь раунд</b><small>3 вопроса: верно — очки ×2, ошибка или пропуск — минус 3 за каждый · осталось ${me.doubles}</small></button>`;
   return me.next_double
     ? `<button class="btn bet-next on" data-bet-next="0" type="button">✓ ×2 на следующий вопрос<small>нажми, чтобы отменить</small></button>`
     : `<button class="btn ghost bet-next" data-bet-next="1" type="button">×2 на следующий вопрос<small>вслепую: верно — очки ×2, ошибка или пропуск — минус 3 · осталось ${me.doubles}</small></button>`;
@@ -643,7 +651,7 @@ function trickBox(s, me) {
   if (me.can_trick) {
     const others = s.players.filter((p) => p.name !== me.name);
     if (!others.some((p) => p.id === trickTo)) trickTo = others.some((p) => p.id === t.leader) ? t.leader : others[0] && others[0].id;
-    return `<div class="trick-box pop"><b>😈 У тебя подлянка!</b><p class="muted">Ты ошибся ${s.trick_streak || 2} раза подряд — испорти кому-нибудь следующий вопрос. Кому?</p>
+    return `<div class="trick-box pop"><b>😈 У тебя подлянка!</b><p class="muted">Ты ошибся ${s.trick_streak || 2} раза подряд — испорти кому-нибудь ${s.phase === "perks" ? "первый вопрос раунда" : "следующий вопрос"}. Кому?</p>
     <div class="trick-who">${others.map((p) => `<button class="trick-to ${p.id === trickTo ? "on" : ""}" data-trick-to="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
     <p class="muted">Какая подлянка достанется — решит случай</p>
     <button class="btn trick-throw" data-trick type="button">🎲 Кинуть подлянку</button></div>`;
@@ -662,7 +670,7 @@ function howTo(s) {
   const g = GAMES.find((x) => x.id === s.settings.mode);
   const extra = [];
   if (s.settings.mode !== "heads" && s.settings.mode !== "jeopardy") {
-    if (s.settings.doubles) extra.push("×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 3");
+    if (s.settings.doubles) extra.push(s.settings.rounds ? "×2 — перед раундом: на все 3 вопроса, верно — очки ×2, ошибка — минус 3" : "×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 3");
     if (s.settings.sabotage && !s.settings.teams) extra.push("😈 Ошибся 2 раза подряд — получаешь подлянку для соперника");
   }
   return g ? `<ol class="howto rise" style="--i:2">${g.about.filter((x) => !x.startsWith("Ведущий")).concat(extra).map((x) => `<li>${x}</li>`).join("")}</ol>` : "";
@@ -1017,7 +1025,7 @@ async function invite(btn, s) {
 // ---------- ведущий играет сам: управление с телефона ----------
 const hostToken = () => recall("quiz-host-" + room);
 const HOST_NEXT = {
-  lobby: "▶ Начать игру", question: "Показать ответ", topic_vote: "Хватит голосовать", topic_bet: "Начать раунд", reveal: "Дальше", leaders: "Следующий вопрос", final: "Сыграть ещё раз",
+  lobby: "▶ Начать игру", question: "Показать ответ", topic_vote: "Хватит голосовать", topic_bet: "Дальше", perks: "Начать раунд", reveal: "Дальше", leaders: "Следующий вопрос", final: "Сыграть ещё раз",
   si_round: "Дальше", si_cat_give: "Решить за игрока", si_stake: "Ставка по номиналу", si_question: "Открыть кнопки", si_answer: "Время вышло",
   si_reveal: "Дальше", si_final_bet: "Хватит ждать", si_final_q: "Открыть ответы", si_final_reveal: "Итоги",
   fd_round: "Начать раунд", fd_play: "Время вышло", fd_steal: "Не угадали", fd_reveal: "Дальше",
@@ -1051,6 +1059,7 @@ function soundtrack(s) {
     else M.sting("start");
   } else if (s.phase === "reveal") { M.stop(0.3); M.sting("reveal"); }
   else if (s.phase === "leaders" || s.phase === "topic_vote") M.play("leaders");
+  else if (s.phase === "perks") M.play("lobby");
   else if (s.phase === "topic_bet") { M.stop(0.4); setTimeout(() => { if (musicKey.startsWith("topic_bet")) M.sting("reveal"); }, 3300); }
   else if (s.phase === "hd_turn") M.play("lobby");
   else if (s.phase === "hd_play") M.play("question");
@@ -1135,7 +1144,7 @@ function phoneRope(s, me) {
   const rows = s.settings.teams
     ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, me: t.team === me.team, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
     : (() => {
-      const top = s.players.slice(0, 7), mine = s.players.find((p) => p.name === me.name);
+      const top = s.players.slice(0, 11), mine = s.players.find((p) => p.name === me.name);
       if (mine && !top.includes(mine)) top.push(mine);
       return top.map((p) => ({ name: p.name, score: p.score, last: p.last, me: p.name === me.name, face: avaP(p) }));
     })();
@@ -1315,6 +1324,22 @@ function draw(s) {
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
       ${betBox(me)}`;
+  } else if (s.phase === "perks") {
+    // перерыв перед раундом: ×2 на весь раунд и подлянка — большие кнопки, есть время подумать
+    const pk = s.perks, t = s.topic, theme = t && t.winner != null ? t.options[t.winner] : "";
+    const wait = pk.waiting.filter((n) => n !== me.name);
+    const mine = me.perks_turn && !me.perks_ready;
+    $main.classList.add("top-start");
+    $main.innerHTML = `<div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${QuizWheel.icon(theme)} ${esc(theme)}</div>
+      <div class="timebar" style="width:100%"><i style="animation-duration:${pk.left}s"></i></div>
+      <h2>${mine ? "Выбери перки на раунд" : "Перки выбраны"}</h2>
+      ${mine ? `<p class="hint">Есть ${Math.ceil(pk.left)} с. Не нужно — просто жми «Готово»</p>
+        ${betBox(me, s)}
+        ${s.trick_next ? trickBox(s, me) : ""}
+        <button class="btn perk-done" data-perks-ready type="button">Готово ✓</button>`
+      : `${me.next_double ? `<span class="pill x2">×2 на этот раунд</span>` : ""}${s.trick_next && s.trick_next.chosen ? trickBox(s, me) : ""}
+        <p class="muted">${wait.length ? `Ждём: ${wait.map(esc).join(", ")}` : "Начинаем!"}</p>`}
+      ${pk.doubled.length ? `<p class="muted">×2 на раунд: <b>${pk.doubled.map(esc).join(", ")}</b></p>` : ""}`;
   } else if (s.phase === "topic_bet") {
     const t = s.topic, w = t.weights;
     const wheel = document.getElementById("topic-wheel");
@@ -1540,7 +1565,8 @@ async function pollOnce(seq) {
     const topicKey = s.topic ? JSON.stringify(s.topic, (k, v) => (k === "left" || k === "spin_left" || k === "voters" ? undefined : v)) : "";
     const meKey = s.me ? JSON.stringify(s.me, (k, v) => (k === "trick_wait" ? v > 0 : v)) : "";
     const sig = JSON.stringify([s.phase, s.index, s.paused, meKey, s.trick_next, s.trick_now, s.players.length, s.phase === "lobby" && s.teams,
-      s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + hdKey + topicKey;
+      s.phase === "lobby" && s.players.map((p) => [p.name, p.avatar, p.team, p.online])]) + siKey + fdKey + hdKey + topicKey
+      + (s.perks ? JSON.stringify([s.perks.waiting, s.perks.doubled]) : "");
     if (sig !== lastSig) { lastSig = sig; render(s); }
     pauseView(s);
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
@@ -1673,6 +1699,8 @@ document.addEventListener("click", async (e) => {
   }
   const here = e.target.closest("[data-play-here]");
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
+  const pr = e.target.closest("[data-perks-ready]"); // перки выбраны
+  if (pr) { buzz(15); pr.disabled = true; await api("/api/perks_ready", { pid }).catch(() => {}); lastSig = ""; poll(); return; }
   const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)
   if (bn) { buzz(bn.dataset.betNext === "1" ? [30, 50, 30] : 15); bn.disabled = true; await api("/api/double", { pid, on: bn.dataset.betNext === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const choice = e.target.closest("[data-choice]");

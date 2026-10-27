@@ -53,6 +53,7 @@ ROUND_SIZE = 3
 VOTE_SECONDS = 8  # голосование за тему
 SPIN_SECONDS = 3.5  # колесо крутится
 THEME_SHOW = 1.5  # после колеса — показать выпавшую тему
+PERKS_SECONDS = 15  # перед раундом: выбрать перки (×2 на раунд, подлянка); раньше — если все нажали «Готово»
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
@@ -96,7 +97,7 @@ TRICKS = [
     {"id": "vowels", "name": "🔤 Без гласных", "desc": "в вариантах ответа пропадут гласные", "tip": "Угадай слова по согласным"},
     {"id": "flip", "name": "🙃 Вверх ногами", "desc": "варианты ответа перевёрнуты", "tip": "Читай ответы вверх ногами — или переверни телефон"},
     {"id": "mirror", "name": "🪞 Зеркало", "desc": "варианты ответа отражены зеркально", "tip": "Читай ответы справа налево"},
-    {"id": "fog", "name": "🌫 Туман", "desc": "ответы в тумане, проясняются не сразу", "tip": "Подожди пару секунд — туман рассеется сам. Не жми наугад!"},
+    {"id": "fog", "name": "🌫 Туман", "desc": "первые 5 секунд ответов не разобрать", "tip": "Ответы проявятся через 5 секунд — подожди, не жми наугад!"},
 ]
 TRICK_STREAK = 2  # столько ошибок (или пропусков) подряд — и у игрока подлянка
 TRICK_GAP = 3  # подлянка летит не чаще, чем раз в столько вопросов
@@ -1562,6 +1563,7 @@ class Game:
         self.display = []  # порядок вариантов на экране (для «по порядку» — перемешан)
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
+        self.perks_ready = set()  # перерыв на перки: кто нажал «Готово»
         self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
         self.trick_at = -99  # номер последнего вопроса с подлянкой (подлянки не чаще раза в TRICK_GAP вопросов)
         self.active_trick = None  # подлянка на текущем вопросе
@@ -1641,6 +1643,8 @@ class Game:
 
     def start_vote(self):
         """Новый раунд: три темы на выбор — голосование с телефонов."""
+        for p in self.players.values():
+            p["bet"] = False  # ×2 «на раунд» закончилась вместе с раундом
         themes = self.round_themes()
         if not themes:
             self.target = len(self.selected)
@@ -1825,6 +1829,11 @@ class Game:
             return
         if self.phase == "topic_bet":
             if now - self.phase_at >= self.topic.get("spin", SPIN_SECONDS) + THEME_SHOW:
+                self.start_perks()
+            return
+        if self.phase == "perks":
+            waiting = self.perks_waiting()
+            if now - self.phase_at >= PERKS_SECONDS or not waiting:
                 self.start_question()
             return
         if self.phase == "question":
@@ -1845,8 +1854,9 @@ class Game:
         """Кто может устроить подлянку: (у кого она есть, лидер — цель по умолчанию) или None.
         Подлянку получает тот, кто ошибся TRICK_STREAK раз подряд. Только «каждый за себя», между вопросами,
         пока подлянка на следующий вопрос не выбрана и не чаще раза в TRICK_GAP вопросов."""
+        between = ("perks",) if self.settings.get("rounds") else ("reveal", "leaders", "topic_vote", "topic_bet")  # раунды — только на перерыве
         if (not self.tricks_on() or self.trick or self.index + 1 - self.trick_at < TRICK_GAP
-                or self.phase not in ("reveal", "leaders", "topic_vote", "topic_bet") or self.index + 1 >= self.total
+                or self.phase not in between or self.index + 1 >= self.total
                 or self.race_winner()):
             return None
         online = set(self.online())
@@ -1865,8 +1875,12 @@ class Game:
         note = self.question().get("note") if self.phase == "reveal" and self.index >= 0 else None
         if note:
             wait += min(4, 1 + len(note) / 50)  # успеть прочитать пояснение
-        if self.phase == ("leaders" if self.settings["leaders"] else "reveal") and self.trick_roles():
-            wait += 3  # последнему месту — время выбрать подлянку
+        if self.phase == ("leaders" if self.settings["leaders"] else "reveal") and not self.settings.get("rounds"):
+            # викторина без раундов: перки выбирают между вопросами — дать время понять и нажать
+            if self.trick_roles():
+                wait += 8
+            elif self.can_bet() and any(p.get("doubles", DOUBLES) > 0 for p in self.players.values()):
+                wait += 4
         return max(0, round(wait - (self.clock() - self.phase_at), 1))
 
     def finish_question(self):
@@ -1936,6 +1950,8 @@ class Game:
         if self.phase == "topic_vote":
             return self.finish_vote()
         if self.phase == "topic_bet":
+            return self.start_perks()
+        if self.phase == "perks":
             return self.start_question()
         won = self.race_winner() is not None
         last = self.index + 1 >= self.total or won
@@ -1950,8 +1966,34 @@ class Game:
             return self.start_vote()  # вопросы раунда кончились — выбираем следующую тему
         self.start_question()
 
+    def perk_holders(self):
+        """Кому есть что выбрать перед раундом: ×2 (если ещё остались) или подлянка."""
+        out = set()
+        if self.settings.get("doubles"):
+            out |= {pid for pid, p in self.players.items() if p.get("doubles", DOUBLES) > 0 or p.get("next_double")}
+        roles = self.trick_roles()
+        if roles:
+            out |= roles[0]
+        return out & set(self.online())
+
+    def perks_waiting(self):
+        """Кто ещё выбирает перки (не нажал «Готово»)."""
+        return [pid for pid in self.perk_holders() if pid not in self.perks_ready]
+
+    def start_perks(self):
+        """Раунды по темам: после колеса — перерыв на перки (×2 на раунд, подлянка). Выбирать некому — сразу вопрос."""
+        self.perks_ready = set()
+        self.phase = "perks"  # perk_holders() смотрит на этап: подлянку можно кинуть только сейчас
+        if self.perks_waiting():
+            self.set_phase("perks")
+        else:
+            self.start_question()
+
     def can_bet(self):
-        """Ставку ×2 на следующий вопрос можно сделать между вопросами (и в лобби), пока он не начался."""
+        """Ставку ×2 на следующий вопрос можно сделать между вопросами (и в лобби), пока он не начался.
+        В раундах по темам — только на перерыве перед раундом, и ставка действует на весь раунд."""
+        if self.settings.get("rounds"):
+            return bool(self.settings.get("doubles")) and self.phase == "perks" and not self.paused_at
         return (bool(self.settings.get("doubles")) and not self.si and not self.fd and not self.hd and not self.paused_at
                 and self.phase in ("lobby", "reveal", "leaders", "topic_vote", "topic_bet")
                 and self.index + 1 < self.total and not self.race_winner())
@@ -1968,8 +2010,13 @@ class Game:
         return True
 
     def start_question(self):
+        first = (self.index + 1) % ROUND_SIZE == 0  # раунды: первый вопрос раунда — ставки ×2 «на раунд» начинают действовать
         for p in self.players.values():  # ставки ×2 «на следующий вопрос» начинают действовать
-            p["bet"], p["next_double"] = bool(p.get("next_double")), False
+            if not self.settings.get("rounds"):
+                p["bet"], p["next_double"] = bool(p.get("next_double")), False
+            elif first:
+                p["bet"], p["next_double"] = bool(p.get("next_double")), False
+            # в раунде ставка держится до конца раунда (её снимает start_vote)
         self.index += 1
         n = len(self.question()["options"])
         self.display = list(range(n))
@@ -2094,8 +2141,13 @@ class Game:
                 s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
                 if self.custom:
                     s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
-        if self.phase in ("topic_vote", "topic_bet"):
+        if self.phase in ("topic_vote", "topic_bet", "perks"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
+        if self.phase == "perks":
+            name = lambda i: self.players[i]["name"] if i in self.players else "?"
+            s["perks"] = {"left": max(0, round(PERKS_SECONDS - (self.clock() - self.phase_at), 1)),
+                          "waiting": [name(i) for i in self.perks_waiting()],
+                          "doubled": [p["name"] for p in self.players.values() if p.get("next_double")]}
         if not self.si and not self.fd and not self.hd and self.phase in ("reveal", "leaders", "final"):
             # верёвка: вершина — цель «Гонки до вершины» или максимум очков за игру (по 5 за вопрос)
             s["rope_top"] = self.settings.get("race") or max(5, self.total * PLACE_POINTS[0])
@@ -2202,6 +2254,8 @@ class Game:
                 "doubled": bool(me.get("bet")) if self.phase == "question" else me.get("doubled", False),
                 "next_double": bool(me.get("next_double")),
                 "can_bet": self.can_bet() and (me.get("doubles", DOUBLES) > 0 or bool(me.get("next_double"))),
+                "perks_ready": pid in self.perks_ready,
+                "perks_turn": self.phase == "perks" and pid in self.perk_holders(),
                 "answer": self.answers.get(pid, {}).get("value"),
                 "answered": pid in self.answers,
                 "answer_time": round(self.answers[pid]["time"], 1) if pid in self.answers and not self.answers[pid].get("skip") else None,
@@ -2648,10 +2702,23 @@ class Handler(BaseHTTPRequestHandler):
                     game.tick()  # если ответили все, кто на связи, — сразу засекаем паузу перед показом ответа
                 return self.send_json({"ok": ok})
 
+            if path == "/api/perks_ready":  # перерыв на перки: игрок выбрал всё, что хотел
+                pid = data.get("pid")
+                ok = game.phase == "perks" and game.owns(pid, device)
+                if ok:
+                    game.perks_ready.add(pid)
+                    game.tick()
+                return self.send_json({"ok": ok})
+
             if path == "/api/double":  # ставка ×2 вслепую на следующий вопрос (можно передумать, пока он не начался)
                 pid = data.get("pid")
                 game.tick()
                 ok = game.owns(pid, device) and game.bet_next(pid, data.get("on") is True)
+                if ok and game.phase == "perks" and data.get("on") is True:
+                    roles = game.trick_roles()
+                    if not (roles and pid in roles[0]):  # больше выбирать нечего — «Готово» за игрока
+                        game.perks_ready.add(pid)
+                        game.tick()
                 return self.send_json({"ok": bool(ok)})
 
             if path == "/api/trick":  # подлянка на следующий вопрос любому игроку (по умолчанию — лидеру); какая — случайно
@@ -2663,6 +2730,7 @@ class Handler(BaseHTTPRequestHandler):
                 if ok:
                     game.trick = {"by": pid, "to": to, "kind": kind}
                     game.players[pid]["trick_charge"] = False
+                    game.tick()  # перерыв на перки: если выбирать больше некому — сразу к вопросу
                 return self.send_json({"ok": ok})
 
             if path == "/api/vote":  # голос за тему раунда (можно передумать)

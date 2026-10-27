@@ -1692,7 +1692,10 @@ class Game:
                  and id(allq[k]) not in taken and k not in used]
         if not cands:
             return
-        k = fresh_first(cands, self.seen(), lambda k: qkey(allq[k]["q"], allq[k]["image"]))[0]
+        seen = self.seen()
+        k = fresh_first(cands, seen, lambda k: qkey(allq[k]["q"], allq[k]["image"]))[0]
+        if seen.get(qkey(allq[k]["q"], allq[k]["image"]), 0) > seen.get(qkey(q["q"], q["image"]), 0):
+            return  # не меняем новый для игроков вопрос на уже виденный — память вопросов важнее
         used.add(k)
         self.selected[i] = allq[k]
         self.adapt = mode

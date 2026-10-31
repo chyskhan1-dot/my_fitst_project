@@ -165,9 +165,10 @@ a.btn { text-decoration: none; display: inline-block; }
 .unanimous { font-size: 9em; line-height: 1; text-align: center; }
 .topic b { font-size: 1.9em; line-height: 1.15; }
 .topic .who { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 2.2em; font-size: 1.2em; }
-.react-fly { position: fixed; bottom: 4vh; z-index: 50; display: flex; flex-direction: column; align-items: center; pointer-events: none;
-  animation: react-up 3s ease-out forwards; }
-.react-fly .re { font-size: 64px; line-height: 1; } .react-fly .rn { font-weight: 800; font-size: 16px; color: var(--ink); text-shadow: 0 1px 4px #000; }
+.react-fly { position: fixed; bottom: 14vh; z-index: 50; display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  animation: react-up 4.2s ease-out forwards; }
+.react-fly .re { font-size: 120px; line-height: 1; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .5)); }
+.react-fly .rn { margin-top: 4px; padding: 2px 12px; border-radius: 99px; background: rgba(0, 0, 0, .55); font-weight: 800; font-size: 24px; color: #fff; }
 @keyframes react-up { 0% { transform: translateY(0) scale(.6); opacity: 0; } 12% { opacity: 1; transform: translateY(-6vh) scale(1.1); } 100% { transform: translateY(-60vh) scale(1); opacity: 0; } }
 .final-x2 { display: inline-block; margin-bottom: 8px; padding: 6px 16px; border-radius: 12px; background: linear-gradient(90deg, #ff7a18, #e5484d); color: #fff; font-weight: 800; }
 .awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 18px; }
@@ -707,14 +708,17 @@ const MARKS = { right: ["✓", "верно"], partial: ["½", "частично"
 const marks = (p) => (p.marks && p.marks.length ? `<span class="marks">${p.marks.map((m) => `<i class="mk ${m}" title="${MARKS[m][1]}">${MARKS[m][0]}</i>`).join("")}</span>` : "");
 // подлянки: объявляем на большом экране — так веселее
 function trickNow(s) {
-  const t = s.trick_now, k = t && s.tricks && s.tricks.find((x) => x.id === t.kind);
-  return k ? `<div class="trick-line now pop"><span>😈 <b>${esc(t.by)}</b> кинул подлянку → <b>${esc(t.to)}</b></span><span class="k">${k.name}: ${k.desc}</span></div>` : "";
+  return (s.tricks_now || []).map((t) => {
+    const k = s.tricks && s.tricks.find((x) => x.id === t.kind);
+    return k ? `<div class="trick-line now pop"><span>😈 <b>${esc(t.by)}</b> кинул подлянку → <b>${esc(t.to)}</b></span><span class="k">${k.name}: ${k.desc}</span></div>` : "";
+  }).join("");
 }
 function trickNext(s) {
   const t = s.trick_next;
   if (!t) return "";
-  return t.chosen ? `<p class="trick-line">😈 Готовится подлянка: <b>${esc(t.by)}</b> → <b>${esc(t.to)}</b>…</p>`
-    : `<p class="trick-line">😈 У кого-то подлянка (2 ошибки подряд) — кому достанется, решается на телефоне!</p>`;
+  const thrown = (t.thrown || []).map((x) => `<b>${esc(x.by)}</b> → <b>${esc(x.to)}</b>`).join(", ");
+  return t.chosen ? `<p class="trick-line">😈 Летят подлянки: ${thrown}</p>`
+    : `<p class="trick-line">😈 У кого-то подлянка (2 ошибки подряд) — кому достанется, решается на телефоне!${thrown ? ` Уже: ${thrown}` : ""}</p>`;
 }
 
 function board(players) {
@@ -931,7 +935,7 @@ function draw(s) {
         ${s.settings.doubles ? `<div class="perk-card pop"><b>🃏 Джокер ×2</b><span>Очки за этот раунд удвоятся. Один раз за игру</span>
           <p>${pk.doubled.length ? `Поставили: <b class="hl">${pk.doubled.map(esc).join(", ")}</b>` : "Пока никто"}</p></div>` : ""}
         ${tn ? `<div class="perk-card trick pop"><b>😈 Подлянка</b><span>У кого 2 ошибки подряд — испортит первый вопрос раунда любому игроку</span>
-          <p>${tn.chosen ? `<b class="hl">${esc(tn.by)}</b> → <b class="hl">${esc(tn.to)}</b>` : "Решается на телефоне…"}</p></div>` : ""}
+          <p>${(tn.thrown || []).length ? tn.thrown.map((x) => `<b class="hl">${esc(x.by)}</b> → <b class="hl">${esc(x.to)}</b>`).join("<br>") : "Решается на телефоне…"}</p></div>` : ""}
       </div>
       <p class="muted">${pk.waiting.length ? `Ещё выбирают: <b style="color:var(--ink)">${pk.waiting.map(esc).join(", ")}</b>` : "Все готовы!"}</p>`;
     $actions.innerHTML = `<button class="btn" data-act="next">Начать раунд</button>`;
@@ -1682,7 +1686,7 @@ function showReactions(s) {
     el.style.left = 8 + Math.random() * 84 + "%";
     el.innerHTML = `<span class="re">${QuizEmoji.html(r.e)}</span><span class="rn">${esc(r.name)}</span>`;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3200);
+    setTimeout(() => el.remove(), 4400);
   }
 }
 const finalTag = (s) => (s.final_x2 ? `<div class="final-x2 pop">🔥 Финальный раунд — очки ×2</div>` : "");

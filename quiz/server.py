@@ -46,8 +46,8 @@ VERSION = hashlib.md5(
 ).hexdigest()[:8]
 
 REVEAL_PAUSE = 0.8  # пауза перед показом ответа, когда все уже ответили
-REVEAL_SECONDS = 3  # автопереход: сколько показываем правильный ответ (владелец просил быстрее)
-LEADERS_SECONDS = 3  # автопереход: сколько показываем таблицу лидеров
+REVEAL_SECONDS = 5  # (владелец: 3 с мало — не успевали прочитать и поставить реакцию)
+LEADERS_SECONDS = 4  # автопереход: сколько показываем таблицу лидеров
 # «Раунды по темам»: перед каждыми ROUND_SIZE вопросами — голосование за тему и колесо («×2» — как обычно, на один вопрос)
 ROUND_SIZE = 3
 VOTE_SECONDS = 8  # голосование за тему
@@ -1568,12 +1568,12 @@ class Game:
         self.topic = None  # раунды по темам: {"options", "winner", "counts", "round"}
         self.votes = {}  # id -> тема, за которую голос
         self.perks_ready = set()  # перерыв на перки: кто нажал «Готово»
-        self.trick = None  # подлянка на следующий вопрос: {"by", "to", "kind"}
+        self.tricks = []  # подлянки на следующий вопрос: [{"by", "to", "kind"}] — у каждого, у кого она есть, своя (владелец просил)
         self.last_acc = None  # доля верных ответов на прошлый вопрос — для подстройки сложности
         self.adapt = None  # этот вопрос подобран сложнее («harder») или проще («easier»)
         self.reactions = []  # реакции с телефонов: {"id", "e", "name", "at"}
         self.trick_at = -99  # номер последнего вопроса с подлянкой (подлянки не чаще раза в TRICK_GAP вопросов)
-        self.active_trick = None  # подлянка на текущем вопросе
+        self.active_tricks = []  # подлянки на текущем вопросе
         self.target = 0  # сколько вопросов будет в игре (в раундах вопросы набираются по ходу)
         self.si = None
         self.fd = None
@@ -1943,7 +1943,7 @@ class Game:
         Подлянку получает тот, кто ошибся TRICK_STREAK раз подряд. Только «каждый за себя», между вопросами,
         пока подлянка на следующий вопрос не выбрана и не чаще раза в TRICK_GAP вопросов."""
         between = ("perks",) if self.settings.get("rounds") else ("reveal", "leaders", "topic_vote", "topic_bet")  # раунды — только на перерыве
-        if (not self.tricks_on() or self.trick or self.index + 1 - self.trick_at < TRICK_GAP
+        if (not self.tricks_on() or self.index + 1 - self.trick_at < TRICK_GAP
                 or self.phase not in between or self.index + 1 >= self.total
                 or self.race_winner()):
             return None
@@ -2128,9 +2128,9 @@ class Game:
         self.started_at = time.time()
         self.answers = {}
         self.all_answered_at = None
-        t, self.trick = self.trick, None
-        self.active_trick = t if t and t["to"] in self.players else None
-        if self.active_trick:
+        self.active_tricks = [t for t in self.tricks if t["to"] in self.players]
+        self.tricks = []
+        if self.active_tricks:
             self.trick_at = self.index
 
     def online(self):
@@ -2272,13 +2272,14 @@ class Game:
         if self.tricks_on():
             name = lambda i: self.players[i]["name"] if i in self.players else "?"
             roles = self.trick_roles()
+            thrown = [{"by": name(t["by"]), "to": name(t["to"]), "to_id": t["to"]} for t in self.tricks]
             if roles:
-                s["trick_next"] = {"to": name(roles[1]), "leader": roles[1]}
-            elif self.trick:
-                s["trick_next"] = {"to": name(self.trick["to"]), "by": name(self.trick["by"]), "chosen": True}
-            t = self.active_trick
-            if t and self.phase in ("question", "reveal"):
-                s["trick_now"] = {"to": name(t["to"]), "by": name(t["by"]), "kind": t["kind"]}
+                s["trick_next"] = {"to": name(roles[1]), "leader": roles[1], "thrown": thrown}
+            elif thrown:
+                s["trick_next"] = {"to": thrown[0]["to"], "by": thrown[0]["by"], "chosen": True, "thrown": thrown}
+            if self.active_tricks and self.phase in ("question", "reveal"):
+                now = [{"to": name(t["to"]), "by": name(t["by"]), "kind": t["kind"]} for t in self.active_tricks]
+                s["trick_now"], s["tricks_now"] = now[0], now
             s["tricks"] = TRICKS
         if self.phase in ("question", "reveal") and not self.si and not self.fd and not self.hd:
             q = self.question()
@@ -2382,10 +2383,12 @@ class Game:
                 s["me"]["trick_charge"] = bool(me.get("trick_charge"))  # подлянка есть (может ждать своей очереди)
                 s["me"]["misses"] = me.get("misses", 0)
                 s["trick_streak"] = TRICK_STREAK
-            if self.trick and self.trick["by"] == pid:
-                s["me"]["trick_sent"] = self.trick["kind"]  # кинувший видит, какая подлянка выпала
-            t = self.active_trick
-            if t and t["to"] == pid and self.phase == "question":
+            sent = next((t for t in self.tricks if t["by"] == pid), None)
+            if sent:
+                s["me"]["trick_sent"] = sent["kind"]  # кинувший видит, какая подлянка выпала
+                s["me"]["trick_sent_to"] = self.players[sent["to"]]["name"] if sent["to"] in self.players else "?"
+            t = next((t for t in self.active_tricks if t["to"] == pid), None)
+            if t and self.phase == "question":
                 s["me"]["trick"] = t["kind"]
                 s["me"]["trick_wait"] = max(0, round(TRICK_DELAY - (self.clock() - self.started_at), 1)) if t["kind"] == "delay" else 0
             if me.get("team") is not None:
@@ -2548,6 +2551,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
+        if url.path == "/soundtest":  # проверка звука на ТВ и телефонах (Web Audio и обычный аудиофайл)
+            return self.send_file("soundtest.html")
         if url.path in ("/", "/host", "/editor", "/learn", "/heads"):
             name = {"/": "play.html", "/host": "host.html", "/editor": "editor.html", "/learn": "learn.html", "/heads": "heads.html"}[url.path]
             device = self.send_file(name, set_device=True)
@@ -2803,8 +2808,8 @@ class Handler(BaseHTTPRequestHandler):
                 pid = data.get("pid")
                 game.tick()
                 ok = game.phase == "question" and game.owns(pid, device) and pid not in game.answers
-                t = game.active_trick
-                if ok and t and t["to"] == pid and t["kind"] == "delay" and time.time() - game.started_at < TRICK_DELAY - 0.5:
+                t = next((t for t in game.active_tricks if t["to"] == pid), None)
+                if ok and t and t["kind"] == "delay" and time.time() - game.started_at < TRICK_DELAY - 0.5:
                     ok = False  # подлянка «Ответы позже»: рано
                 skip = ok and data.get("skip") is True  # «Пропустить вопрос»: без штрафа и без очков
                 value = game.check(data.get("answer")) if ok and not skip else None
@@ -2850,9 +2855,10 @@ class Handler(BaseHTTPRequestHandler):
                 game.tick()
                 roles = game.owns(pid, device) and game.trick_roles()
                 to = data.get("to") or (roles[1] if roles else None)
-                ok = bool(roles and pid in roles[0] and to in game.players and to != pid)
+                taken = {t["to"] for t in game.tricks}  # одному игроку — не больше одной подлянки за раз
+                ok = bool(roles and pid in roles[0] and to in game.players and to != pid and to not in taken)
                 if ok:
-                    game.trick = {"by": pid, "to": to, "kind": kind}
+                    game.tricks.append({"by": pid, "to": to, "kind": kind})
                     game.players[pid]["trick_charge"] = False
                     game.players[pid]["tricks_thrown"] = game.players[pid].get("tricks_thrown", 0) + 1
                     game.tick()  # перерыв на перки: если выбирать больше некому — сразу к вопросу

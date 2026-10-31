@@ -665,20 +665,21 @@ function betBox(me, s) {
 function trickBox(s, me) {
   const t = s.trick_next;
   if (!t || !s.tricks) return trickHint(s, me);
-  if (me.can_trick) {
+  const thrown = t.thrown || [];
+  if (me.can_trick) { // одно касание по имени — и подлянка полетела (раньше нужно было ещё нажать «Кинуть» — забывали)
+    const taken = new Set(thrown.map((x) => x.to_id));
     const others = s.players.filter((p) => p.name !== me.name);
-    if (!others.some((p) => p.id === trickTo)) trickTo = others.some((p) => p.id === t.leader) ? t.leader : others[0] && others[0].id;
-    return `<div class="trick-box pop"><b>😈 У тебя подлянка!</b><p class="muted">Ты ошибся ${s.trick_streak || 2} раза подряд — испорти кому-нибудь ${s.phase === "perks" ? "первый вопрос раунда" : "следующий вопрос"}. Кому?</p>
-    <div class="trick-who">${others.map((p) => `<button class="trick-to ${p.id === trickTo ? "on" : ""}" data-trick-to="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
-    <p class="muted">Какая подлянка достанется — решит случай</p>
-    <button class="btn trick-throw" data-trick type="button">🎲 Кинуть подлянку</button></div>`;
+    return `<div class="trick-box pop"><b>😈 У тебя подлянка!</b><p class="muted">Нажми на того, кому испортить ${s.phase === "perks" ? "первый вопрос раунда" : "следующий вопрос"}:</p>
+    <div class="trick-who">${others.map((p) => taken.has(p.id) ? `<button class="trick-to" type="button" disabled>${avaP(p)}${esc(p.name)} · уже 😈</button>`
+      : `<button class="trick-to" data-trick="${esc(p.id)}" type="button">${avaP(p)}${esc(p.name)}${p.id === t.leader ? " 👑" : ""}</button>`).join("")}</div>
+    <p class="muted">Какая подлянка — решит случай</p></div>`;
   }
-  if (t.chosen && t.by === me.name) {
+  if (me.trick_sent) {
     const k = s.tricks.find((x) => x.id === me.trick_sent);
-    return `<div class="trick-box pop"><b>😈 Подлянка летит! Кому: ${esc(t.to)}</b>${k ? `<p class="trick-got">Выпало: ${k.name}<small>${k.desc}</small></p>` : ""}
-      <p class="muted">Сработает на следующем вопросе</p></div>`;
+    return `<div class="trick-box pop"><b>😈 Подлянка летит → ${esc(me.trick_sent_to || "")}</b>${k ? `<p class="trick-got">Выпало: ${k.name}<small>${k.desc}</small></p>` : ""}</div>`;
   }
-  if (t.chosen && t.to === me.name) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(t.by)}. Сюрприз будет на следующем вопросе</p></div>`;
+  const mine = thrown.find((x) => x.to === me.name);
+  if (mine) return `<div class="trick-box"><b>😈 Тебе готовят подлянку!</b><p class="muted">Автор — ${esc(mine.by)}. Сюрприз будет на следующем вопросе</p></div>`;
   return trickHint(s, me);
 }
 // как получить подлянку: подсказка тому, кто уже ошибся, и тому, чья подлянка ждёт очереди
@@ -1390,7 +1391,7 @@ function draw(s) {
         ${betBox(me, s)}
         ${s.trick_next ? trickBox(s, me) : ""}
         <button class="btn perk-done" data-perks-ready type="button">Готово ✓</button>`
-      : `${me.next_double ? `<span class="pill x2">🃏 Джокер ×2 в этом раунде</span>` : ""}${s.trick_next && s.trick_next.chosen ? trickBox(s, me) : ""}
+      : `${me.next_double ? `<span class="pill x2">🃏 Джокер ×2 в этом раунде</span>` : ""}${s.trick_next ? trickBox(s, me) : ""}
         <p class="muted">${wait.length ? `Ждём: ${wait.map(esc).join(", ")}` : "Начинаем!"}</p>`}
       ${pk.doubled.length ? `<p class="muted">🃏 Джокер: <b>${pk.doubled.map(esc).join(", ")}</b></p>` : ""}`;
   } else if (s.phase === "topic_bet") {
@@ -1461,6 +1462,7 @@ function draw(s) {
         ${me.answer == null ? "" : answerSummary(s, me.answer)}
         ${me.doubled ? `<span class="pill x2">🃏 Джокер ×2</span>` : ""}
         <p class="muted">Ждём остальных…</p>
+        ${reactBar()}
       </div>`;
   } else if (s.phase === "reveal") {
     const res = me.result || "none";
@@ -1746,10 +1748,8 @@ document.addEventListener("click", async (e) => {
     else await api("/api/host/hd_fix", { token: hostToken(), index: i }).catch(() => {});
     lastSig = ""; poll(); return;
   }
-  const tto = e.target.closest("[data-trick-to]"); // кому подлянка
-  if (tto) { trickTo = tto.dataset.trickTo; document.querySelectorAll("[data-trick-to]").forEach((b) => b.classList.toggle("on", b === tto)); buzz(10); return; }
   const trk = e.target.closest("[data-trick]"); // кинуть подлянку — какая, решает сервер
-  if (trk) { buzz([20, 40, 20]); trk.disabled = true; await api("/api/trick", { pid, to: trickTo }).catch(() => {}); lastSig = ""; poll(); return; }
+  if (trk) { buzz([20, 40, 20]); document.querySelectorAll("[data-trick]").forEach((b) => (b.disabled = true)); await api("/api/trick", { pid, to: trk.dataset.trick }).catch(() => {}); lastSig = ""; poll(); return; }
   const snd = e.target.closest("#phone-sound");
   if (snd && window.QuizMusic) { // звук был закрыт браузером — нажатие его открывает, а не выключает
     if (!(QuizMusic.justUnlocked && !QuizMusic.muted)) QuizMusic.toggle();

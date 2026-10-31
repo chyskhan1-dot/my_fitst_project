@@ -337,6 +337,22 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 .perk-x2 b { font-size: 22px; } .perk-x2 small { font-weight: 600; font-size: 13px; color: var(--muted); }
 .perk-x2.on { background: var(--accent); color: var(--accent-ink); } .perk-x2.on small { color: var(--accent-ink); }
 .perk-done { width: 100%; }
+.chase { margin: 0; padding: 10px 14px; border-radius: 12px; background: rgba(255, 210, 63, .14); color: var(--accent); font-weight: 800; text-align: center; }
+.reacts { display: flex; justify-content: center; gap: 10px; }
+.reacts button { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel); display: grid; place-items: center; padding: 0; cursor: pointer; font-size: 28px; }
+.reacts button:active { transform: scale(1.25); }
+.final-x2 { padding: 8px 14px; border-radius: 12px; background: linear-gradient(90deg, #ff7a18, #e5484d); color: #fff; font-weight: 800; text-align: center; }
+.adapt { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); }
+details.more { width: 100%; text-align: center; }
+details.more summary { cursor: pointer; padding: 8px; color: var(--muted); font-weight: 700; list-style: none; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::after { content: " ▾"; }
+details.more[open] summary::after { content: " ▴"; }
+details.more > *:not(summary) { margin-top: 10px; }
+.awards { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.award { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel); text-align: left; }
+.award .ai { font-size: 30px; } .award b { display: block; } .award small { color: var(--muted); font-weight: 600; }
+.award.mine { border: 2px solid var(--accent); }
 .pill.x2 { background: var(--accent); color: var(--accent-ink); font-family: var(--display); }
 /* новости после вопроса */
 .news { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
@@ -367,6 +383,7 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script src="/static/seen.js"></script>
+<script src="/static/awake.js"></script>
 <script src="/static/logic.js"></script>
 <script src="/static/music.js"></script>
 <script src="/static/wheel.js"></script>
@@ -638,11 +655,11 @@ function trickOrder(s) {
 function betBox(me, s) {
   if (!me.can_bet) return "";
   if (s && s.phase === "perks") return me.next_double
-    ? `<button class="btn perk-x2 on" data-bet-next="0" type="button"><b>✓ ×2 включено</b><small>на все 3 вопроса раунда · нажми, чтобы отменить</small></button>`
-    : `<button class="btn perk-x2" data-bet-next="1" type="button"><b>×2 на весь раунд</b><small>3 вопроса: верно — очки ×2, ошибка или пропуск — минус 3 за каждый · осталось ${me.doubles}</small></button>`;
+    ? `<button class="btn perk-x2 on" data-bet-next="0" type="button"><b>✓ Джокер ×2 в этом раунде</b><small>нажми, чтобы отменить</small></button>`
+    : `<button class="btn perk-x2" data-bet-next="1" type="button"><b>🃏 Джокер ×2</b><small>очки за этот раунд удвоятся · один раз за игру</small></button>`;
   return me.next_double
-    ? `<button class="btn bet-next on" data-bet-next="0" type="button">✓ ×2 на следующий вопрос<small>нажми, чтобы отменить</small></button>`
-    : `<button class="btn ghost bet-next" data-bet-next="1" type="button">×2 на следующий вопрос<small>вслепую: верно — очки ×2, ошибка или пропуск — минус 3 · осталось ${me.doubles}</small></button>`;
+    ? `<button class="btn bet-next on" data-bet-next="0" type="button">✓ Джокер ×2 на следующий вопрос<small>нажми, чтобы отменить</small></button>`
+    : `<button class="btn ghost bet-next" data-bet-next="1" type="button">🃏 Джокер ×2 на следующий вопрос<small>очки за него удвоятся · один раз за игру</small></button>`;
 }
 
 function trickBox(s, me) {
@@ -670,7 +687,7 @@ function howTo(s) {
   const g = GAMES.find((x) => x.id === s.settings.mode);
   const extra = [];
   if (s.settings.mode !== "heads" && s.settings.mode !== "jeopardy") {
-    if (s.settings.doubles) extra.push(s.settings.rounds ? "×2 — перед раундом: на все 3 вопроса, верно — очки ×2, ошибка — минус 3" : "×2 — ставка вслепую на следующий вопрос: верно — очки ×2, ошибка — минус 3");
+    if (s.settings.doubles) extra.push("🃏 Джокер ×2 — раз за игру удвой свои очки за раунд");
     if (s.settings.sabotage && !s.settings.teams) extra.push("😈 Ошибся 2 раза подряд — получаешь подлянку для соперника");
   }
   return g ? `<ol class="howto rise" style="--i:2">${g.about.filter((x) => !x.startsWith("Ведущий")).concat(extra).map((x) => `<li>${x}</li>`).join("")}</ol>` : "";
@@ -724,7 +741,7 @@ function answerControls(s) {
       <p class="hint">👆 Нажми на лишнюю картинку</p>`;
   }
   return `<div class="answers">${order.map((i, n) => btn(i, "data-choice", "", n)).join("")}</div>
-    <p class="hint">${s.settings && s.settings.speed ? "Выбери ответ: первый верный — 5 очков, второй — 4…" : "Выбери ответ"}</p>`;
+    <p class="hint">${s.settings && s.settings.speed ? "Кто первым ответит верно — больше очков" : "Выбери ответ"}</p>`;
 }
 
 // номера на кнопках «по порядку»
@@ -1045,13 +1062,24 @@ function listen(s) { // проиграть звук вопроса на этом
   if (s.melody) QuizMusic.melody(s.melody, s.tempo, instrumentFor(s));
   else if (s.audio) { hereSound = new Audio(mediaSrc(s.audio)); hereSound.play().catch(() => {}); }
 }
+// Фоновая музыка на телефоне игрока — по желанию (кнопка 🎵 в лобби): с нескольких телефонов вразнобой — какофония.
+// Короткие звуки (старт вопроса, «верно»/«мимо», фанфары) играют на всех телефонах.
+const musicPref = () => recall("quiz-phone-music") === "on";
+const musicHere = (s) => speaker(s) || musicPref();
+function stings(s, M) { // только короткие звуки — на телефонах игроков без музыки
+  if (M.styleName) M.stop(0.3);
+  if (s.phase === "question" && !s.melody && !s.audio) M.sting("start");
+  else if (s.phase === "reveal" && s.me) M.sting(s.me.result === "right" || s.me.result === "partial" ? "reveal" : s.me.result === "skip" ? "" : "wrong");
+  else if (s.phase === "final") M.sting("fanfare");
+}
 function soundtrack(s) {
-  const M = window.QuizMusic, key = s.phase + ":" + s.index + (s.paused ? ":пауза" : "");
+  const M = window.QuizMusic, key = s.phase + ":" + s.index + (s.paused ? ":пауза" : "") + (musicHere(s) ? ":муз" : "");
   if (!M || key === musicKey) return;
   musicKey = key;
   if (s.paused) { stopHere(); if (M.styleName) M.stop(0.3); return; }
   if (s.phase !== "question") stopHere();
-  if (!speaker(s) || s.phase.startsWith("si_") || s.phase.startsWith("fd_")) { if (M.styleName) M.stop(0.3); return; }
+  if (s.phase.startsWith("si_") || s.phase.startsWith("fd_")) { if (M.styleName) M.stop(0.3); return; }
+  if (!musicHere(s)) return stings(s, M);
   if (s.phase === "setup" || s.phase === "lobby") M.play("lobby");
   else if (s.phase === "question") {
     if (s.audio || s.melody) M.stop(0.3); else M.play("question");
@@ -1173,6 +1201,25 @@ function othersAnswers(s, me) {
   return `<div class="others"><div class="eyebrow">${s.qtype === "number" || s.qtype === "map" ? "Кто ближе" : "Кто что ответил"}</div><ol class="mini">${rows.join("")}</ol></div>`;
 }
 
+// ближайшая цель вместо места в общей таблице: сравнение с соседом мотивирует сильнее (исследования таблиц лидеров)
+function chase(s, me) {
+  const rows = s.players, i = rows.findIndex((p) => p.name === me.name);
+  if (i < 0 || rows.length < 2) return "";
+  const pts = (n) => n + " " + QuizComments.plural(n, "очко", "очка", "очков");
+  if (i === 0) {
+    const gap = me.score - rows[1].score;
+    return `<p class="chase rise">${gap > 0 ? `🏆 Ты лидер! Отрыв — ${pts(gap)}, следом ${esc(rows[1].name)}` : `🤝 Первое место поровну: ты и ${esc(rows[1].name)}`}</p>`;
+  }
+  const up = rows[i - 1], gap = up.score - me.score;
+  return `<p class="chase rise">${gap > 0 ? `🎯 ${esc(up.name)} впереди на ${pts(gap)}. Обгони!` : `🤝 Поровну: ты и ${esc(up.name)}`}</p>`;
+}
+// реакции: всплывают на большом экране
+const REACTS = ["👏", "😂", "😱", "🔥"];
+let moreOpen = false; // «Подробнее» раскрыто — держим раскрытым и после перерисовки
+document.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("details.more")) moreOpen = e.target.open; }, true);
+const reactBar = () => `<div class="reacts">${REACTS.map((e) => `<button type="button" data-react="${e}" aria-label="Реакция">${QuizEmoji.html(e)}</button>`).join("")}</div>`;
+// финальный раунд — очки ×2
+const finalTag = (s) => (s.final_x2 ? `<div class="final-x2 pop">🔥 Финальный раунд — очки ×2</div>` : "");
 function moveText(me) {
   if (!me.prev || me.prev === me.place) return "";
   const d = me.prev - me.place, n = Math.abs(d);
@@ -1271,7 +1318,7 @@ function draw(s) {
   $main.classList.remove("top-start");
   const me = s.me;
   if (!me) { pid = null; save(null); joinForm(); return; }
-  document.getElementById("top").innerHTML = `<a class="home-btn" href="/" title="Главное меню — в игру можно вернуться">⌂</a>${avaP(me)}<span class="nm">${esc(me.name)}</span>${speaker(s) && window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${soundIcon()}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
+  document.getElementById("top").innerHTML = `<a class="home-btn" href="/" title="Главное меню — в игру можно вернуться">⌂</a>${avaP(me)}<span class="nm">${esc(me.name)}</span>${window.QuizMusic ? `<button class="sound-btn" id="phone-sound" type="button" aria-label="Звук">${soundIcon()}</button>` : ""}<span class="sc" title="Твои очки">${me.score}<small> очк.</small></span>`;
   soundtrack(s);
   mood("");
   confetti(false);
@@ -1303,6 +1350,7 @@ function draw(s) {
           <p class="muted">Можно перейти в другую команду:</p>${teamPicker(s, me.team)}` : ""}
         <p class="muted rise" style="--i:1">${hostToken() ? "Ты ведущий: нажми «Начать игру», когда все зайдут." : "Смотри на экран ведущего. Игра скоро начнётся."}</p>
         ${howTo(s)}
+        ${speaker(s) ? "" : `<button class="btn ghost" id="music-here" type="button">${musicPref() ? "🎵 Музыка на этом телефоне: вкл" : "🎵 Включить музыку на этом телефоне"}</button>`}
         <div class="lobby-people rise" style="--i:2"><div class="eyebrow">В игре: ${s.players.length}</div>
           <div class="people">${s.players.slice().sort((a, b) => (a.name === me.name ? -1 : b.name === me.name ? 1 : 0)).map((p) => `
             <span class="person ${p.name === me.name ? "me" : ""} ${p.online ? "" : "off"}" ${p.team != null && TEAM_COLORS[p.team] ? `style="--c:${TEAM_COLORS[p.team]}"` : ""}>${avaP(p)}${esc(p.name)}${p.name === me.name ? " (ты)" : ""}</span>`).join("")}</div></div>
@@ -1313,13 +1361,17 @@ function draw(s) {
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
     document.getElementById("invite").onclick = (e) => invite(e.currentTarget, s);
+    const mh = document.getElementById("music-here");
+    if (mh) mh.onclick = () => { try { localStorage.setItem("quiz-phone-music", musicPref() ? "off" : "on"); } catch {} QuizMusic.unlock(); musicKey = ""; lastSig = ""; poll(); };
     document.querySelector(".ava-change").ontoggle = (e) => { avaOpen = e.target.open; };
   } else if (s.phase === "topic_vote") {
     const t = s.topic;
     $main.innerHTML = `
       <div class="eyebrow">Раунд ${t.round} из ${t.rounds} · осталось <span id="topic-left">${Math.ceil(t.left)} с</span></div>
       <div class="timebar" style="width:100%"><i style="animation-duration:${t.left}s"></i></div>
+      ${finalTag(s)}
       <h2>Какую тему играем?</h2>
+      ${s.underdog === me.name ? `<p class="chase">🎯 Твой голос считается за два — ты сейчас последний</p>` : s.underdog ? `<p class="hint">Голос ${esc(s.underdog)} считается за два — он сейчас последний</p>` : ""}
       <p class="hint">Нажми на тему. Чем больше за неё голосов, тем больше её сектор на колесе. Передумать можно</p>
       <div class="topic-list">${t.options.map((o, i) => `<button class="topic-btn rise ${t.my_vote === o ? "on" : ""} ${i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${i}" data-vote="${esc(o)}" type="button">
         <span class="ti">${QuizWheel.icon(o)}</span>${esc(o)}${t.my_vote === o ? "<small>✓ твой голос</small>" : ""}</button>`).join("")}</div>
@@ -1332,14 +1384,15 @@ function draw(s) {
     $main.classList.add("top-start");
     $main.innerHTML = `<div class="eyebrow">Раунд ${t.round} из ${t.rounds} · ${QuizWheel.icon(theme)} ${esc(theme)}</div>
       <div class="timebar" style="width:100%"><i style="animation-duration:${pk.left}s"></i></div>
+      ${finalTag(s)}
       <h2>${mine ? "Выбери перки на раунд" : "Перки выбраны"}</h2>
       ${mine ? `<p class="hint">Есть ${Math.ceil(pk.left)} с. Не нужно — просто жми «Готово»</p>
         ${betBox(me, s)}
         ${s.trick_next ? trickBox(s, me) : ""}
         <button class="btn perk-done" data-perks-ready type="button">Готово ✓</button>`
-      : `${me.next_double ? `<span class="pill x2">×2 на этот раунд</span>` : ""}${s.trick_next && s.trick_next.chosen ? trickBox(s, me) : ""}
+      : `${me.next_double ? `<span class="pill x2">🃏 Джокер ×2 в этом раунде</span>` : ""}${s.trick_next && s.trick_next.chosen ? trickBox(s, me) : ""}
         <p class="muted">${wait.length ? `Ждём: ${wait.map(esc).join(", ")}` : "Начинаем!"}</p>`}
-      ${pk.doubled.length ? `<p class="muted">×2 на раунд: <b>${pk.doubled.map(esc).join(", ")}</b></p>` : ""}`;
+      ${pk.doubled.length ? `<p class="muted">🃏 Джокер: <b>${pk.doubled.map(esc).join(", ")}</b></p>` : ""}`;
   } else if (s.phase === "topic_bet") {
     const t = s.topic, w = t.weights;
     const wheel = document.getElementById("topic-wheel");
@@ -1356,6 +1409,7 @@ function draw(s) {
     const tk = (trick && s.tricks && s.tricks.find((k) => k.id === trick)) || {}, trickName = tk.name || "";
     if (waiting) { clearTimeout(trickTimer); trickTimer = setTimeout(() => { lastSig = ""; pollTick(); }, me.trick_wait * 1000); }
     $main.innerHTML = `
+      ${finalTag(s)}
       <div class="q-top"><div class="eyebrow">Вопрос ${s.index + 1} из ${s.total}${s.level ? " · " + LEVEL_NAMES[s.level] : ""}</div><b class="q-left" id="q-left">${Math.ceil(s.left)}</b></div>
       <div class="timebar"><i style="animation-duration:${s.left}s"></i></div>
       ${trick ? `<div class="trick-banner pop">😈 Подлянка${tn ? ` · автор ${esc(tn.by)}` : ""}<br>${trickName}${tk.tip ? `<small>${esc(tk.tip)}</small>` : ""}</div>` : ""}
@@ -1368,7 +1422,7 @@ function draw(s) {
         : `<p class="hint">🎵 Мелодия звучит у ведущего</p><button class="btn ghost small" data-listen type="button">🔊 Послушать здесь</button>`) : ""}
       ${waiting ? `<div class="trick-wait">⏳ Ответы появятся через <b id="trick-left">${Math.ceil(me.trick_wait)}</b> с</div>` : answerControls(s)}
       </div>
-      ${me.doubled ? `<span class="pill x2">×2 ставка на этот вопрос</span>` : ""}
+      ${me.doubled ? `<span class="pill x2">🃏 Джокер ×2</span>` : ""}
       ${waiting ? "" : `<div class="extra"><button class="btn ghost" id="skip" type="button">Пропустить</button></div>
         ${s.settings && s.settings.penalty ? `<p class="hint">Ошибка — минус очки, пропуск — без штрафа</p>` : ""}`}`;
     if (!waiting && (s.qtype === "text" || s.qtype === "number")) {
@@ -1405,7 +1459,7 @@ function draw(s) {
         <h1>${me.answer == null ? "Пропускаешь" : "Ответ принят"}</h1>
         ${me.answer_time != null ? `<p class="muted">⏱ за ${secs(me.answer_time)}</p>` : ""}
         ${me.answer == null ? "" : answerSummary(s, me.answer)}
-        ${me.doubled ? `<span class="pill x2">×2 ставка</span>` : ""}
+        ${me.doubled ? `<span class="pill x2">🃏 Джокер ×2</span>` : ""}
         <p class="muted">Ждём остальных…</p>
       </div>`;
   } else if (s.phase === "reveal") {
@@ -1422,21 +1476,22 @@ function draw(s) {
       <div class="scene">
         ${me.can_trick ? trickBox(s, me) : ""}
         <span class="big pop ${res === "right" || res === "partial" ? "good" : res === "skip" ? "" : "bad"}">${text}</span>
-        ${me.doubled ? `<span class="pill x2 rise">×2 ${me.last > 0 ? "сыграла!" : "не сыграла"}</span>` : ""}
-        ${me.answer_time != null ? `<span class="muted rise" style="--i:1">⏱ твой ответ — за ${secs(me.answer_time)}</span>` : ""}
-        ${me.last > 0 ? `<span class="pill plus rise" style="--i:2">+${me.last}</span>` : ""}
+        ${me.last > 0 ? `<span class="pill plus rise" style="--i:1">+${me.last}${me.doubled ? " · 🃏 ×2" : ""}</span>` : ""}
         ${me.last < 0 ? `<span class="pill minus rise" style="--i:1">−${-me.last}</span>` : ""}
         ${res !== "right" || s.qtype === "number" || s.qtype === "map" ? `<div class="muted rise" style="--i:2">Правильный ответ:${correctAnswer(s)}</div>` : ""}
-        ${s.note ? `<p class="note rise" style="--i:2">💡 ${esc(s.note)}</p>` : ""}
-        ${s.answer_image ? `<img class="qimg answer-pic pop ${isEmojiPic(s.answer_image) ? "" : "photo"}" src="${esc(mediaSrc(s.answer_image))}" alt="Картинка к ответу">` : ""}
         ${s.qtype === "map" ? `<div class="phone-map small" id="reveal-map"></div>` : ""}
         ${miss != null ? `<p class="rise" style="--i:3">Твоя точка — в <b>${QuizMap.km(miss)}</b> отсюда</p>` : ""}
-        ${rank ? `<p class="muted rise" style="--i:3">По точности ты ${rank}-й из ${near.length}</p>` : ""}
-        ${me.streak >= 2 ? `<span class="pill rise" style="--i:3">🔥 ${me.streak} подряд!</span>` : ""}
+        ${reactBar()}
         ${me.can_trick ? "" : trickBox(s, me)}
         ${betBox(me)}
-        ${othersAnswers(s, me)}
-        ${s.settings.leaders ? "" : `<div class="others"><div class="eyebrow">Счёт</div>${standings(s, me)}</div>`}
+        <details class="more" ${moreOpen ? "open" : ""}><summary>Подробнее</summary>
+          ${me.answer_time != null ? `<p class="muted">⏱ твой ответ — за ${secs(me.answer_time)}</p>` : ""}
+          ${rank ? `<p class="muted">По точности ты ${rank}-й из ${near.length}</p>` : ""}
+          ${s.note ? `<p class="note">💡 ${esc(s.note)}</p>` : ""}
+          ${s.answer_image ? `<img class="qimg answer-pic ${isEmojiPic(s.answer_image) ? "" : "photo"}" src="${esc(mediaSrc(s.answer_image))}" alt="Картинка к ответу">` : ""}
+          ${othersAnswers(s, me)}
+          ${s.settings.leaders ? "" : `<div class="others"><div class="eyebrow">Счёт</div>${standings(s, me)}</div>`}
+        </details>
       </div>`;
     if (s.qtype === "map") {
       const m = QuizMap.create(document.getElementById("reveal-map"));
@@ -1472,13 +1527,13 @@ function draw(s) {
         <div class="eyebrow">Ты на месте</div>
         <span class="place pop">${me.place}</span>
         <p class="muted">из ${s.players.length} · ${me.score} очков</p>
-        ${s.settings.race && me.score < s.settings.race ? `<p class="hint">⛰️ До вершины: ${s.settings.race - me.score} очков — кто первым доберётся, тот царь горы</p>` : ""}
-        ${moveText(me)}
+        ${chase(s, me)}
+        ${finalTag(s)}
         ${phoneRope(s, me)}
+        ${reactBar()}
         ${me.can_trick ? "" : trickBox(s, me)}
         ${betBox(me)}
-        ${news(s)}
-        ${standings(s, me)}
+        <details class="more" ${moreOpen ? "open" : ""}><summary>Вся таблица</summary>${news(s)}${standings(s, me)}</details>
       </div>`;
     QuizRope.climb($main);
   } else if (s.phase === "final") {
@@ -1490,7 +1545,10 @@ function draw(s) {
         <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
         ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${s.settings.mode === "heads" ? wordsN(me.score) : me.score + " очков"}. Спасибо за игру!</p>
+        ${(s.awards || []).length ? `<div class="awards">${s.awards.map((a, i) => `<div class="award rise ${a.name === me.name ? "mine" : ""}" style="--i:${i + 2}">
+          <span class="ai">${a.icon}</span><span><b>${esc(a.title)}</b><small>${esc(a.name)} · ${esc(a.detail)}</small></span></div>`).join("")}</div>` : ""}
         ${standings(s, me)}
+        ${reactBar()}
         <button class="btn ghost rise" style="--i:2" type="button" data-share-site>📤 Понравилось? Поделись игрой</button>
       </div>`;
     if (place <= 3) { mood("good"); buzz([50, 50, 50, 50, 120]); confetti(true); }
@@ -1701,6 +1759,8 @@ document.addEventListener("click", async (e) => {
   if (here) { if (hereAudio) hereAudio.pause(); hereAudio = new Audio(here.dataset.playHere); hereAudio.play().catch(() => {}); here.remove(); return; }
   const pr = e.target.closest("[data-perks-ready]"); // перки выбраны
   if (pr) { buzz(15); pr.disabled = true; await api("/api/perks_ready", { pid }).catch(() => {}); lastSig = ""; poll(); return; }
+  const rc = e.target.closest("[data-react]"); // реакция — летит на большой экран
+  if (rc) { buzz(10); rc.animate([{ transform: "scale(1.4)" }, { transform: "scale(1)" }], 250); api("/api/react", { pid, e: rc.dataset.react }).catch(() => {}); return; }
   const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)
   if (bn) { buzz(bn.dataset.betNext === "1" ? [30, 50, 30] : 15); bn.disabled = true; await api("/api/double", { pid, on: bn.dataset.betNext === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const choice = e.target.closest("[data-choice]");

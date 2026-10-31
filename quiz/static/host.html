@@ -174,6 +174,11 @@ a.btn { text-decoration: none; display: inline-block; }
 .award { animation-delay: calc(var(--i) * .25s + 1.5s); display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 18px; background: var(--panel); border: 2px solid var(--line); min-width: 230px; }
 .award .ai { font-size: 2.2em; } .award .at { display: flex; flex-direction: column; } .award small { color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: .7em; }
 .award b { font-size: 1.15em; } .award .ad { color: var(--muted); font-size: .85em; font-weight: 600; } .award .ava { width: 32px; height: 32px; font-size: 16px; }
+#sound-ask { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 60; padding: 14px 28px; border-radius: 18px; border: 0;
+  background: var(--accent); color: var(--accent-ink); font: 800 1.2em var(--body); cursor: pointer; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
+  display: flex; flex-direction: column; gap: 2px; animation: pulse 1.6s ease-in-out infinite; }
+#sound-ask small { font-weight: 600; font-size: .62em; opacity: .8; }
+@keyframes pulse { 50% { transform: translateX(-50%) scale(1.04); } }
 .perk-cards { display: flex; gap: 18px; flex-wrap: wrap; }
 .perk-card { flex: 1 1 320px; padding: 20px 24px; border-radius: 20px; background: var(--panel); border: 3px solid var(--accent); display: flex; flex-direction: column; gap: 8px; }
 .perk-card b { font-family: var(--display); font-size: 1.6em; } .perk-card span { color: var(--muted); font-weight: 600; }
@@ -534,6 +539,7 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
 <script src="/static/seen.js"></script>
+<script src="/static/awake.js"></script>
 <script src="/static/logic.js"></script>
 <script src="/static/wheel.js"></script>
 <script src="/static/rope.js"></script>
@@ -562,7 +568,7 @@ const RULES = [
   { id: "penalty", name: "Штраф за ошибку", desc: "Неверный ответ отнимает 1 очко (ниже нуля счёт не опускается)" },
   { id: "speed", name: "Очки за место", desc: "Первый верный ответ — 5 очков, второй — 4, третий — 3, четвёртый — 2, остальные — 1. Если выключить, всем верным по 5" },
   { id: "streak", name: "Бонус за серию 🔥", desc: "+100 очков за каждый правильный ответ подряд, до +500" },
-  { id: "doubles", name: "Ставка ×2", desc: "Два раза за игру игрок ставит ×2 вслепую — между вопросами, на следующий: верно — очки ×2, ошибка или пропуск — минус 3" },
+  { id: "doubles", name: "Джокер ×2", desc: "Раз за игру игрок удваивает свои очки за раунд (без раундов — за следующий вопрос). Ничего не отнимает" },
   { id: "leaders", name: "Таблица лидеров после вопроса", desc: "Показывать места после каждого раунда" },
   { id: "auto", name: "Автопереход", desc: "Все ответили — сразу ответ, через 4 с лидеры, через 5 с следующий вопрос. Нажимать ничего не нужно" },
 ];
@@ -768,6 +774,13 @@ function soundButton() {
   const blocked = M.blocked && !M.muted;
   b.textContent = M.muted ? "🔇 Звук выкл" : blocked ? "🔈 Включить звук" : "🔊";
   b.classList.toggle("blocked", blocked);
+  // браузер не играет звук, пока по экрану ни разу не нажали, — на ТВ этого легко не заметить: крупная плашка
+  let ov = document.getElementById("sound-ask");
+  if (blocked && !ov) {
+    ov = document.createElement("button"); ov.id = "sound-ask"; ov.type = "button";
+    ov.innerHTML = "🔊 Нажмите сюда, чтобы включить музыку<small>браузер включает звук только после нажатия — мышкой или кнопкой пульта</small>";
+    document.body.appendChild(ov);
+  } else if (!blocked && ov) ov.remove();
 }
 
 // Пауза: таймеры на сервере стоят, на экране — табличка поверх всего
@@ -915,7 +928,7 @@ function draw(s) {
         <p class="muted">Выбирайте на телефонах — время есть</p></div>
         <span class="topic-time" id="topic-time"></span></div>
       <div class="perk-cards">
-        ${s.settings.doubles ? `<div class="perk-card pop"><b>×2 на весь раунд</b><span>3 вопроса: верно — очки ×2, ошибка или пропуск — минус 3 за каждый</span>
+        ${s.settings.doubles ? `<div class="perk-card pop"><b>🃏 Джокер ×2</b><span>Очки за этот раунд удвоятся. Один раз за игру</span>
           <p>${pk.doubled.length ? `Поставили: <b class="hl">${pk.doubled.map(esc).join(", ")}</b>` : "Пока никто"}</p></div>` : ""}
         ${tn ? `<div class="perk-card trick pop"><b>😈 Подлянка</b><span>У кого 2 ошибки подряд — испортит первый вопрос раунда любому игроку</span>
           <p>${tn.chosen ? `<b class="hl">${esc(tn.by)}</b> → <b class="hl">${esc(tn.to)}</b>` : "Решается на телефоне…"}</p></div>` : ""}
@@ -932,7 +945,7 @@ function draw(s) {
       ${s.qtype === "map" ? `<div class="map-row">${media(s)}<div class="host-map" id="host-map"></div></div>` : media(s)}
       ${questionBody(s)}
       <p class="muted" id="answered"></p>
-      ${(s.doubled_now || []).length ? `<p class="muted">×2: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
+      ${(s.doubled_now || []).length ? `<p class="muted">🃏 Джокер ×2: <b style="color:var(--accent)">${s.doubled_now.map(esc).join(", ")}</b></p>` : ""}`;
     mountMap(s);
     const audio = document.querySelector(".qaudio audio");
     if (audio) audio.play().catch(() => {}); // если браузер не дал включить звук сам — есть кнопка ▶

@@ -715,7 +715,7 @@ function answerControls(s) {
       <button class="btn" id="submit" ${picks.length ? "" : "disabled"}>Ответить</button>`;
   }
   if (s.qtype === "order") {
-    return `<p class="hint">Нажимай варианты по порядку: первый, второй…</p>
+    return `<p class="hint">Нажимай варианты по порядку: первый, второй… Нажмёшь ещё раз — выбор отменится</p>
       <div class="answers">${s.options.map((_, i) => btn(i, "data-seq")).join("")}</div>
       <div class="row2"><button class="btn ghost" id="reset">Сначала</button><button class="btn" id="submit" disabled>Ответить</button></div>`;
   }
@@ -1777,7 +1777,9 @@ document.addEventListener("click", async (e) => {
   const seq = e.target.closest("[data-seq]");
   if (seq) {
     const i = Number(seq.dataset.seq);
-    if (!picks.includes(i)) { picks.push(i); buzz(10); }
+    // повторное нажатие на выбранный вариант отменяет его, номера остальных сдвигаются
+    picks = picks.includes(i) ? picks.filter((x) => x !== i) : [...picks, i];
+    buzz(10);
     return paintOrder();
   }
   if (e.target.closest("#reset")) { picks = []; return paintOrder(); }

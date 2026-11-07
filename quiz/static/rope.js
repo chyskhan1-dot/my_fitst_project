@@ -65,11 +65,17 @@
     <polyline points="${pts(TRAIL)}" fill="none" stroke="#f3d79c" stroke-width="3" stroke-dasharray="7 6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
   </svg><span class="cloud" style="left:6%;top:10%"></span><span class="cloud" style="left:70%;top:18%;animation-duration:55s"></span><span class="cloud" style="left:30%;top:40%;opacity:.6;animation-duration:70s"></span>`;
   let styled = false;
-  const shown = new Set(); // какие подъёмы уже показали: при перерисовке экрана не лезем заново
+  // когда начался подъём (по ключу вопроса): перерисовка экрана посреди подъёма продолжает его с того же места,
+  // а давно закончившийся — сразу на местах
+  const started = new Map();
+  const finished = (key) => started.has(key) && performance.now() - started.get(key) > 8000;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (n) => Number(n).toLocaleString("ru-RU");
   const clamp = (v) => Math.max(0, Math.min(1, v));
 
+  // низ тропы растянут: в начале игры у всех мало очков — так они не толпятся у подножия, а верх короче.
+  // Отметки высоты ставятся так же, поэтому высота честная (10 — у камня «10»)
+  const bend = (t) => 1 - Math.pow(1 - clamp(t), 1.7);
   // точка тропы на доле пути t (0 — подножие, 1 — вершина) в процентах поля; длина считается с учётом пропорций поля
   function trail(aspect) {
     const seg = [];
@@ -81,7 +87,7 @@
       total += len;
     }
     const at = (t) => {
-      const d = clamp(t) * total;
+      const d = bend(t) * total;
       const s = seg.find((g) => d <= g.start + g.len) || seg[seg.length - 1];
       const k = s.len ? (d - s.start) / s.len : 0;
       return [s.x0 + (s.x1 - s.x0) * k, s.y0 + (s.y1 - s.y0) * k];
@@ -96,7 +102,7 @@
     top = Math.max(1, top || 1);
     const order = rows.map((r, i) => i).sort((a, b) => (rows[a].last - rows[b].last) || (rows[a].score - rows[b].score)); // большой рывок — в конце
     const turn = new Map(order.map((idx, k) => [idx, k]));
-    const again = shown.has(key);
+    const again = finished(key);
     const g = trail(opts.compact ? 1.4 : 2.4);
     const marks = [1, 2, 3, 4].map((k) => {
       const [x, y] = g.at(k / 5);
@@ -131,7 +137,7 @@
     const groups = [];
     for (const it of sorted) {
       const last = groups[groups.length - 1];
-      if (last && (last[0].t - it.t) * lenPx < S * 1.1) last.push(it); else groups.push([it]);
+      if (last && (bend(last[0].t) - bend(it.t)) * lenPx < S * 1.1) last.push(it); else groups.push([it]);
     }
     for (const grp of groups) {
       grp.sort((a, b) => b.me - a.me || a.place - b.place); // «я» — всегда на виду
@@ -192,25 +198,26 @@
       el.querySelector(".tag b").textContent = num(el.dataset.score);
     };
     stage._lay = lay;
-    if (shown.has(key) || matchMedia("(prefers-reduced-motion: reduce)").matches) { lay.items.forEach((it) => finish(it.el)); return; }
-    shown.add(key);
-    lay.items.forEach((it) => place(it.el, lay, +it.el.dataset.from, false));
-    const step = Math.min(600, 2400 / lay.items.length); // много игроков — лезут чаще, чтобы уложиться в показ таблицы
-    lay.items.forEach((it) => setTimeout(() => {
-      const el = it.el;
-      if (!el.isConnected) return;
-      const a = +el.dataset.from, b = +el.dataset.to, t0 = performance.now(), dur = 900;
-      el.classList.add("go");
+    if (finished(key) || matchMedia("(prefers-reduced-motion: reduce)").matches) { lay.items.forEach((it) => finish(it.el)); return; }
+    if (!started.has(key)) started.set(key, performance.now());
+    const start = started.get(key);
+    // много игроков — лезут чаще и быстрее: весь подъём укладывается в ~2,5 с (таблица на экране 4 с)
+    const n = lay.items.length, step = Math.min(600, 1600 / n), dur = n > 12 ? 550 : n > 6 ? 750 : 900, wait = n > 12 ? 250 : 500;
+    lay.items.forEach((it) => {
+      const el = it.el, a = +el.dataset.from, b = +el.dataset.to;
+      const t0 = start + wait + Number(el.dataset.turn) * step, now = performance.now();
+      if (now >= t0 + dur) { finish(el); return; } // уже долез до перерисовки
+      place(el, lay, a, false);
       const frame = (now) => {
         if (!el.isConnected) return;
-        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        const k = Math.max(0, Math.min(1, (now - t0) / dur)), e = 1 - Math.pow(1 - k, 3);
         place(el, lay, a + (b - a) * e, false);
         if (k < 1) return requestAnimationFrame(frame);
         finish(el);
         if (el.dataset.over === "1") el.classList.add("over");
       };
-      requestAnimationFrame(frame);
-    }, 500 + Number(it.el.dataset.turn) * step));
+      setTimeout(() => { if (el.isConnected) { el.classList.add("go"); requestAnimationFrame(frame); } }, Math.max(0, t0 - now));
+    });
   }
 
   // поворот экрана или новый размер окна — расставить заново, без подъёма

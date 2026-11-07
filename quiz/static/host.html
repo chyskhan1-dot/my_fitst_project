@@ -170,7 +170,7 @@ a.btn { text-decoration: none; display: inline-block; }
 .awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 18px; }
 .award { animation-delay: calc(var(--i) * .25s + 1.5s); display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 18px; background: var(--panel); border: 2px solid var(--line); min-width: 230px; }
 .award .ai { font-size: 2.2em; } .award .at { display: flex; flex-direction: column; } .award small { color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: .7em; }
-.award b { font-size: 1.15em; } .award .ad { color: var(--muted); font-size: .85em; font-weight: 600; } .award .ava { width: 32px; height: 32px; font-size: 16px; }
+.award b { font-size: 1.15em; } .award .aw-n { display: flex; align-items: center; gap: 8px; } .award .ad { color: var(--muted); font-size: .85em; font-weight: 600; } .award .ava { width: 32px; height: 32px; font-size: 16px; }
 #sound-ask { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 60; padding: 14px 28px; border-radius: 18px; border: 0;
   background: var(--accent); color: var(--accent-ink); font: 800 1.2em var(--body); cursor: pointer; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
   display: flex; flex-direction: column; gap: 2px; animation: pulse 1.6s ease-in-out infinite; }
@@ -204,12 +204,12 @@ a.btn { text-decoration: none; display: inline-block; }
 .chips.speed { margin-top: 12px; }
 .chips.speed .chip.ok { color: var(--ink); }
 .num-list .d { color: var(--muted); min-width: 7ch; text-align: right; font-variant-numeric: tabular-nums; }
-.host-map { width: 100%; height: min(56vh, 46vw); }
+.host-map { width: 100%; height: clamp(220px, calc(100vh - 400px), min(56vh, 46vw)); } /* место под заголовок и пояснение — карта не выталкивает их за экран ТВ */
 .map-row { display: flex; gap: 18px; align-items: stretch; }
 .map-row > .qmedia { flex: 0 0 34%; justify-content: center; }
 .map-row > .host-map { flex: 1; width: auto; }
 .map-reveal { display: grid; grid-template-columns: 1fr minmax(260px, 30%); gap: 18px; align-items: start; }
-.map-reveal .num-list { max-height: min(56vh, 46vw); overflow: auto; }
+.map-reveal .num-list { max-height: clamp(220px, calc(100vh - 400px), min(56vh, 46vw)); overflow: auto; }
 .place { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3vw, 38px); color: var(--good); }
 @media (max-width: 900px) { .map-reveal, .map-row { display: flex; flex-direction: column; } }
 /* темы и сложность в меню */
@@ -815,6 +815,7 @@ function render(s) {
     window.scrollTo(0, y);
     settleTimer = setTimeout(() => { $main.style.minHeight = ""; }, 1500);
   } else if (y) window.scrollTo(0, 0);
+  fitSoon();
 }
 
 function draw(s) {
@@ -986,12 +987,12 @@ function draw(s) {
     const step = (p, n) => p ? `<div class="step p${n}">${teamMode ? teamDot(p.team) : avaP(p)}<span class="nm">${esc(p.name)}</span><div class="block">${n}<small>${s.settings.mode === "heads" ? wordsN(p.score) : p.score + " очков"}</small></div></div>` : "";
     const mvp = s.players[0];
     $main.innerHTML = `
-      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? "Победила команда" : "Победители"}</h1>
+      <div style="text-align:center"><div class="eyebrow">Игра окончена</div><h1>${teamMode ? (s.teams.length > 1 && s.teams[0].score === s.teams[1].score ? "Ничья!" : "Победила команда") : "Победители"}</h1>
         ${s.race_winner ? `<p class="muted">👑 Царь горы: ${esc(s.race_winner)} — первым на вершине</p>` : ""}</div>
       <div class="podium ${(s.awards || []).length ? "short" : ""}">${step(p2, 2)}${step(p1, 1)}${step(p3, 3)}</div>
       ${teamMode && mvp ? `<p class="mvp rise">Лучший игрок: <b>${esc(mvp.name)}</b> · ${s.settings.mode === "heads" ? wordsN(mvp.score) : mvp.score + " очков"}</p>` : ""}
       ${(s.awards || []).length ? `<div class="awards">${s.awards.map((a, i) => `<div class="award pop" style="--i:${i}"><span class="ai">${a.icon}</span>
-        <span class="at"><small>${esc(a.title)}</small>${a.avatar ? `<span class="ava emo">${QuizEmoji.html(a.avatar)}</span>` : ""}<b>${esc(a.name)}</b><span class="ad">${esc(a.detail)}</span></span></div>`).join("")}</div>` : ""}`;
+        <span class="at"><small>${esc(a.title)}</small><b class="aw-n">${avaP(a)}${esc(a.name)}</b><span class="ad">${esc(a.detail)}</span></span></div>`).join("")}</div>` : ""}`;
     $actions.innerHTML = `<button class="btn ghost" data-act="setup">Изменить правила</button>
       <button class="btn ghost" data-share-site type="button">📤 Поделиться сайтом</button>
       <button class="btn" data-act="reset">Сыграть ещё раз</button>`;
@@ -1665,6 +1666,25 @@ async function pollOnce(seq) {
   }
 }
 
+// ТВ пультом не прокрутить: игровой экран, который не влез (картинка + варианты + пояснение, финал с наградами),
+// уменьшаем целиком. На узком экране (ведущий с телефона) и в меню — обычная прокрутка.
+function fitScreen() {
+  const s = lastState;
+  $main.style.zoom = "";
+  if (!s || s.phase === "setup" || innerWidth < 900) return;
+  $main.style.minHeight = "";
+  const fits = (z) => { $main.style.zoom = z; return document.documentElement.scrollHeight - innerHeight <= 2; };
+  if (fits("")) return;
+  let lo = 0.55, hi = 1; // самый крупный размер, при котором всё влезает (высота частей в vh тоже меняется — поэтому подбором)
+  for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (fits(mid.toFixed(3))) lo = mid; else hi = mid; }
+  $main.style.zoom = lo.toFixed(3);
+  window.scrollTo(0, 0);
+}
+function fitSoon() { // картинки догружаются — меряем ещё раз
+  requestAnimationFrame(fitScreen); setTimeout(fitScreen, 900);
+  $main.querySelectorAll("img").forEach((i) => { if (!i.complete) i.addEventListener("load", fitScreen, { once: true }); });
+}
+addEventListener("resize", () => fitScreen());
 /* конфетти для финала */
 let confettiRun = 0;
 // реакции с телефонов: всплывают снизу и улетают вверх

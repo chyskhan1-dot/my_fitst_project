@@ -338,6 +338,11 @@ body.has-hostbar { padding-bottom: calc(var(--hb, 84px) + 16px); }
 .reacts { display: flex; justify-content: center; gap: 10px; }
 .reacts button { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel); display: grid; place-items: center; padding: 0; cursor: pointer; font-size: 28px; }
 .reacts button:active { transform: scale(1.25); }
+.react-fly { position: fixed; bottom: 90px; z-index: 60; display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  animation: react-up 3.2s ease-out forwards; }
+.react-fly .re { font-size: 46px; line-height: 1; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
+.react-fly .rn { margin-top: 2px; padding: 1px 8px; border-radius: 99px; background: rgba(0, 0, 0, .55); font-weight: 800; font-size: 13px; color: #fff; }
+@keyframes react-up { 0% { transform: translateY(0) scale(.6); opacity: 0; } 12% { opacity: 1; transform: translateY(-20px) scale(1.1); } 100% { transform: translateY(-45vh) scale(1); opacity: 0; } }
 .final-x2 { padding: 8px 14px; border-radius: 12px; background: linear-gradient(90deg, #ff7a18, #e5484d); color: #fff; font-weight: 800; text-align: center; }
 .adapt { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); }
 details.more { width: 100%; text-align: center; }
@@ -1212,6 +1217,22 @@ function placeLine(s, me) {
   }
   return `<p class="place-line rise"><b>${i + 1}-е место</b>${tail ? ` · ${tail}` : ""}</p>`;
 }
+// реакции всех игроков всплывают и на телефонах (поменьше, чем на ТВ) — видно и без большого экрана
+let reactSeen = -1;
+function showReactions(s) {
+  const list = s.reactions || [];
+  if (reactSeen < 0) { reactSeen = Math.max(0, ...list.map((r) => r.id)); return; } // старые при входе не показываем
+  for (const r of list) {
+    if (r.id <= reactSeen) continue;
+    reactSeen = r.id;
+    const el = document.createElement("div");
+    el.className = "react-fly";
+    el.style.left = 6 + Math.random() * 70 + "%";
+    el.innerHTML = `<span class="re">${QuizEmoji.html(r.e)}</span><span class="rn">${esc(r.name)}</span>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+  }
+}
 // реакции: всплывают на большом экране
 const REACTS = ["👏", "😂", "😱", "🔥"];
 let moreOpen = false; // «Подробнее» раскрыто — держим раскрытым и после перерисовки
@@ -1534,12 +1555,14 @@ function draw(s) {
       </div>`;
     QuizRope.climb($main);
   } else if (s.phase === "final") {
-    const place = myTeam ? me.team_place : me.place;
-    const medal = ["🥇", "🥈", "🥉"][place - 1] || "🎉";
+    const mine = myTeam && (s.teams || []).find((t) => t.team === me.team);
+    const tie = !!(mine && s.teams.filter((t) => t.score === s.teams[0].score).length > 1 && mine.score === s.teams[0].score); // счёт у лучших равный
+    const place = tie ? 1 : myTeam ? me.team_place : me.place;
+    const medal = tie ? "🤝" : ["🥇", "🥈", "🥉"][place - 1] || "🎉";
     $main.innerHTML = `
       <div class="scene">
         <span class="big pop">${medal}</span>
-        <h1 class="rise">${myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
+        <h1 class="rise">${tie ? `«${esc(myTeam)}» — ничья!` : myTeam ? `«${esc(myTeam)}» — ${place} место` : `${place} место`}</h1>
         ${s.race_winner ? `<p class="muted rise">👑 Царь горы: ${esc(s.race_winner)}</p>` : ""}
         <p class="muted rise" style="--i:1">${myTeam ? `Ты лично: ${me.place} место, ` : ""}${s.settings.mode === "heads" ? wordsN(me.score) : me.score + " очков"}. Спасибо за игру!</p>
         ${(s.awards || []).length ? `<div class="awards">${s.awards.map((a, i) => `<div class="award rise ${a.name === me.name ? "mine" : ""}" style="--i:${i + 2}">
@@ -1624,6 +1647,7 @@ async function pollOnce(seq) {
       + (s.perks ? JSON.stringify([s.perks.waiting, s.perks.doubled]) : "");
     if (sig !== lastSig) { lastSig = sig; render(s); }
     pauseView(s);
+    showReactions(s);
     if (window.QuizMusic && speaker(s)) QuizMusic.setTension(s.phase === "question" && s.left <= 5);
     const tw = document.getElementById("trick-left"); if (tw && s.me) tw.textContent = Math.ceil(s.me.trick_wait || 0);
     const tl = document.getElementById("topic-left"); if (tl && s.topic) tl.textContent = `${Math.ceil(s.topic.left)} с`;
@@ -1666,6 +1690,13 @@ function confetti(on) {
 
 // На телефоне первое касание кнопки под полем ввода закрывает клавиатуру: экран сдвигается, и нажатие
 // приходится мимо кнопки. Поэтому кнопку формы срабатываем уже при касании, пока экран не сдвинулся.
+// реакции — сразу по касанию: пока палец на кнопке, экран может перерисоваться, и «клик» потеряется
+const sendReact = (rc) => { buzz(10); rc.animate([{ transform: "scale(1.4)" }, { transform: "scale(1)" }], 250); api("/api/react", { pid, e: rc.dataset.react }).catch(() => {}); };
+let reactTap = 0;
+document.addEventListener("pointerdown", (e) => {
+  const rc = e.target.closest("[data-react]");
+  if (rc && e.pointerType !== "mouse") { reactTap = Date.now(); sendReact(rc); }
+});
 document.addEventListener("pointerdown", (e) => {
   const b = e.target.closest("form button[type=submit]");
   if (!b || b.disabled || e.pointerType === "mouse") return;
@@ -1755,7 +1786,7 @@ document.addEventListener("click", async (e) => {
   const pr = e.target.closest("[data-perks-ready]"); // перки выбраны
   if (pr) { buzz(15); pr.disabled = true; await api("/api/perks_ready", { pid }).catch(() => {}); lastSig = ""; poll(); return; }
   const rc = e.target.closest("[data-react]"); // реакция — летит на большой экран
-  if (rc) { buzz(10); rc.animate([{ transform: "scale(1.4)" }, { transform: "scale(1)" }], 250); api("/api/react", { pid, e: rc.dataset.react }).catch(() => {}); return; }
+  if (rc) { if (Date.now() - reactTap > 800) sendReact(rc); return; } // касанием уже отправили
   const bn = e.target.closest("[data-bet-next]"); // ставка ×2 на следующий вопрос (не путать с [data-bet] — ставкой «Своей игры»)
   if (bn) { buzz(bn.dataset.betNext === "1" ? [30, 50, 30] : 15); bn.disabled = true; await api("/api/double", { pid, on: bn.dataset.betNext === "1" }).catch(() => {}); lastSig = ""; poll(); return; }
   const choice = e.target.closest("[data-choice]");

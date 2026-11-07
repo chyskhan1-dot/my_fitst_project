@@ -66,6 +66,16 @@ MAX_QUESTIONS = 1000  # вопросов в одном загружаемом п
 OFFLINE_AFTER = 8  # игрок не на связи, если его телефон молчит дольше 8 секунд
 AVATARS = ["🦊", "🐼", "🐯", "🦁", "🐸", "🐵", "🐧", "🦉", "🐙", "🦄", "🐲", "🐺",
            "🐻", "🐨", "🐰", "🐱", "⚽", "🏀", "🎸", "🚀", "👽", "🤖", "👑", "🔥"]
+# цвет игрока (круг аватарки, метка на горе, подписи) — по порядку входа, у каждого свой; та же палитра в play/host/rope.js
+PLAYER_COLORS = ["#ff6b6b", "#2ed3c6", "#ffd23f", "#a46bff", "#4cd964", "#ff6fb5", "#5ac8fa", "#ff9f43", "#c3e84a", "#4f7cff"]
+
+
+def free_color(players):
+    """Первый цвет палитры, которого ни у кого нет; все заняты — по кругу."""
+    used = [p.get("color") for p in players.values()]
+    return next((c for c in PLAYER_COLORS if c not in used), PLAYER_COLORS[len(used) % len(PLAYER_COLORS)])
+
+
 INSTRUMENTS = ("piano", "epiano", "marimba", "flute", "strings", "pluck", "synth")
 NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C#5:0.5, пауза R:1
 QTYPES = ("choice", "multi", "order", "text", "number", "map")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе), точка на карте
@@ -928,7 +938,7 @@ class SiEngine:
     # ---------- что показать ----------
     def name(self, pid):
         p = self.players().get(pid)
-        return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
+        return {"id": pid, "name": p["name"], "avatar": p.get("avatar"), "color": p.get("color")} if p else None
 
     def state(self, pid):
         ph, now = self.g.phase, self.g.clock()
@@ -1245,7 +1255,7 @@ class FeudEngine:
     # ---------- что показать ----------
     def name(self, pid):
         p = self.g.players.get(pid)
-        return {"id": pid, "name": p["name"], "avatar": p.get("avatar")} if p else None
+        return {"id": pid, "name": p["name"], "avatar": p.get("avatar"), "color": p.get("color")} if p else None
 
     def state(self, pid):
         ph, now = self.g.phase, self.g.clock()
@@ -1447,7 +1457,7 @@ class HeadsEngine:
         name = lambda i: self.g.players[i]["name"] if i in self.g.players else None
         if c:
             p = self.g.players.get(c["pid"]) or {}
-            s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"), "team": p.get("team"),
+            s["cur"] = {"id": c["pid"], "name": p.get("name", "?"), "avatar": p.get("avatar"), "color": p.get("color"), "team": p.get("team"),
                         "ok": sum(w["ok"] for w in c["words"]), "n": len(c["words"]),
                         "marks": [w["ok"] for w in c["words"]],
                         # слова целиком — только после хода: на ТВ во время хода может посмотреть тот, кто угадывает
@@ -1709,7 +1719,7 @@ class Game:
         pid_of = {id(p): pid for pid, p in self.players.items()}
         out = []
         def add(icon, title, p, detail):
-            out.append({"icon": icon, "title": title, "name": p["name"], "avatar": p.get("avatar"), "detail": detail})
+            out.append({"icon": icon, "title": title, "name": p["name"], "avatar": p.get("avatar"), "color": p.get("color"), "detail": detail})
         fast = [p for p in ps if p.get("n_right", 0) >= 2]
         if fast:
             p = min(fast, key=lambda p: p["t_right"] / p["n_right"])
@@ -1776,7 +1786,7 @@ class Game:
         if self.phase == "topic_vote":
             out["left"] = max(0, round(VOTE_SECONDS - el, 1))
             out["voted"] = len(self.votes)
-            out["voters"] = [[{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar")}
+            out["voters"] = [[{"name": self.players[v]["name"], "avatar": self.players[v].get("avatar"), "color": self.players[v].get("color")}
                               for v, th in self.votes.items() if th == o and v in self.players] for o in out["options"]]
         else:
             out.update(winner=t.get("winner"), counts=t.get("counts"), weights=t.get("weights"), spin_left=max(0, round(t.get("spin", SPIN_SECONDS) - el, 1)),
@@ -2156,7 +2166,7 @@ class Game:
                 "prev": p["prev_place"],
                 "streak": p["streak"],
                 "doubled": p.get("doubled", False),
-                "avatar": p.get("avatar"),
+                "avatar": p.get("avatar"), "color": p.get("color"),
                 "online": time.time() - p.get("seen", 0) <= OFFLINE_AFTER,
                 "marks": [p.get("marks", {}).get(i, "none") for i in span],
             }
@@ -2321,7 +2331,7 @@ class Game:
                 rank = {"right": 0, "partial": 1}
                 rows = sorted(((rank.get(a.get("result"), 2), a["time"], pid, a) for pid, a in self.answers.items()
                                if pid in self.players and a["value"] is not None), key=lambda r: r[:2])
-                s["player_answers"] = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"),
+                s["player_answers"] = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "color": self.players[pid].get("color"),
                                         "pick": a["value"], "result": a.get("result"), "time": round(a["time"], 1)} for _, _, pid, a in rows]
             if q["type"] in ("choice", "multi"):
                 s["correct"] = q["answer"]
@@ -2334,21 +2344,21 @@ class Game:
                 s["correct_order"] = q["options"]
             elif q["type"] == "number":
                 s["correct_number"] = q["answer"]
-                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "value": a["value"],
+                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "color": self.players[pid].get("color"), "value": a["value"],
                          "diff": a["value"] - q["answer"], "best": a.get("result") == "right", "time": round(a["time"], 1)}
                         for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["number_answers"] = sorted(rows, key=lambda r: abs(r["diff"]))
             elif q["type"] == "map":
                 s["correct_point"] = q["answer"]
                 s["place"] = q.get("place")
-                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "point": a["value"],
+                rows = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "color": self.players[pid].get("color"), "point": a["value"],
                          "km": round(distance_km(a["value"], q["answer"])), "best": a.get("result") == "right", "time": round(a["time"], 1)}
                         for pid, a in self.answers.items() if pid in self.players and a["value"] is not None]
                 s["map_answers"] = sorted(rows, key=lambda r: r["km"])
             else:
                 s["correct_text"] = q["answer"][0]
                 s["text_answers"] = [
-                    {"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "text": a["value"],
+                    {"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "color": self.players[pid].get("color"), "text": a["value"],
                      "ok": a.get("result") == "right", "time": round(a["time"], 1)}
                     for pid, a in sorted(self.answers.items(), key=lambda x: (x[1].get("result") != "right", x[1]["time"]))
                     if pid in self.players and a["value"] is not None
@@ -2359,6 +2369,7 @@ class Game:
             s["me"] = {
                 "name": me["name"],
                 "avatar": me.get("avatar"),
+                "color": me.get("color"),
                 "team": me.get("team"),
                 "score": me["score"],
                 "last": me["last_points"],
@@ -2717,7 +2728,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"pid": mine})
                 pid = secrets.token_urlsafe(8)
                 game.players[pid] = {
-                    "name": name, "device": device, "team": team, "avatar": avatar, "seen": time.time(),
+                    "name": name, "device": device, "team": team, "avatar": avatar, "color": free_color(game.players), "seen": time.time(),
                     "score": 0, "last_points": 0, "prev_place": 0, "streak": 0, "doubles": DOUBLES, "doubled": False, "next_double": False, "bet": False,
                 }
                 game.balance_teams()

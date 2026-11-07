@@ -73,12 +73,8 @@ p { margin: 0; line-height: 1.5; }
 #main.calm .rise, #main.calm .pop, #main.calm .person { animation: none; } /* тот же экран обновился — без повторной анимации */
 @keyframes pop { from { opacity: 0; transform: scale(.4); } }
 
-.ava {
-  width: 34px; height: 34px; border-radius: 50%; flex: none; display: grid; place-items: center;
-  font-family: var(--display); font-weight: 800; font-size: 14px; color: #fff; background: var(--c);
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .2);
-}
-.ava.xl { width: 84px; height: 84px; font-size: 34px; }
+.ava { --s: 32px; } /* круг и цвет — static/avatar.js */
+.ava.xl { --s: 64px; }
 
 form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 input {
@@ -115,6 +111,8 @@ input {
 .spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .place { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; }
+.place-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 0; font-size: 18px; font-weight: 700; }
+.place-line b { font-family: var(--display); font-size: 22px; color: var(--accent); }
 .move { font-weight: 800; }
 .move.up { color: var(--good); } .move.down { color: var(--bad); }
 .mini { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
@@ -232,11 +230,10 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .phone-map.small { height: 34vh; min-height: 200px; }
 .text-form input { font: 700 22px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: center; width: 100%; }
 .stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.ava.emo { background: var(--panel); box-shadow: none; font-size: 20px; }
-.ava.emo.xl { font-size: 46px; }
 .avatars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; }
-.av { font-size: 24px; aspect-ratio: 1; border-radius: 12px; border: 2px solid transparent; background: var(--panel); cursor: pointer; padding: 0; }
-.av.on { border-color: var(--accent); background: rgba(255, 210, 63, .18); }
+.av { aspect-ratio: 1; border-radius: 50%; border: 0; background: none; cursor: pointer; padding: 0; display: grid; place-items: center; opacity: .75; }
+.av .ava { --s: 44px; transition: transform .15s; }
+.av.on { opacity: 1; } .av.on .ava { transform: scale(1.12); box-shadow: 0 0 0 2px #fff, 0 0 14px 2px var(--c); }
 .ava-change { width: 100%; }
 .ava-change summary { color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 8px; }
 .marks { display: inline-flex; gap: 3px; flex: none; }
@@ -382,6 +379,7 @@ details.more > *:not(summary) { margin-top: 10px; }
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/avatar.js"></script>
 <script src="/static/seen.js"></script>
 <script src="/static/awake.js"></script>
 <script src="/static/logic.js"></script>
@@ -410,8 +408,6 @@ function save(v) {
   } catch {}
 }
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
-const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
 const isEmojiPic = (v) => /media\/pics\/ans-/.test(v || ""); // объёмный смайлик к ответу — не растягивать
 const mediaSrc = (v) => (/^(data:|https?:|\/)/.test(v) ? v : "/" + v);
 const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
@@ -565,11 +561,13 @@ const remember = (k, v) => { try { v == null ? localStorage.getItem(k) : localSt
 const recall = (k) => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
 let trickTimer = 0, trickTo = null; // кому подлянка (по умолчанию — лидеру)
 let pickAva = recall("quiz-avatar") || null, avaOpen = false, lastScene = "";
-const avaP = (p, cls = "") => (p.avatar ? `<span class="ava emo ${cls}">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name, cls));
+const avaP = (p, cls = "") => QuizAva.html(p, cls); // смайлик в круге цвета игрока — static/avatar.js
 
-function avatarPicker(list, selected) {
-  return `<div class="avatars" role="group" aria-label="Аватарка">${list.map((a) =>
-    `<button type="button" class="av ${a === selected ? "on" : ""}" data-ava="${esc(a)}" aria-label="${esc(a)}">${QuizEmoji.html(a)}</button>`).join("")}</div>`;
+// выбор аватарки: каждая — сразу в круге своего цвета (до входа — цвет, который достанется, как на сервере)
+function avatarPicker(list, selected, color) {
+  const c = color || QuizAva.next(lastState && lastState.players);
+  return `<div class="avatars" role="group" aria-label="Аватарка" style="${QuizAva.vars(c)}">${list.map((a) =>
+    `<button type="button" class="av ${a === selected ? "on" : ""}" data-ava="${esc(a)}" aria-label="${esc(a)}">${QuizAva.html({ avatar: a, color: c })}</button>`).join("")}</div>`;
 }
 
 function joinForm() {
@@ -1171,13 +1169,13 @@ const secs = (t) => (t == null ? "" : `${Number(t).toLocaleString("ru-RU", { max
 // верёвка на телефоне: лидеры и ты; конец раунда и победа в гонке — подписью
 function phoneRope(s, me) {
   const rows = s.settings.teams
-    ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, me: t.team === me.team, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+    ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, prev: t.prev, color: TEAM_COLORS[t.team], me: t.team === me.team, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
     : (() => {
       const top = s.players.slice(0, 11), mine = s.players.find((p) => p.name === me.name);
       if (mine && !top.includes(mine)) top.push(mine);
-      return top.map((p) => ({ name: p.name, score: p.score, last: p.last, me: p.name === me.name, face: avaP(p) }));
+      return top.map((p) => ({ name: p.name, score: p.score, last: p.last, prev: p.prev, color: QuizAva.color(p), me: p.name === me.name, face: avaP(p) }));
     })();
-  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "210px", compact: true, race: !!s.settings.race, mountain: true });
+  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "60vh", compact: true, race: !!s.settings.race });
 }
 const roundTitle = (s) => (s.race_winner ? `👑 ${esc(s.race_winner)} — царь горы!`
   : s.round_end ? `Раунд ${s.round_no} из ${s.rounds_total} завершён${s.round_theme ? ` · «${esc(s.round_theme)}»` : ""}` : "");
@@ -1203,16 +1201,16 @@ function othersAnswers(s, me) {
 }
 
 // ближайшая цель вместо места в общей таблице: сравнение с соседом мотивирует сильнее (исследования таблиц лидеров)
-function chase(s, me) {
+// шапка таблицы в одну строку: «2-е место · отстаёшь на 5» (что дальше — видно на горе)
+function placeLine(s, me) {
   const rows = s.players, i = rows.findIndex((p) => p.name === me.name);
-  if (i < 0 || rows.length < 2) return "";
-  const pts = (n) => n + " " + QuizComments.plural(n, "очко", "очка", "очков");
-  if (i === 0) {
-    const gap = me.score - rows[1].score;
-    return `<p class="chase rise">${gap > 0 ? `🏆 Ты лидер! Отрыв — ${pts(gap)}, следом ${esc(rows[1].name)}` : `🤝 Первое место поровну: ты и ${esc(rows[1].name)}`}</p>`;
+  if (i < 0) return "";
+  let tail = "";
+  if (rows.length > 1) {
+    const gap = i === 0 ? me.score - rows[1].score : rows[i - 1].score - me.score;
+    tail = i === 0 ? (gap > 0 ? `впереди на ${gap}` : "делишь первое") : gap > 0 ? `отстаёшь на ${gap}` : "поровну с соседом";
   }
-  const up = rows[i - 1], gap = up.score - me.score;
-  return `<p class="chase rise">${gap > 0 ? `🎯 ${esc(up.name)} впереди на ${pts(gap)}. Обгони!` : `🤝 Поровну: ты и ${esc(up.name)}`}</p>`;
+  return `<p class="place-line rise"><b>${i + 1}-е место</b>${tail ? ` · ${tail}` : ""}</p>`;
 }
 // реакции: всплывают на большом экране
 const REACTS = ["👏", "😂", "😱", "🔥"];
@@ -1357,7 +1355,7 @@ function draw(s) {
             <span class="person ${p.name === me.name ? "me" : ""} ${p.online ? "" : "off"}" ${p.team != null && TEAM_COLORS[p.team] ? `style="--c:${TEAM_COLORS[p.team]}"` : ""}>${avaP(p)}${esc(p.name)}${p.name === me.name ? " (ты)" : ""}</span>`).join("")}</div></div>
         ${betBox(me)}
         <button class="btn ghost" id="invite" type="button">📤 Позвать друзей</button>
-        <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar)}</details>
+        <details class="ava-change" ${avaOpen ? "open" : ""}><summary>Сменить аватарку</summary>${avatarPicker(s.avatars, me.avatar, me.color)}</details>
         <button class="leave" id="leave">Сменить имя</button>
       </div>`;
     document.getElementById("leave").onclick = () => { pid = null; save(null); lastSig = ""; joinForm(); };
@@ -1526,10 +1524,7 @@ function draw(s) {
       <div class="scene">
         ${me.can_trick ? trickBox(s, me) : ""}
         ${roundTitle(s) ? `<div class="round-done pop">${roundTitle(s)}</div>` : ""}
-        <div class="eyebrow">Ты на месте</div>
-        <span class="place pop">${me.place}</span>
-        <p class="muted">из ${s.players.length} · ${me.score} очков</p>
-        ${chase(s, me)}
+        ${placeLine(s, me)}
         ${finalTag(s)}
         ${phoneRope(s, me)}
         ${reactBar()}
@@ -1723,7 +1718,7 @@ document.addEventListener("click", async (e) => {
     document.querySelectorAll("[data-ava]").forEach((x) => x.classList.toggle("on", x === av));
     buzz(10);
     if (pid) {
-      document.querySelectorAll("#top .ava, #main .ava.xl").forEach((x) => { x.outerHTML = avaP({ avatar: pickAva }, x.classList.contains("xl") ? "xl" : ""); });
+      document.querySelectorAll("#top .ava, #main .ava.xl").forEach((x) => { x.outerHTML = avaP({ avatar: pickAva, color: lastState && lastState.me && lastState.me.color }, x.classList.contains("xl") ? "xl" : ""); });
       await api("/api/avatar", { pid, avatar: pickAva }).catch(() => {}); lastSig = ""; poll();
     }
     return;

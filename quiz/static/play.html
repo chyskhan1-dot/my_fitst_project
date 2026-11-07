@@ -1175,7 +1175,7 @@ function phoneRope(s, me) {
       if (mine && !top.includes(mine)) top.push(mine);
       return top.map((p) => ({ name: p.name, score: p.score, last: p.last, prev: p.prev, color: QuizAva.color(p), me: p.name === me.name, face: avaP(p) }));
     })();
-  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "60vh", compact: true, race: !!s.settings.race });
+  return QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { height: "60vh", compact: true, race: !!s.settings.race, progress: (s.index + 1) / Math.max(1, s.total), night: !!(s.final_x2 || s.race_winner) });
 }
 const roundTitle = (s) => (s.race_winner ? `👑 ${esc(s.race_winner)} — царь горы!`
   : s.round_end ? `Раунд ${s.round_no} из ${s.rounds_total} завершён${s.round_theme ? ` · «${esc(s.round_theme)}»` : ""}` : "");

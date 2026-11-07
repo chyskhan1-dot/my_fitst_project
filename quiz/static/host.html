@@ -974,7 +974,7 @@ function draw(s) {
       : s.players.slice(0, 30).map((p) => ({ name: p.name, score: p.score, last: p.last, prev: p.prev, color: QuizAva.color(p), face: avaP(p) }));
     $main.innerHTML = `
       <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1>${roundDone ? finalTag(s) : ""}</div>
-      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, height: "min(64vh, calc(100vh - 330px))" })}
+      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, height: "min(64vh, calc(100vh - 330px))", progress: (s.index + 1) / Math.max(1, s.total), night: !!(s.final_x2 || s.race_winner) })}
         ${s.settings.teams ? `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : ""}</div>
         <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
     QuizRope.climb($main);

@@ -69,11 +69,7 @@ h2 { font-size: clamp(24px, 3.4vw, 46px); font-weight: 500; }
 @keyframes pop { from { opacity: 0; transform: scale(.5); } }
 
 /* аватарки */
-.ava {
-  width: 1.9em; height: 1.9em; border-radius: 50%; flex: none; display: grid; place-items: center;
-  font-family: var(--display); font-weight: 800; font-size: .85em; color: #fff; background: var(--c);
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .2);
-}
+.ava { width: 1.9em; height: 1.9em; font-size: .85em; } /* круг и цвет — static/avatar.js */
 
 /* лобби */
 .join { display: flex; gap: 36px; align-items: center; flex-wrap: wrap; padding: 28px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line); }
@@ -229,7 +225,6 @@ a.btn { text-decoration: none; display: inline-block; }
 .podium { display: flex; justify-content: center; align-items: flex-end; gap: 14px; }
 .step { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(240px, 31%); }
 .step .ava { font-size: 1.5em; }
-.ava.emo { background: var(--panel); box-shadow: none; font-size: 1.15em; }
 .chip.off { opacity: .5; }
 #to-player { text-decoration: none; white-space: nowrap; }
 .top .home { color: inherit; text-decoration: none; font-weight: 700; padding: 4px 10px; border-radius: 10px; background: rgba(255, 255, 255, .08); margin-right: 6px; }
@@ -539,6 +534,7 @@ body.paused .trick-fog .text-form, body.paused .eq i { animation-play-state: pau
 <script src="/static/comments.js"></script>
 <script src="/static/map.js"></script>
 <script src="/static/emoji.js"></script>
+<script src="/static/avatar.js"></script>
 <script src="/static/seen.js"></script>
 <script src="/static/awake.js"></script>
 <script src="/static/logic.js"></script>
@@ -576,10 +572,8 @@ const RULES = [
 const teamDot = (t) => `<span class="tdot" style="--c:${TEAM_COLORS[t]}"></span>`;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-function color(name) { let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
-const ava = (name, cls = "") => `<span class="ava ${cls}" style="--c:${color(name)}">${esc([...name][0].toUpperCase())}</span>`;
-// аватарка игрока: выбранный значок или первая буква имени
-const avaP = (p) => (p.avatar ? `<span class="ava emo">${QuizEmoji.html(p.avatar)}</span>` : ava(p.name));
+// аватарка игрока: смайлик (или первая буква имени) в круге цвета игрока — static/avatar.js
+const avaP = (p, cls = "") => QuizAva.html(p, cls);
 
 // копирование: navigator.clipboard работает только по https, дома по Wi-Fi (http) — запасной способ
 async function copyText(text) {
@@ -976,11 +970,11 @@ function draw(s) {
     const eyebrow = won ? "Царь горы" : roundDone ? `Раунд ${s.round_no} из ${s.rounds_total} завершён` : `После вопроса ${s.index + 1} из ${s.total}`;
     const title = won ? `👑 ${esc(won)} — царь горы!` : roundDone ? `Итоги раунда${s.round_theme ? ` «${esc(s.round_theme)}»` : ""}` : "Кто выше?";
     const rows = s.settings.teams
-      ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
-      : s.players.slice(0, 30).map((p) => ({ name: p.name, score: p.score, last: p.last, face: avaP(p) }));
+      ? s.teams.map((t) => ({ name: t.name, score: t.score, last: t.last, prev: t.prev, color: TEAM_COLORS[t.team], face: `<span class="team-face" style="--c:${TEAM_COLORS[t.team]}"></span>` }))
+      : s.players.slice(0, 30).map((p) => ({ name: p.name, score: p.score, last: p.last, prev: p.prev, color: QuizAva.color(p), face: avaP(p) }));
     $main.innerHTML = `
       <div><div class="eyebrow">${eyebrow}</div><h1 class="${roundDone || won ? "pop" : ""}">${title}</h1>${roundDone ? finalTag(s) : ""}</div>
-      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, mountain: true })}
+      <div class="leaders-wrap"><div>${QuizRope.html(rows, s.rope_top, `${room}:${s.index}`, { race: !!s.settings.race, height: "min(64vh, calc(100vh - 330px))" })}
         ${s.settings.teams ? `<p class="muted" style="margin:12px 0 10px">Лучшие игроки</p>` + board(s.players.slice(0, 3)) : ""}</div>
         <aside class="comments">${trickNext(s)}${QuizComments.comments(s).map((c, i) => `<div class="comment" style="--i:${i}">${c}</div>`).join("")}</aside></div>`;
     QuizRope.climb($main);

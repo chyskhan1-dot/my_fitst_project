@@ -104,9 +104,12 @@ textarea { resize: vertical; min-height: 54px; }
   .opts, .media { grid-template-columns: 1fr; }
   .bar .logo { width: 100%; }
 }
+.phone-note { display: none; margin: 0; padding: 8px 14px; background: rgba(255, 210, 63, .16); color: #ffd23f; font-weight: 700; font-size: 14px; text-align: center; }
+@media (max-width: 600px) { .phone-note { display: block; } }
 </style>
 </head>
 <body>
+<p class="phone-note">💻 Редактор удобнее на компьютере — на телефоне тесно</p>
 <div class="bar">
   <span class="logo">Редактор вопросов</span>
   <button class="btn" id="new">Новый</button>

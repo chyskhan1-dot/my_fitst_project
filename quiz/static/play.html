@@ -99,6 +99,9 @@ input {
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .2); transition: transform .1s;
 }
 .ans:active { transform: scale(.95); }
+.ans.lg .tx { font-size: 20px; } .ans.xl .tx { font-size: 28px; }
+.ans .tx { hyphens: auto; -webkit-hyphens: auto; }
+.ans .lt { position: absolute; top: 8px; left: 12px; font: 800 13px var(--display); opacity: .65; }
 .ans.ink, .topic-btn.ink { color: #10142e; } /* на жёлтом и зелёном белый текст плохо читается */
 .ans:disabled { opacity: .5; }
 .ans:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -143,7 +146,7 @@ input {
 .topic-res { opacity: 0; transition: opacity .5s; display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%; }
 .topic-res.shown { opacity: 1; }
 .topic-res:not(.shown) { pointer-events: none; } /* пока колесо крутится, ставку не сделать */
-.sound-btn { border: 0; background: none; font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.sound-btn { border: 0; background: none; font-size: 20px; cursor: pointer; padding: 4px 8px; min-width: 44px; min-height: 44px; }
 .ans .opt-img { height: 60px; width: 90px; object-fit: contain; flex: none; border-radius: 6px; } /* флаг, планета у варианта */
 .mini .n small { display: block; font-weight: 600; font-size: 13px; color: var(--muted); white-space: normal; }
 .others { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
@@ -230,7 +233,9 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .phone-map.small { height: 34vh; min-height: 200px; }
 .text-form input { font: 700 22px var(--body); padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: center; width: 100%; }
 .stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-.avatars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; }
+.avatars { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, 52px); grid-auto-columns: 52px; gap: 6px; width: 100%;
+  overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.avatars .av { scroll-snap-align: start; }
 .av { aspect-ratio: 1; border-radius: 50%; border: 0; background: none; cursor: pointer; padding: 0; display: grid; place-items: center; opacity: .75; }
 .av .ava { --s: 44px; transition: transform .15s; }
 .av.on { opacity: 1; } .av.on .ava { transform: scale(1.12); box-shadow: 0 0 0 2px #fff, 0 0 14px 2px var(--c); }
@@ -259,7 +264,8 @@ a.role { color: inherit; text-decoration: none; text-align: left; }
 .welcome small { color: var(--muted); font-weight: 700; font-size: 12px; }
 .welcome b { font-family: var(--display); font-size: 20px; }
 .welcome span { font-size: 14px; }
-.home-btn { text-decoration: none; font-size: 18px; padding: 4px 6px; border-radius: 10px; background: var(--panel); line-height: 1; }
+.home-btn { text-decoration: none; font-size: 18px; border-radius: 12px; background: var(--panel); line-height: 1;
+  min-width: 44px; min-height: 44px; display: grid; place-items: center; flex: none; }
 .hd-claim { width: 100%; font-size: 20px; }
 .hd-claimed { margin: 0; font-weight: 800; color: var(--good, #3ddc84); }
 .hd-tip { margin: 0; font-size: 14px; font-weight: 700; color: #ffe9a8; }
@@ -460,6 +466,7 @@ function startScreen() {
       <button class="btn ghost rise" style="--i:8;width:100%" id="as-player" type="button">📱 У меня есть код комнаты</button>
       <div class="error" id="err"></div>
       <button class="leave" type="button" data-share-site>📤 Поделиться игрой с друзьями</button>
+      <a class="leave" href="/privacy">Конфиденциальность</a>
       <button class="leave" type="button" data-install hidden>📲 Установить на телефон</button>
       <p class="muted install-help" id="install-help" hidden></p>
     </div>`;
@@ -595,12 +602,12 @@ function joinForm() {
       <h1 class="rise" style="--i:1">Как тебя записать?</h1>
       <form id="join" class="rise" style="--i:2">
         <input id="name" maxlength="20" autocomplete="nickname" placeholder="Твоё имя" aria-label="Имя" required value="${esc(recall("quiz-name"))}">
-        ${s && s.avatars ? `<p class="muted">Выбери аватарку:</p>${avatarPicker(s.avatars, pickAva)}` : ""}
+        ${s && s.avatars ? `<p class="muted">Выбери аватарку — листай вбок:</p>${avatarPicker(s.avatars, pickAva)}` : ""}
         ${teams ? `<p class="muted">Выбери команду:</p>${teamPicker(s, pickTeam)}` : ""}
         <div class="error" id="err"></div>
         <button class="btn" type="submit">Войти в игру</button>
       </form>
-      <p class="muted small-note">Вылетел из игры? Введи то же имя — очки вернутся.</p>
+      <p class="muted small-note">Вылетел из игры? Открой её с того же телефона — очки вернутся.</p>
       <button class="leave" id="other">Другая комната</button>
     </div>`;
   document.getElementById("other").onclick = startScreen;
@@ -709,8 +716,13 @@ const oddPick = (s) => s.theme === "Убери лишнее" && s.qtype === "cho
 function answerControls(s) {
   const pic = (i) => (s.option_images ? `<img class="opt-img" src="${esc(mediaSrc(s.option_images[i]))}" alt="">` : "");
   const plain = s.me && s.me.trick;
-  const btn = (i, attr, extra = "", n = i) => `<button class="ans rise ${extra} ${plain ? "plain" : i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${n}" ${attr}="${i}">
-    ${pic(i)}<span class="tx">${esc(trickText(s, s.options[i]))}</span><span class="badge-num"></span></button>`;
+  // короткий ответ («0,3», «Париж») — крупнее; буква в углу — та же, что у варианта на большом экране (не при подлянке)
+  const size = (o) => { // крупно — только если слова короткие: длинное слово на узком телефоне рвётся посередине
+    const n = [...String(o)].length, w = Math.max(...String(o).split(/[\s-]+/).map((x) => [...x].length));
+    return n <= 6 ? "xl" : n <= 16 && w <= 8 ? "lg" : "";
+  };
+  const btn = (i, attr, extra = "", n = i) => `<button class="ans rise ${extra} ${size(s.options[i])} ${plain ? "plain" : i === 2 || i === 3 ? "ink" : ""}" style="--c:var(--a${i});--i:${n}" ${attr}="${i}">
+    ${plain ? "" : `<span class="lt">${"АБВГ"[i] || ""}</span>`}${pic(i)}<span class="tx">${esc(trickText(s, s.options[i]))}</span><span class="badge-num"></span></button>`;
   const order = trickOrder(s);
   if (s.qtype === "multi") {
     return `<p class="hint">Отметь все верные варианты</p>
@@ -726,7 +738,7 @@ function answerControls(s) {
     return `<form id="text-form" class="text-form">
       <input id="answer-text" maxlength="20" inputmode="decimal" autocomplete="off" placeholder="Число${s.unit ? ", " + esc(s.unit) : ""}" aria-label="Твой ответ — число">
       <button class="btn" type="submit">Ответить</button></form>
-      <p class="hint">Побеждает тот, кто ближе всех к правильному ответу</p>`;
+      <p class="hint">Чем ближе к правильному ответу, тем больше очков</p>`;
   }
   if (s.qtype === "map") {
     return `<div class="phone-map" id="phone-map"></div>

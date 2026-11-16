@@ -59,6 +59,9 @@ ADAPT_HIGH = 0.8  # подстройка сложности: верно отве
 PERKS_SECONDS = 30  # перед раундом (владелец: 15 с мало): выбрать перки (×2 на раунд, подлянка); раньше — если все нажали «Готово»
 ROOM_IDLE = 3 * 60 * 60  # комната без активности удаляется через 3 часа
 MAX_ROOMS = 500
+MAX_PLAYERS = 60  # игроков в одной комнате
+MAX_SMALL_BODY = 256 * 1024  # обычный запрос (ответ, имя, настройки); больше — только загрузка пакета ведущим
+MISS_LIMIT, MISS_WINDOW = 30, 300  # перебор кодов комнат: столько промахов с одного адреса за 5 минут — и пауза
 MAX_BODY = 25 * 1024 * 1024  # самый большой запрос (пакет с картинками и аудио)
 MAX_SIQ = 60 * 1024 * 1024  # самый большой пакет «Своей игры» (.siq)
 MAX_MEDIA_TOTAL = 300 * 1024 * 1024  # сколько загруженных файлов держим в памяти на все комнаты
@@ -81,6 +84,8 @@ NOTE_RE = re.compile(r"^(R|[A-G][#b]?[1-7])(:\d+(\.\d+)?)?$")  # нота: E4, C
 QTYPES = ("choice", "multi", "order", "text", "number", "map")  # один ответ, несколько верных, по порядку, свой ответ, число (кто ближе), точка на карте
 LEVELS = ("easy", "normal", "hard")  # сложность вопроса
 TYPE_TIME = {"multi": 1.5, "order": 1.5, "text": 1.25, "number": 1.25, "map": 1.5}
+NUMBER_CLOSE = 0.15  # «кто ближе»: полные очки ближайшему — только если ошибся не больше чем на 15% (владелец согласился)
+MAP_CLOSE = 500  # карта: полные очки ближайшему — только если промах не больше 500 км
 MAP_RADIUS = 2500  # «Где на карте?»: промах дальше, чем на столько км, — без очков (кроме ближайшего)  # на сложные типы — больше времени
 
 mimetypes.add_type("image/webp", ".webp")  # старые Python не знают WebP (смайлики — media/emoji/*.webp)
@@ -151,17 +156,24 @@ def distance(a, b):
 def close(a, b):
     if not a or not b:
         return False
-    allowed = 0 if len(b) <= 4 else 1 if len(b) <= 7 else 2  # короткие слова — без опечаток
+    if a == b:
+        return True
+    if a[0] != b[0]:  # опечатка в первой букве — редкость, а «неправильный» вместо «правильный» — другой ответ
+        return False
+    allowed = 0 if len(b) <= 4 else 1 if len(b) <= 8 else 2  # короткие слова — без опечаток
     return distance(a, b) <= allowed
 
 
 def text_matches(given, accepted):
-    """Засчитываем ответ, если он совпадает с одним из верных с точностью до опечатки,
-    или если среди написанных слов есть верная фамилия (последнее слово верного ответа)."""
+    """Засчитываем ответ, если он совпадает с одним из верных с точностью до опечатки. Ещё можно:
+    одну фамилию вместо «имя фамилия» и лишние слова между ними («Лев Николаевич Толстой»).
+    Чужое слово перед верным не проходит: «Тихий океан» — не «Атлантический океан», «Южная Америка» — не «Америка»."""
     words = [sound_key(w) for w in re.findall(r"[\w'-]+", given)]
     words = [w for w in words if w]
-    if not words or len(words) > 3:
+    if not words or len(words) > 4:
         return False
+    if len(words) > 1 and words[0] in ("v", "na", "iz", "eto"):  # «в Париже», «из нута», «это Волк»
+        words = words[1:]
     whole = "".join(words)
     for variant in accepted:
         parts = [sound_key(w) for w in re.findall(r"[\w'-]+", variant)]
@@ -170,8 +182,12 @@ def text_matches(given, accepted):
             continue
         if close(whole, "".join(parts)):
             return True
-        if any(close(w, parts[-1]) for w in words):
-            return True
+        if len(parts) >= 2:
+            if len(words) == 1 and close(words[0], parts[-1]):
+                return True  # одна фамилия
+            rest = iter(words)
+            if len(words) > len(parts) and all(any(close(w, p) for w in rest) for p in parts):
+                return True  # все слова верного ответа по порядку, между ними — лишние
     return False
 
 
@@ -198,7 +214,8 @@ def media_ref(value, kind, store, scope):
     if value.startswith(("https://", "http://")):
         if len(value) > 2000:
             raise PackError("слишком длинная ссылка")
-        return value
+        # сайт работает по https, и картинку по http:// браузер не покажет — просим её по https
+        return "https://" + value[7:] if value.startswith("http://") else value
     if value.startswith("data:"):
         if store is None:
             raise PackError("вшитые файлы здесь не поддерживаются")
@@ -361,7 +378,9 @@ def clean_pack(data, store=None, scope="_", limit=MAX_QUESTIONS):
             })
         except PackError as e:
             raise PackError(f"вопрос {n}: {e}")
-    return {"title": title, "questions": questions}
+    # необязательные темы пакета: в игру попадают, только если ведущий сам отметил их (например, «ПДД России»)
+    optional = [str(t)[:40] for t in data.get("optional_themes", []) if isinstance(t, str)] if isinstance(data.get("optional_themes"), list) else []
+    return {"title": title, "questions": questions, "optional": [t for t in optional if any(q["theme"] == t for q in questions)]}
 
 
 BUILTIN_MEDIA = {}  # файлы, вшитые во встроенные пакеты
@@ -374,6 +393,28 @@ for f in sorted(PACKS_DIR.glob("*.json")):
         PACK_FILES[f.stem] = f
     except (json.JSONDecodeError, PackError) as e:
         print(f"Пакет {f.name} пропущен: {e}", flush=True)
+LOCKED_PACKS = set()  # пакеты с "locked": true — играть можно, скачать файл с ответами нельзя (задел под платные)
+for _id, _f in PACK_FILES.items():
+    try:
+        if json.loads(_f.read_text(encoding="utf-8")).get("locked") is True:
+            LOCKED_PACKS.add(_id)
+    except (json.JSONDecodeError, AttributeError):
+        pass
+LEARN_THEMES = ("Страны и города", "Флаги", "Столицы")  # темы тренировки (COLLECTIONS в static/learn.html)
+LEARN_CACHE = {}
+
+
+def learn_pack(pack_id):
+    """Пакет для тренировки: только вопросы её тем — остальные ответы наружу не отдаём (и грузится в 6 раз быстрее)."""
+    if pack_id not in PACK_FILES:
+        pack_id = "general" if "general" in PACK_FILES else next(iter(PACK_FILES), None)
+    if pack_id not in LEARN_CACHE:
+        raw = json.loads(PACK_FILES[pack_id].read_text(encoding="utf-8")) if pack_id else {"questions": []}
+        raw["questions"] = [q for q in raw.get("questions", []) if q.get("theme") in LEARN_THEMES]
+        LEARN_CACHE[pack_id] = json.dumps(raw, ensure_ascii=False).encode("utf-8")
+    return LEARN_CACHE[pack_id]
+
+
 DEFAULT_PACK = "general" if "general" in PACKS else next(iter(PACKS), None)
 
 
@@ -448,7 +489,7 @@ def si_from_quiz(pack, used=frozenset(), seen=None):
     seen — ключ → сколько устройств игроков уже видели вопрос (тоже ближе к концу)."""
     themes = collections.defaultdict(list)
     for q in pack["questions"]:
-        a = si_answers(q)
+        a = si_answers(q) if q.get("theme") not in (pack.get("optional") or []) else None
         if a:
             themes[q.get("theme") or "Разное"].append((q, a))
     names = [t for t, items in themes.items() if len(items) >= 5]
@@ -553,6 +594,23 @@ def balanced_sample(indexes, n, questions, seen=None):
                 out.append(groups[t].pop())
     random.shuffle(out)
     return out
+
+
+def ease_in(indexes, questions, first=2):
+    """Разгон: первые вопросы игры — не сложные (если такие есть в выборке), порядок остальных не меняется."""
+    soft = [i for i in indexes if questions[i].get("level") != "hard"][:first]
+    return soft + [i for i in indexes if i not in soft]
+
+
+SHUFFLE_KEEP = re.compile(r"\b(оба|обе|все (три|четыре|перечисленн|вариант)|всё (перечисленн|вышеперечисленн)|ни один|ни одна|ни одно|ничего из)", re.I)
+
+
+def shuffle_ok(q):
+    """Можно ли перемешивать варианты: нет, если картинка привязана к их порядку («Убери лишнее» — четверти картинки)
+    или вариант ссылается на соседей («оба варианта», «все перечисленные»)."""
+    if "/odd/" in (q.get("image") or ""):
+        return False
+    return not any(SHUFFLE_KEEP.search(o) for o in q["options"])
 
 
 def pack_meta(pack):
@@ -706,6 +764,8 @@ class SiEngine:
         if self.g.phase != "si_board":
             return False
         themes = self.round()["themes"]
+        if not (isinstance(ti, int) and isinstance(qi, int)):
+            return False
         if not (0 <= ti < len(themes) and 0 <= qi < len(themes[ti]["questions"])) or (ti, qi) in self.played:
             return False
         self.played.add((ti, qi))
@@ -1617,8 +1677,9 @@ class Game:
         allq, st = self.pack["questions"], self.settings
         themes = set(st.get("themes") or []) & {q.get("theme") for q in allq}
         levels = set(st.get("levels") or LEVELS)
+        skip = set() if themes else set(self.pack.get("optional") or [])  # темы не выбраны — все, кроме необязательных
         ok = [i for i, q in enumerate(allq)
-              if (not themes or q.get("theme") in themes) and (not q.get("level") or q["level"] in levels)]
+              if (not themes or q.get("theme") in themes) and q.get("theme") not in skip and (not q.get("level") or q["level"] in levels)]
         return ok or list(range(len(allq)))  # ничего не подошло — играем весь пакет
 
     def pick_questions(self, commit=False):
@@ -1640,7 +1701,7 @@ class Game:
         if len(fresh) < n:  # вопросы закончились — начинаем круг заново
             used.difference_update(pool)
             fresh = list(pool)
-        chosen = balanced_sample(fresh, n, allq, self.seen())
+        chosen = ease_in(balanced_sample(fresh, n, allq, self.seen()), allq)
         if commit:
             used.update(chosen)
         self.selected = [allq[i] for i in chosen]
@@ -1775,6 +1836,8 @@ class Game:
         k = min(ROUND_SIZE, self.target - len(self.selected), len(avail))
         chosen = fresh_first(fresh, self.seen(), lambda i: qkey(allq[i]["q"], allq[i]["image"]))[:k]
         chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
+        if not self.selected:
+            chosen = ease_in(chosen, allq)  # первый раунд игры начинаем не со сложного
         used.update(chosen)
         self.selected += [allq[i] for i in chosen]
         self.set_phase("topic_bet")
@@ -1888,23 +1951,23 @@ class Game:
         if value is None:
             return 0.0
         if q["type"] == "choice":
-            return 1.0 if value == q["answer"] else 0.0
+            return 1.0 if self.display[value] == q["answer"] else 0.0
         if q["type"] == "text":
             return 1.0 if text_matches(value, q["answer"]) else 0.0
         if q["type"] == "number":
             # ближе всех — полные очки; остальным — до 70% по точности (ошибка в 50% — 35%)
-            err = abs(value - q["answer"])
-            if err <= self.best_err:
-                return 1.0
-            return round(0.7 * max(0.0, 1 - err / max(abs(q["answer"]), 1)), 3)
+            err, scale = abs(value - q["answer"]), max(abs(q["answer"]), 1)
+            if err <= self.best_err and err <= NUMBER_CLOSE * scale:
+                return 1.0  # ближе всех и ошибся не больше чем на 15% — полные очки
+            return round(0.7 * max(0.0, 1 - err / scale), 3)
         if q["type"] == "map":  # так же, как число: ближе всех — полные очки, остальным — по расстоянию
             km = distance_km(value, q["answer"])
-            if km <= self.best_err + 0.01:
+            if km <= self.best_err + 0.01 and km <= MAP_CLOSE:
                 return 1.0
             return round(0.7 * max(0.0, 1 - km / MAP_RADIUS), 3)
         if q["type"] == "multi":
-            right = set(q["answer"])
-            hits, misses = len(right & set(value)), len(set(value) - right)
+            right, value = set(q["answer"]), {self.display[v] for v in value}
+            hits, misses = len(right & value), len(value - right)
             return max(0.0, (hits - misses) / len(right))
         order = [self.display[i] for i in value]  # что игрок поставил на каждое место
         return sum(1 for place, item in enumerate(order) if place == item) / len(order)
@@ -2129,11 +2192,14 @@ class Game:
                 p["bet"], p["next_double"] = bool(p.get("next_double")), False
             # в раунде ставка держится до конца раунда (её снимает start_vote)
         self.index += 1
-        n = len(self.question()["options"])
-        self.display = list(range(n))
-        if self.question()["type"] == "order":
+        q = self.question()
+        n = len(q["options"])
+        self.display = list(range(n))  # display[место на экране] = номер варианта в пакете
+        if q["type"] == "order":
             while n > 1 and self.display == sorted(self.display):
                 random.shuffle(self.display)  # на экране варианты перемешаны
+        elif q["type"] in ("choice", "multi") and shuffle_ok(q):
+            random.shuffle(self.display)  # каждый раз в новом порядке: запоминается ответ, а не «красная кнопка»
         self.set_phase("question")
         self.started_at = time.time()
         self.answers = {}
@@ -2249,9 +2315,9 @@ class Game:
             # экран ведущего присылает pk — ключ того списка, что у него уже есть
             s["packs_key"] = self.packs_key()
             if pid is None and pk != s["packs_key"]:
-                s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
+                s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p), "optional": p.get("optional") or []} for k, p in PACKS.items()]
                 if self.custom:
-                    s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
+                    s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom), "optional": self.custom.get("optional") or []}
         if self.phase in ("topic_vote", "topic_bet", "perks"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
         if not self.si and not self.fd and not self.hd and self.phase not in ("setup", "lobby", "final"):
@@ -2334,7 +2400,8 @@ class Game:
                 s["player_answers"] = [{"name": self.players[pid]["name"], "avatar": self.players[pid].get("avatar"), "color": self.players[pid].get("color"),
                                         "pick": a["value"], "result": a.get("result"), "time": round(a["time"], 1)} for _, _, pid, a in rows]
             if q["type"] in ("choice", "multi"):
-                s["correct"] = q["answer"]
+                at = self.display.index  # номера вариантов — как на экране
+                s["correct"] = at(q["answer"]) if q["type"] == "choice" else sorted(at(a) for a in q["answer"])
                 counts = [0] * len(q["options"])
                 for a in self.answers.values():
                     for v in a["value"] if isinstance(a["value"], list) else [a["value"]] if a["value"] is not None else []:
@@ -2408,6 +2475,7 @@ class Game:
 
 
 rooms = {}  # код комнаты -> Game
+MISSES = {}  # адрес -> {код комнаты: когда спросили} — запросы к несуществующим комнатам (защита от перебора кодов)
 
 
 class Stats:
@@ -2426,7 +2494,7 @@ class Stats:
 
     def visit(self, device, page):
         self.views[page] += 1
-        if device:
+        if device and len(self.visitors) < 200000:  # не растём без конца
             self.visitors.add(hashlib.sha256(device.encode()).hexdigest()[:16])
 
     def event(self, text):
@@ -2548,9 +2616,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_bytes((STATIC / name).read_bytes(), mime, extra=extra)
         return device
 
-    def read_json(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        if length > MAX_BODY:
+    def read_json(self, limit=MAX_BODY):
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return None
+        if length > limit or length < 0:
             return None
         try:
             data = json.loads(self.rfile.read(length) or b"{}")
@@ -2558,10 +2629,48 @@ class Handler(BaseHTTPRequestHandler):
             return {}
         return data if isinstance(data, dict) else {}
 
+    def client(self):
+        """Адрес клиента (на Render — из заголовка прокси)."""
+        return (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip() or self.client_address[0]
+
+    def missed(self, code):
+        """Запрос к несуществующей комнате. Много разных кодов с одного адреса — это перебор: True — пора отказать."""
+        now, who = time.time(), self.client()
+        seen = MISSES.setdefault(who, {})
+        for c in [c for c, t in seen.items() if now - t > MISS_WINDOW]:
+            del seen[c]
+        seen[str(code)[:8]] = now
+        if len(MISSES) > 5000:  # не копим адреса без конца
+            for k in [k for k, v in MISSES.items() if all(now - t > MISS_WINDOW for t in v.values())]:
+                del MISSES[k]
+        return len(seen) > MISS_LIMIT
+
+    def crashed(self, e):
+        import traceback
+        print(f"[ошибка] {self.command} {self.path.split('?')[0]}: {e!r}", flush=True)
+        traceback.print_exc()
+        with lock:
+            STATS.counts["errors"] += 1
+        self.defer = False
+        try:
+            self.send_json({"error": "Что-то пошло не так. Попробуй ещё раз"}, 500)
+        except OSError:
+            pass
+
     def do_GET(self):
+        try:
+            self.get()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception as e:  # сбой не должен обрывать связь молча
+            self.crashed(e)
+
+    def get(self):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
+        if url.path == "/privacy":  # политика конфиденциальности (нужна магазинам приложений)
+            return self.send_file("privacy.html")
         if url.path == "/soundtest":  # проверка звука на ТВ и телефонах (Web Audio и обычный аудиофайл)
             return self.send_file("soundtest.html")
         if url.path in ("/", "/host", "/editor", "/learn", "/heads"):
@@ -2604,8 +2713,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"error": "Файл не найден"}, 404)
             self.send_media(item[1], item[0])
         elif url.path == "/api/packs":
-            self.send_json([{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items()])
+            self.send_json([{"id": k, "title": p["title"], "count": len(p["questions"])} for k, p in PACKS.items() if k not in LOCKED_PACKS])
+        elif url.path == "/api/learn/pack":  # тренировка: только её темы (страны, флаги, столицы), а не весь пакет с ответами
+            self.send_bytes(learn_pack(query.get("id", [""])[0]), "application/json; charset=utf-8")
         elif parts[:2] == ["api", "packs"] and len(parts) == 3 and parts[2] in PACK_FILES:
+            if parts[2] in LOCKED_PACKS:  # пакет с "locked": true (платный) целиком не отдаём
+                return self.send_json({"error": "Этот пакет нельзя скачать"}, 403)
             self.send_bytes(PACK_FILES[parts[2]].read_bytes(), "application/json; charset=utf-8")
         elif url.path == "/api/state":
             self.defer, self.pending = True, None
@@ -2613,7 +2726,10 @@ class Handler(BaseHTTPRequestHandler):
                 with lock:
                     game = rooms.get(query.get("room", [""])[0])
                     if not game:
-                        self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
+                        if self.missed(query.get("room", [""])[0]):
+                            self.send_json({"error": "Слишком много попыток. Подожди пару минут", "phase": "gone"}, 429)
+                        else:
+                            self.send_json({"error": "Комната не найдена", "phase": "gone"}, 404)
                     else:
                         game.touched = time.time()
                         STATS.sample()
@@ -2630,6 +2746,11 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         if length > MAX_SIQ:
             return self.send_json({"error": "Пакет больше 60 МБ — уменьши картинки или раздели на части"}, 413)
+        with lock:  # сначала права, потом файл: чужой запрос не должен занимать память сервера
+            game = rooms.get(query.get("room", [""])[0])
+            if not game or query.get("token", [""])[0] != game.host_token or self.device() != game.host_device:
+                self.close_connection = True  # тело не читаем
+                return self.send_json({"error": "Управлять игрой может только ведущий этой комнаты"}, 403)
         body = self.rfile.read(length)
         with lock:
             game = rooms.get(query.get("room", [""])[0])
@@ -2650,20 +2771,32 @@ class Handler(BaseHTTPRequestHandler):
         self.defer, self.pending = True, None  # ответ отправим, когда замок уже отпущен
         try:
             self.post()
+        except (BrokenPipeError, ConnectionResetError):
+            return
+        except Exception as e:
+            return self.crashed(e)
         finally:
             self.defer = False
-        if self.pending:
-            self.send_bytes(*self.pending)
+        try:
+            if self.pending:
+                self.send_bytes(*self.pending)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def post(self):
         url = urlparse(self.path)
         path = url.path
         if path == "/api/host/upload_siq":
             return self.upload_siq(url)
-        data = self.read_json()
-        if data is None:
-            return self.send_json({"error": "Файл слишком большой: максимум 25 МБ вместе с картинками и аудио"}, 413)
         device = self.device()
+        big = path in ("/api/host/upload", "/api/host/upload_fd")  # пакет с картинками — только ведущему какой-нибудь комнаты
+        if big:
+            with lock:
+                big = any(g.host_device == device for g in rooms.values())
+        data = self.read_json(MAX_BODY if big else MAX_SMALL_BODY)
+        if data is None:
+            self.close_connection = True  # тело не читали
+            return self.send_json({"error": "Файл слишком большой: максимум 25 МБ вместе с картинками и аудио"}, 413)
         with lock:
             if not device:
                 return self.send_json({"error": "Обнови страницу. Если не помогло, разреши cookies в браузере"}, 400)
@@ -2692,6 +2825,8 @@ class Handler(BaseHTTPRequestHandler):
 
             game = rooms.get(str(data.get("room", "")))
             if not game:
+                if self.missed(data.get("room", "")):
+                    return self.send_json({"error": "Слишком много попыток. Подожди пару минут"}, 429)
                 return self.send_json({"error": "Комнаты с таким кодом нет. Проверь код у ведущего"}, 404)
             game.touched = time.time()
 
@@ -2705,16 +2840,13 @@ class Handler(BaseHTTPRequestHandler):
                 avatar = data.get("avatar") if data.get("avatar") in AVATARS else None
                 same = next((pid for pid, p in game.players.items() if pid != mine and p["name"].lower() == name.lower()), None)
                 if same:
-                    if same in game.online():
-                        return self.send_json({"error": "Это имя уже занято"}, 400)
-                    # игрок с таким именем вылетел — возвращаем его вместе с очками на этот телефон
-                    if mine:
-                        del game.players[mine]
-                    back = game.players[same]
-                    back.update(device=device, seen=time.time())
-                    if avatar:
-                        back["avatar"] = avatar
-                    return self.send_json({"pid": same, "restored": True, "score": back["score"]})
+                    # очки возвращаются только на тот же телефон (его узнаём по метке устройства, см. выше «mine»):
+                    # по одному имени чужие очки забрать нельзя — владелец решил
+                    busy = same in game.online()
+                    return self.send_json({"error": "Это имя уже занято" if busy else
+                                           "Это имя занято игроком, который вышел. Вернуться можно с того же телефона — или возьми другое имя"}, 400)
+                if not mine and len(game.players) >= MAX_PLAYERS:
+                    return self.send_json({"error": f"В комнате уже {MAX_PLAYERS} игроков — больше не помещается"}, 400)
                 team = data.get("team")
                 if not (isinstance(team, int) and 0 <= team < game.settings["teams"]):
                     team = None

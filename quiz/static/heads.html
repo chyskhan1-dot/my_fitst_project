@@ -183,14 +183,19 @@ function resultView() {
     <div class="eyebrow">Раунд ${g.round + 1} из ${g.themes.length} · ${esc(g.themes[g.round])}</div>
     <div>${team(g.team)}</div>
     <h1>${wordsN(ok)}</h1>
-    ${g.cur.length ? `<ul class="words">${g.cur.map((w, i) => `<li><button type="button" class="${w.ok ? "ok" : "no"}" data-fix="${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</button></li>`).join("")}</ul>
-      <p class="muted">Наклон сработал случайно? Нажми на слово — поменяется</p>` : `<p class="muted">Ни одного слова — бывает!</p>`}
+    ${g.cur.length ? wordsHtml() : `<p class="muted">Ни одного слова — бывает!</p>`}
     ${scoresHtml()}
     <button class="btn big" id="next">${next}</button>`;
 }
 
-function finalView() {
+// слова хода: нажатие на слово исправляет случайный наклон
+const wordsHtml = () => `<ul class="words">${g.cur.map((w, i) => `<li><button type="button" class="${w.ok ? "ok" : "no"}" data-fix="${i}">${w.ok ? "✓" : "✗"} ${esc(w.word)}</button></li>`).join("")}</ul>
+  <p class="muted">Наклон сработал случайно? Нажми на слово — поменяется</p>`;
+
+// итоги — сразу после последнего хода (без отдельного экрана хода — владелец: «дублирует инфу»); слова последнего хода — ниже
+function finalView(quiet) {
   const best = Math.max(...g.scores), winners = g.scores.map((s, i) => (s === best ? i : -1)).filter((i) => i >= 0);
+  const ok = g.cur.filter((w) => w.ok).length;
   $app.innerHTML = `
     <div class="turn">
       <div style="font-size:64px">🏆</div>
@@ -198,9 +203,10 @@ function finalView() {
       <h1>${winners.length > 1 ? "Ничья!" : `Победа: ${tname(winners[0])}`}</h1>
       ${scoresHtml()}
       <div class="row" style="align-self:stretch"><button class="btn ghost" id="setup">Настройки</button><button class="btn" id="again">Сыграть ещё</button></div>
+      ${g.cur.length ? `<div class="last-turn" style="align-self:stretch"><div class="eyebrow">Последний ход · ${esc(tname(g.team))} · ${wordsN(ok)}</div>${wordsHtml()}</div>` : ""}
       <a class="muted" href="/">На главную</a>
     </div>`;
-  sound("fanfare");
+  if (!quiet) sound("fanfare");
 }
 
 function scoresHtml() {
@@ -229,7 +235,7 @@ function resumeView() {
 function render() {
   if (!g || g.stage === "setup") return setupView();
   if (g.stage === "turn") return turnView();
-  if (g.stage === "play") { g.stage = "result"; save(); } // страницу перезагрузили посреди хода — ход закончен
+  if (g.stage === "play") { g.stage = isLast() ? "final" : "result"; save(); } // страницу перезагрузили посреди хода — ход закончен
   if (g.stage === "result") return resultView();
   if (g.stage === "final") return finalView();
 }
@@ -257,7 +263,7 @@ async function startTurn() {
       word = draw(theme);
       return word;
     },
-    onEnd: () => { QuizHeads.hide(); g.stage = "result"; save(); render(); },
+    onEnd: () => { QuizHeads.hide(); g.stage = isLast() ? "final" : "result"; save(); render(); }, // последний ход — сразу итоги
   });
 }
 
@@ -286,7 +292,7 @@ document.addEventListener("click", (e) => {
   const fix = e.target.closest("[data-fix]");
   if (fix) { // поправить случайный наклон: счёт команды меняется вместе со словом
     const w = g.cur[Number(fix.dataset.fix)];
-    w.ok = !w.ok; g.scores[g.team] += w.ok ? 1 : -1; save(); return resultView();
+    w.ok = !w.ok; g.scores[g.team] += w.ok ? 1 : -1; save(); return g.stage === "final" ? finalView(true) : resultView();
   }
   const id = e.target.closest("button, a") && e.target.closest("button, a").id;
   if (id === "random") { draft.themes = shuffle(THEMES.map((x) => x.name)).slice(0, 3); return setupView(); }
@@ -305,7 +311,7 @@ document.addEventListener("click", (e) => {
   if (!THEMES.length) { $app.innerHTML = `<p class="muted">Не удалось загрузить слова. Проверь интернет и обнови страницу</p>`; return; }
   if (g && g.themes && g.themes.some((n) => !THEMES.find((t) => t.name === n))) g = null; // темы переименовали — начать заново
   if (g && g.stage === "final") { draft = { teams: g.teams, themes: g.themes, names: g.names }; g = null; } // прошлая игра закончена — к настройкам
-  if (g && g.stage === "play") { g.stage = "result"; save(); } // страницу закрыли посреди хода — ход закончен
+  if (g && g.stage === "play") { g.stage = isLast() ? "final" : "result"; save(); } // страницу закрыли посреди хода — ход закончен
   if (g && g.stage !== "setup") resumeView(); else render();
 })();
 </script>

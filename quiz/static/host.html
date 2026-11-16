@@ -1353,14 +1353,18 @@ const roundsLabel = (n) => `${n} ${plural(n, "раунд", "раунда", "ра
 const levelsOf = (d) => (d.levels && d.levels.length ? d.levels : ["normal", "hard"]);
 // подпись сложности для сводки — только если играем не все уровни
 const levelsLabel = (d) => (levelsOf(d).length === 3 ? "" : "Сложность: " + LEVELS.filter(([v]) => levelsOf(d).includes(v)).map(([, n]) => n.toLowerCase()).join(", "));
-const packMeta = (s, d) => ((d.pack === "custom" ? s.custom : s.packs.find((p) => p.id === d.pack)) || {}).meta || [];
+const packOf = (s, d) => (d.pack === "custom" ? s.custom : s.packs.find((p) => p.id === d.pack)) || {};
+const packMeta = (s, d) => packOf(s, d).meta || [];
+// темы «по умолчанию»: все, кроме необязательных (их ведущий включает сам — например, «ПДД России»)
+const defaultThemes = (s, d, themes) => { const opt = new Set(packOf(s, d).optional || []); return themes.filter((t) => !opt.has(t)); };
 function themePicker(s, d) {
   const meta = packMeta(s, d);
   const themes = [...new Set(meta.map((m) => m[0]).filter(Boolean))];
-  const chosen = new Set(d.themes && d.themes.length ? d.themes : themes);
+  const base = defaultThemes(s, d, themes);
+  const chosen = new Set(d.themes && d.themes.length ? d.themes : base);
   const fits = meta.filter((m) => (!themes.length || chosen.has(m[0])) && (!m[1] || levelsOf(d).includes(m[1]))).length;
   const levels = new Set(meta.map((m) => m[1]).filter(Boolean));
-  const label = !d.themes || !d.themes.length ? `все ${themes.length}` : d.themes.length <= 2 ? d.themes.join(", ") : `${d.themes.length} из ${themes.length}`;
+  const label = !d.themes || !d.themes.length ? (base.length === themes.length ? `все ${themes.length}` : `${base.length} из ${themes.length}`) : d.themes.length <= 2 ? d.themes.join(", ") : `${d.themes.length} из ${themes.length}`;
   return `${themes.length > 1 ? `<div class="picker-line"><button type="button" class="btn ghost small" data-themes-open aria-expanded="${themesOpen}">🏷 Темы: ${esc(label)} ${themesOpen ? "▴" : "▾"}</button></div>` : ""}
     ${themes.length > 1 && themesOpen ? `<div class="theme-chips">${themes.map((t) => `<button type="button" class="theme-chip ${chosen.has(t) ? "on" : ""}" data-theme-toggle="${esc(t)}">${esc(t)}</button>`).join("")}
       <button type="button" class="theme-chip" data-themes-all>${chosen.size === themes.length ? "Снять все" : "Все темы"}</button></div>` : ""}
@@ -1507,12 +1511,15 @@ document.addEventListener("click", (e) => {
   const tt = e.target.closest("[data-theme-toggle], [data-themes-all]");
   if (tt) {
     const all = [...new Set(packMeta(lastState, draft).map((m) => m[0]).filter(Boolean))];
-    const cur = new Set(draft.themes && draft.themes.length ? draft.themes : all);
-    if (tt.dataset.themesAll != null) draft.themes = cur.size === all.length ? [all[0]] : [];
+    const base = defaultThemes(lastState, draft, all);
+    const cur = new Set(draft.themes && draft.themes.length ? draft.themes : base);
+    // пустой список = темы по умолчанию (все, кроме необязательных); любой другой набор шлём списком
+    const pack = (list) => (list.length === base.length && list.every((x) => base.includes(x)) ? [] : list);
+    if (tt.dataset.themesAll != null) draft.themes = cur.size === all.length ? [all[0]] : pack(all);
     else {
       const name = tt.dataset.themeToggle;
       cur.has(name) ? cur.delete(name) : cur.add(name);
-      draft.themes = !cur.size ? [name] : cur.size === all.length ? [] : all.filter((x) => cur.has(x)); // хотя бы одна тема
+      draft.themes = !cur.size ? [name] : pack(all.filter((x) => cur.has(x))); // хотя бы одна тема
     }
     return renderSetup(lastState);
   }

@@ -377,7 +377,9 @@ def clean_pack(data, store=None, scope="_", limit=MAX_QUESTIONS):
             })
         except PackError as e:
             raise PackError(f"вопрос {n}: {e}")
-    return {"title": title, "questions": questions}
+    # необязательные темы пакета: в игру попадают, только если ведущий сам отметил их (например, «ПДД России»)
+    optional = [str(t)[:40] for t in data.get("optional_themes", []) if isinstance(t, str)] if isinstance(data.get("optional_themes"), list) else []
+    return {"title": title, "questions": questions, "optional": [t for t in optional if any(q["theme"] == t for q in questions)]}
 
 
 BUILTIN_MEDIA = {}  # файлы, вшитые во встроенные пакеты
@@ -486,7 +488,7 @@ def si_from_quiz(pack, used=frozenset(), seen=None):
     seen — ключ → сколько устройств игроков уже видели вопрос (тоже ближе к концу)."""
     themes = collections.defaultdict(list)
     for q in pack["questions"]:
-        a = si_answers(q)
+        a = si_answers(q) if q.get("theme") not in (pack.get("optional") or []) else None
         if a:
             themes[q.get("theme") or "Разное"].append((q, a))
     names = [t for t, items in themes.items() if len(items) >= 5]
@@ -591,6 +593,12 @@ def balanced_sample(indexes, n, questions, seen=None):
                 out.append(groups[t].pop())
     random.shuffle(out)
     return out
+
+
+def ease_in(indexes, questions, first=2):
+    """Разгон: первые вопросы игры — не сложные (если такие есть в выборке), порядок остальных не меняется."""
+    soft = [i for i in indexes if questions[i].get("level") != "hard"][:first]
+    return soft + [i for i in indexes if i not in soft]
 
 
 SHUFFLE_KEEP = re.compile(r"\b(оба|обе|все (три|четыре|перечисленн|вариант)|всё (перечисленн|вышеперечисленн)|ни один|ни одна|ни одно|ничего из)", re.I)
@@ -1668,8 +1676,9 @@ class Game:
         allq, st = self.pack["questions"], self.settings
         themes = set(st.get("themes") or []) & {q.get("theme") for q in allq}
         levels = set(st.get("levels") or LEVELS)
+        skip = set() if themes else set(self.pack.get("optional") or [])  # темы не выбраны — все, кроме необязательных
         ok = [i for i, q in enumerate(allq)
-              if (not themes or q.get("theme") in themes) and (not q.get("level") or q["level"] in levels)]
+              if (not themes or q.get("theme") in themes) and q.get("theme") not in skip and (not q.get("level") or q["level"] in levels)]
         return ok or list(range(len(allq)))  # ничего не подошло — играем весь пакет
 
     def pick_questions(self, commit=False):
@@ -1691,7 +1700,7 @@ class Game:
         if len(fresh) < n:  # вопросы закончились — начинаем круг заново
             used.difference_update(pool)
             fresh = list(pool)
-        chosen = balanced_sample(fresh, n, allq, self.seen())
+        chosen = ease_in(balanced_sample(fresh, n, allq, self.seen()), allq)
         if commit:
             used.update(chosen)
         self.selected = [allq[i] for i in chosen]
@@ -1826,6 +1835,8 @@ class Game:
         k = min(ROUND_SIZE, self.target - len(self.selected), len(avail))
         chosen = fresh_first(fresh, self.seen(), lambda i: qkey(allq[i]["q"], allq[i]["image"]))[:k]
         chosen += random.sample([i for i in avail if i not in chosen], k - len(chosen))
+        if not self.selected:
+            chosen = ease_in(chosen, allq)  # первый раунд игры начинаем не со сложного
         used.update(chosen)
         self.selected += [allq[i] for i in chosen]
         self.set_phase("topic_bet")
@@ -2303,9 +2314,9 @@ class Game:
             # экран ведущего присылает pk — ключ того списка, что у него уже есть
             s["packs_key"] = self.packs_key()
             if pid is None and pk != s["packs_key"]:
-                s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p)} for k, p in PACKS.items()]
+                s["packs"] = [{"id": k, "title": p["title"], "count": len(p["questions"]), "meta": pack_meta(p), "optional": p.get("optional") or []} for k, p in PACKS.items()]
                 if self.custom:
-                    s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom)}
+                    s["custom"] = {"title": self.custom["title"], "count": len(self.custom["questions"]), "meta": pack_meta(self.custom), "optional": self.custom.get("optional") or []}
         if self.phase in ("topic_vote", "topic_bet", "perks"):
             s["topic"] = self.topic_state(pid if self.owns(pid, device) else None)
         if not self.si and not self.fd and not self.hd and self.phase not in ("setup", "lobby", "final"):

@@ -600,7 +600,7 @@ function joinForm() {
         <div class="error" id="err"></div>
         <button class="btn" type="submit">Войти в игру</button>
       </form>
-      <p class="muted small-note">Вылетел из игры? Введи то же имя — очки вернутся.</p>
+      <p class="muted small-note">Вылетел из игры? Открой её с того же телефона — очки вернутся.</p>
       <button class="leave" id="other">Другая комната</button>
     </div>`;
   document.getElementById("other").onclick = startScreen;
@@ -726,7 +726,7 @@ function answerControls(s) {
     return `<form id="text-form" class="text-form">
       <input id="answer-text" maxlength="20" inputmode="decimal" autocomplete="off" placeholder="Число${s.unit ? ", " + esc(s.unit) : ""}" aria-label="Твой ответ — число">
       <button class="btn" type="submit">Ответить</button></form>
-      <p class="hint">Побеждает тот, кто ближе всех к правильному ответу</p>`;
+      <p class="hint">Чем ближе к правильному ответу, тем больше очков</p>`;
   }
   if (s.qtype === "map") {
     return `<div class="phone-map" id="phone-map"></div>

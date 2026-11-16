@@ -1,0 +1,13 @@
+const { chromium } = require(require('child_process').execSync('npm root -g').toString().trim() + '/playwright');
+(async () => { const b = await chromium.launch(); const errs = [];
+  const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage(); p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://localhost:8000/'); const r = await p.evaluate(async () => (await fetch('/api/rooms', { method: 'POST', body: '{}' })).json());
+  await p.evaluate(r => { localStorage.setItem('quiz-host-' + r.room, r.token); localStorage.removeItem('quiz-rules'); }, r);
+  await p.goto('http://localhost:8000/host?room=' + r.room + '&mode=quiz'); await p.waitForTimeout(2500);
+  const lab = () => p.textContent('[data-themes-open]');
+  console.log('по умолчанию:', await lab()); await p.click('[data-themes-open]'); await p.waitForTimeout(300);
+  console.log('ПДД отмечена:', await p.evaluate(() => document.querySelector('[data-theme-toggle="ПДД России"]').classList.contains('on')));
+  await p.click('[data-theme-toggle="ПДД России"]'); await p.waitForTimeout(300); console.log('включили ПДД:', await lab(), JSON.stringify(await p.evaluate(() => draft.themes.length)));
+  await p.click('[data-theme-toggle="ПДД России"]'); await p.waitForTimeout(300); console.log('выключили:', await lab(), JSON.stringify(await p.evaluate(() => draft.themes)));
+  await p.click('[data-theme-toggle="Космос"]'); await p.waitForTimeout(300); console.log('без Космоса:', await lab());
+  console.log('errors', errs); await b.close(); })();

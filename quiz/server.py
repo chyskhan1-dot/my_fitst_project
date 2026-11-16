@@ -214,7 +214,8 @@ def media_ref(value, kind, store, scope):
     if value.startswith(("https://", "http://")):
         if len(value) > 2000:
             raise PackError("слишком длинная ссылка")
-        return value
+        # сайт работает по https, и картинку по http:// браузер не покажет — просим её по https
+        return "https://" + value[7:] if value.startswith("http://") else value
     if value.startswith("data:"):
         if store is None:
             raise PackError("вшитые файлы здесь не поддерживаются")
@@ -2668,6 +2669,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         parts = url.path.strip("/").split("/")
+        if url.path == "/privacy":  # политика конфиденциальности (нужна магазинам приложений)
+            return self.send_file("privacy.html")
         if url.path == "/soundtest":  # проверка звука на ТВ и телефонах (Web Audio и обычный аудиофайл)
             return self.send_file("soundtest.html")
         if url.path in ("/", "/host", "/editor", "/learn", "/heads"):

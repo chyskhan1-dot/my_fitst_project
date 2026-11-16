@@ -1,0 +1,23 @@
+const { chromium } = require(require('child_process').execSync('npm root -g').toString().trim() + '/playwright');
+(async () => {
+  const S = process.argv[2], B = 'http://localhost:8000'; const b = await chromium.launch(); const errs = [];
+  const h = await b.newPage(); await h.goto(B + '/');
+  const r = await h.evaluate(async () => (await fetch('/api/rooms', { method: 'POST', body: '{}' })).json());
+  const H = (a, body = {}) => h.evaluate(([a, body, r]) => fetch('/api/host/' + a, { method: 'POST', body: JSON.stringify({ room: r.room, token: r.token, ...body }) }).then(x => x.json()), [a, body, r]);
+  await H('upload', { pack: { title: 'T', questions: [{ type: 'order', q: 'По порядку?', options: ['Один', 'Два', 'Три', 'Четыре'] }] } });
+  await H('configure', { settings: { mode: 'quiz', pack: 'custom', count: 0, auto: false, sabotage: false } });
+  const p = await (await b.newContext({ viewport: { width: 390, height: 800 }, hasTouch: true })).newPage();
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto(B + '/?room=' + r.room); await p.fill('#name', 'Аня'); await p.tap('#join button[type=submit]'); await p.waitForTimeout(700);
+  await H('next'); await p.waitForSelector('[data-seq]');
+  const nums = () => p.$$eval('[data-seq]', (bs) => bs.map((b) => b.querySelector('.tx').textContent + ':' + (b.querySelector('.badge-num').textContent || '-')).join('  '));
+  const seq = await p.$$('[data-seq]');
+  await seq[0].tap(); await seq[1].tap(); await seq[2].tap();
+  console.log('нажал 3:   ', await nums(), '| Ответить:', await p.$eval('#submit', (x) => (x.disabled ? 'выкл' : 'вкл')));
+  await seq[1].tap();
+  console.log('отменил 2-й:', await nums());
+  await seq[1].tap(); await seq[3].tap();
+  console.log('ещё 2:      ', await nums(), '| Ответить:', await p.$eval('#submit', (x) => (x.disabled ? 'выкл' : 'вкл')));
+  await p.screenshot({ path: S + '/order.png' });
+  console.log('errors', errs); await b.close();
+})();
